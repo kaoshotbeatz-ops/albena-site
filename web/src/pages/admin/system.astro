@@ -2,7 +2,7 @@
 import Admin from '../../layouts/Admin.astro';
 ---
 <Admin title="System" section="system" lead="Backup health and audit chain verification.">
-  <span slot="actions"><button class="btn" id="run-backup" type="button">Run backup now</button> <button class="btn" id="refresh" type="button">Re-verify</button> <span id="sys-msg" role="status"></span></span>
+  <span slot="actions"><button class="btn" id="run-backup" type="button">Run backup now</button> <button class="btn" id="refresh" type="button">Re-verify</button> <button class="btn" id="repair-chain" type="button" hidden>Repair chain</button> <span id="sys-msg" role="status"></span></span>
   <div id="sys" class="grid-2">
     <section class="panel" aria-labelledby="h-chain">
       <header><h2 id="h-chain">Audit chain</h2></header>
