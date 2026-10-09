@@ -18,7 +18,7 @@ export function encodeForm(params: Record<string, unknown>): string {
 }
 
 export async function stripe<T = any>(
-  env: Bindings, method: "GET" | "POST", path: string, params: Record<string, unknown> = {}, idempotencyKey?: string,
+  env: Bindings, method: "GET" | "POST" | "DELETE", path: string, params: Record<string, unknown> = {}, idempotencyKey?: string,
 ): Promise<T> {
   const qs = encodeForm(params);
   const headers: Record<string, string> = { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "Stripe-Version": "2025-09-30.clover" };

@@ -4,10 +4,11 @@ import { audit, requireUser } from "../auth";
 import { getEntitlement } from "./entitlements";
 import { PLANS, isHardware, priceId, type Interval, type Plan } from "./plans";
 import { stripe, StripeError } from "./stripe";
+import { isNonTerminal } from "./reconcile";
 import { stripeWebhook } from "./webhook";
 
 export { getEntitlement } from "./entitlements";
-export const migrations = ["0200_billing_init.sql"];
+export const migrations = ["0200_billing_init.sql", "0201_billing_hardening.sql"];
 
 const base = (env: Bindings) => (env.PORTAL_ORIGIN).replace(/\/$/, "");
 
@@ -41,24 +42,61 @@ export function mount(app: Hono<AppEnv>): void {
 
     try {
       const customer = await ensureCustomer(c.env, user.accountId, user.email);
-      const meta = { account_id: user.accountId, plan, interval, ...(hw ? { hardware: "1" } : {}) };
-      const bucket = Math.floor(Date.now() / 300000); // same attempt within 5 min reuses the session
-      const session = await stripe<{ url: string }>(c.env, "POST", "/checkout/sessions", {
-        mode: "subscription",
-        customer,
-        client_reference_id: user.accountId,
-        line_items: [{ price: sub, quantity: 1 }, ...(hw ? [{ price: hw, quantity: 1 }] : [])],
-        automatic_tax: { enabled: true },
-        customer_update: { address: "auto", name: "auto", ...(hw ? { shipping: "auto" } : {}) },
-        billing_address_collection: "required",
-        tax_id_collection: { enabled: true },
-        ...(hw ? { shipping_address_collection: { allowed_countries: ["US"] } } : {}),
-        allow_promotion_codes: true,
-        metadata: meta,
-        subscription_data: { metadata: meta },
-        success_url: `${base(c.env)}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base(c.env)}/billing?checkout=cancelled`,
-      }, `albena-co-${user.accountId}-${plan}-${interval}-${bucket}`);
+      // Stripe is the authority: any subscription that can still bill blocks a new purchase (past_due, incomplete, ...).
+      const subs = await stripe<{ data: any[] }>(c.env, "GET", "/subscriptions", { customer, status: "all", limit: 100 });
+      if (subs.data.some((s) => isNonTerminal(s.status))) return c.json({ error: "already_subscribed", hint: "use /api/billing/portal" }, 409);
+
+      // One pending purchase per account: reuse the open session for the same plan, expire any other first.
+      const t = Math.floor(Date.now() / 1000);
+      const pend = await c.env.DB.prepare("SELECT * FROM checkout_pending WHERE account_id = ?").bind(user.accountId).first<any>();
+      if (pend?.session_id) {
+        const old = await stripe<any>(c.env, "GET", `/checkout/sessions/${pend.session_id}`).catch((e) => {
+          if (e instanceof StripeError && e.status === 404) return { status: "expired" };
+          throw e;
+        });
+        if (old.status === "complete") return c.json({ error: "checkout_in_progress" }, 409); // webhook has not landed yet
+        if (old.status === "open") {
+          if (pend.plan === plan && pend.interval === interval && old.url && pend.expires_at > t) return c.json({ url: old.url });
+          await stripe(c.env, "POST", `/checkout/sessions/${pend.session_id}/expire`);
+        }
+      } else if (pend && t - pend.created_at < 120) {
+        return c.json({ error: "checkout_in_progress" }, 409); // another request is creating the session right now
+      }
+      const pendingId = crypto.randomUUID();
+      const expiresAt = t + 1860; // Stripe requires >= 30 minutes
+      const claim = await c.env.DB.prepare(
+        `INSERT INTO checkout_pending (account_id, pending_id, plan, interval, session_id, expires_at, created_at) VALUES (?,?,?,?,NULL,?,?)
+         ON CONFLICT(account_id) DO UPDATE SET pending_id=excluded.pending_id, plan=excluded.plan, interval=excluded.interval, session_id=NULL,
+           expires_at=excluded.expires_at, created_at=excluded.created_at
+         WHERE checkout_pending.pending_id = ?`,
+      ).bind(user.accountId, pendingId, plan, interval, expiresAt, t, pend?.pending_id ?? "").run();
+      if (!(claim.meta?.changes ?? 0)) return c.json({ error: "checkout_in_progress" }, 409);
+
+      const meta = { account_id: user.accountId, plan, interval, ...(hw ? { hardware: "1" } : {}) }; // attribution only
+      let session: { id: string; url: string };
+      try {
+        session = await stripe<{ id: string; url: string }>(c.env, "POST", "/checkout/sessions", {
+          mode: "subscription",
+          customer,
+          client_reference_id: user.accountId,
+          line_items: [{ price: sub, quantity: 1 }, ...(hw ? [{ price: hw, quantity: 1 }] : [])],
+          automatic_tax: { enabled: true },
+          customer_update: { address: "auto", name: "auto", ...(hw ? { shipping: "auto" } : {}) },
+          billing_address_collection: "required",
+          tax_id_collection: { enabled: true },
+          ...(hw ? { shipping_address_collection: { allowed_countries: ["US"] } } : {}),
+          allow_promotion_codes: true,
+          expires_at: expiresAt,
+          metadata: meta,
+          subscription_data: { metadata: meta },
+          success_url: `${base(c.env)}/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${base(c.env)}/billing?checkout=cancelled`,
+        }, `albena-co-${user.accountId}-${pendingId}`); // one key per pending purchase: a retry of it cannot create a second session
+      } catch (e) {
+        await c.env.DB.prepare("DELETE FROM checkout_pending WHERE account_id = ? AND pending_id = ?").bind(user.accountId, pendingId).run();
+        throw e;
+      }
+      await c.env.DB.prepare("UPDATE checkout_pending SET session_id = ? WHERE account_id = ? AND pending_id = ?").bind(session.id, user.accountId, pendingId).run();
       await audit(c, "billing.checkout_started", user.accountId, { plan, interval });
       return c.json({ url: session.url });
     } catch (e) {
@@ -92,7 +130,7 @@ export function mount(app: Hono<AppEnv>): void {
   app.get("/api/billing/orders", requireUser, async (c) => {
     const { accountId } = c.get("user");
     const { results } = await c.env.DB.prepare(
-      "SELECT id, plan, shipping_status AS shippingStatus, refunded, amount_total AS amountTotal, currency, created_at AS createdAt FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
+      "SELECT id, plan, shipping_status AS shippingStatus, refunded, refund_status AS refundStatus, amount_total AS amountTotal, currency, created_at AS createdAt FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
     ).bind(accountId).all<{ refunded: number }>();
     return c.json({ orders: results.map((o) => ({ ...o, refunded: !!o.refunded })) });
   });

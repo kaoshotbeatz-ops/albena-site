@@ -78,6 +78,51 @@ export async function auditSince(id: number): Promise<{ action: string; target: 
   return (await e.DB.prepare("SELECT action, target FROM audit_log WHERE id > ? ORDER BY id").bind(id).all<{ action: string; target: string | null }>()).results;
 }
 export async function clearPortalTables() {
-  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_rate", "releases"]
+  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_rate", "releases", "refunds", "checkout_pending"]
     .map(t => e.DB.prepare(`DELETE FROM ${t}`)));
+}
+
+export interface FakeStripe {
+  subs: Record<string, any>; sessions: Record<string, any>; calls: { method: string; path: string; params: URLSearchParams; key?: string }[];
+  failPaths: Set<string>;
+}
+/** In-memory Stripe API. Install with fake.install(); state is plain objects tests can mutate. */
+export function fakeStripe(): FakeStripe & { install: () => void } {
+  const st: FakeStripe = { subs: {}, sessions: {}, calls: [], failPaths: new Set() };
+  const byKey = new Map<string, any>();
+  let n = 0;
+  const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status });
+  const impl = async (input: any, init: any = {}) => {
+    const u = new URL(String(input));
+    if (u.hostname !== "api.stripe.com") return json({ success: true });
+    const path = u.pathname.replace("/v1", "");
+    const method = String(init.method ?? "GET");
+    const params = new URLSearchParams(method === "GET" ? u.search : init.body ?? "");
+    const key = init.headers?.["Idempotency-Key"];
+    st.calls.push({ method, path, params, key });
+    if ([...st.failPaths].some((f) => path.startsWith(f))) return json({ error: "boom" }, 500);
+    let m: RegExpMatchArray | null;
+    if (method === "POST" && path === "/customers") return json({ id: "cus_new" });
+    if (path === "/subscriptions" && method === "GET") return json({ data: Object.values(st.subs).filter((s) => s.customer === params.get("customer")), has_more: false });
+    if ((m = path.match(/^\/subscriptions\/([^/]+)$/))) {
+      const s = st.subs[m[1]];
+      if (!s) return json({ error: "nf" }, 404);
+      if (method === "DELETE") { s.status = "canceled"; return json(s); }
+      return json(s);
+    }
+    if (path === "/checkout/sessions" && method === "GET") return json({ data: Object.values(st.sessions).filter((s) => s.customer === params.get("customer") && s.status === params.get("status")), has_more: false });
+    if (path === "/checkout/sessions" && method === "POST") {
+      if (key && byKey.has(key)) return json(byKey.get(key));
+      const id = `cs_new_${++n}`;
+      const s = { id, status: "open", url: `https://checkout.stripe.com/c/${id}`, customer: params.get("customer"), line_items: { data: [] } };
+      st.sessions[id] = s; if (key) byKey.set(key, s);
+      return json(s);
+    }
+    if ((m = path.match(/^\/checkout\/sessions\/([^/]+)\/expire$/))) { const s = st.sessions[m[1]]; if (!s) return json({}, 404); s.status = "expired"; return json(s); }
+    if ((m = path.match(/^\/checkout\/sessions\/([^/]+)$/))) { const s = st.sessions[m[1]]; return s ? json(s) : json({}, 404); }
+    if (path.startsWith("/billing_portal")) return json({ url: "https://billing.stripe.com/p/x" });
+    if (path === "/invoices") return json({ data: [{ id: "in_1", number: "A-1", status: "paid", amount_paid: 100, amount_due: 0, currency: "usd", created: 1, hosted_invoice_url: "h", invoice_pdf: "p", secret: "x" }] });
+    return json({ error: "unmocked " + method + " " + path }, 500);
+  };
+  return Object.assign(st, { install: () => vi.stubGlobal("fetch", vi.fn(impl)) });
 }

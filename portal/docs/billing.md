@@ -30,6 +30,10 @@ In your billing portal, you can:
 - Download receipts
 - Cancel your subscription at any time
 
+## One subscription at a time
+
+An account can have one open checkout and one subscription at a time. If you start a different plan before paying, the earlier checkout is closed. If a subscription is overdue or still being set up, you cannot start another; fix or cancel the existing one in your billing portal first. Your plan and billing interval always follow the plan you are currently subscribed to in Stripe, including changes made in the billing portal.
+
 ## Payments
 
 We use Stripe to process payments securely. You can pay by credit card or other methods Stripe supports. We never store your card data directly.
