@@ -1,0 +1,24 @@
+---
+import App from '../layouts/App.astro';
+const perks = [
+  { n: 'Cloud credits', d: 'Hosting and infrastructure credits for builders.', p: 'M6.5 15a3.5 3.5 0 0 1-.4-7 4.5 4.5 0 0 1 8.7-1A3.8 3.8 0 0 1 14 15z' },
+  { n: 'Developer tools', d: 'Discounted editors, CI and observability.', p: 'm7 6-4 4 4 4M13 6l4 4-4 4M11.5 4l-3 12' },
+  { n: 'Smart home', d: 'Partner pricing on sensors, lights and locks.', p: 'M3 10.5 10 4l7 6.5V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z' },
+  { n: 'Music and media', d: 'Streaming and library offers for your household.', p: 'M8 14.5V5l8-1.5V13M8 14.5a2 2 0 1 1-2-2 2 2 0 0 1 2 2zM16 13a2 2 0 1 1-2-2 2 2 0 0 1 2 2z' },
+  { n: 'Security', d: 'Password managers and security keys.', p: 'M10 3 4 5.5v4.2c0 3.6 2.4 6.2 6 7.3 3.6-1.1 6-3.7 6-7.3V5.5z' },
+  { n: 'Learning', d: 'Courses and training for you and your family.', p: 'M2.5 8 10 4l7.5 4L10 12zM5.5 10v3.5c1.2 1.2 2.9 1.8 4.5 1.8s3.3-.6 4.5-1.8V10' },
+];
+---
+<App title="Perks" section="perks" lead="Partner offers for Albena customers.">
+  <p class="banner mb" role="note">Partner offers coming soon. We’re lining up partners now; offers will appear here when they’re ready.</p>
+  <ul class="grid-3">
+    {perks.map((x) => (
+      <li class="perk">
+        <span class="ico"><svg viewBox="0 0 20 20" aria-hidden="true"><path d={x.p} /></svg></span>
+        <h3>{x.n}</h3><p>{x.d}</p>
+        <span><span class="chip grey">Coming soon</span></span>
+      </li>
+    ))}
+  </ul>
+  <script>import '../scripts/page';</script>
+</App>

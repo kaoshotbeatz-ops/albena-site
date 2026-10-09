@@ -1,0 +1,17 @@
+---
+import Auth from '../layouts/Auth.astro';
+---
+<Auth title="Check your email">
+  <div>
+    <h1>Check your email</h1>
+    <p class="mut mt-s">If that address has an account, a sign-in link is on its way.</p>
+  </div>
+  <p id="sent-line" hidden>Sent to <strong id="sent-to"></strong></p>
+  <ul class="notes">
+    <li>The link works once and expires in 15 minutes.</li>
+    <li>Open it on this device for the smoothest sign-in.</li>
+    <li>Nothing arrived? Check spam, then try again.</li>
+  </ul>
+  <a class="btn btn-lg" href="/login">Back to sign in</a>
+  <script>import '../scripts/check-email';</script>
+</Auth>

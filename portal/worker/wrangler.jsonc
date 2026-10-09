@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "albena-portal",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  // Request URLs can contain magic tokens. Do not enable automatic request logs.
+  "observability": { "enabled": false },
+  // Static portal UI (portal/web, `npm run build`). Worker first so every asset gets the security headers.
+  "assets": { "directory": "../web/dist", "binding": "ASSETS", "html_handling": "auto-trailing-slash", "not_found_handling": "404-page", "run_worker_first": true },
+  "send_email": [{ "name": "EMAIL" }],
+  "triggers": { "crons": ["23 * * * *"] },
+  "routes": [{ "pattern": "account.albena.ai", "custom_domain": true }],
+  "d1_databases": [{ "binding": "DB", "database_name": "albena_portal", "database_id": "TO_BE_CREATED", "migrations_dir": "migrations" }],
+  "ratelimits": [
+    { "name": "AUTH_IP_LIMITER", "namespace_id": "1101", "simple": { "limit": 20, "period": 60 } },
+    { "name": "AUTH_EMAIL_LIMITER", "namespace_id": "1102", "simple": { "limit": 5, "period": 60 } }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PORTAL_ORIGIN": "https://account.albena.ai",
+    "RP_ID": "albena.ai",
+    "MAIL_FROM": "accounts@albena.ai",
+    "MAIL_PROVIDER": "cloudflare",
+    // Stripe Price IDs (test mode). Placeholders: empty means "plan not configured" and checkout answers 503.
+    "PRICE_BYO_MONTHLY": "", "PRICE_BYO_ANNUAL": "",
+    "PRICE_HUB_MAC_MONTHLY": "", "PRICE_HUB_MAC_ANNUAL": "", "PRICE_HUB_MAC_HARDWARE": "",
+    "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": ""
+  }
+  // EMAIL is Cloudflare Email Sending: onboard the MAIL_FROM domain first (wrangler email sending enable albena.ai).
+  // Secrets: TURNSTILE_SECRET_KEY, PORTAL_SECRETS (random HMAC privacy key), STRIPE_SECRET_KEY (sk_test_), STRIPE_WEBHOOK_SECRET.
+}
