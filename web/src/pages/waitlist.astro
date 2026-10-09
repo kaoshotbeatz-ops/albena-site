@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import WaitlistForm from '../components/WaitlistForm.astro';
+---
+<Base title="Join the waitlist" description="Join the Albena early-access waitlist. We invite people in small groups and email you before anything changes.">
+  <div class="split">
+    <section class="pitch" aria-labelledby="w-h">
+      <div class="pitch-in">
+        <svg class="orb" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+          <defs><radialGradient id="wo" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#c7c9ff" /><stop offset="0.5" stop-color="#7170ff" /><stop offset="1" stop-color="#3b3f94" /></radialGradient></defs>
+          <circle cx="60" cy="60" r="56" fill="url(#wo)" />
+          <g stroke="#08090a" stroke-width="5" stroke-linecap="round"><path d="M36 52v16M48 42v36M60 34v52M72 45v30M84 53v14" /></g>
+        </svg>
+        <p class="eyebrow">Early access</p>
+        <h1 id="w-h" class="h-display">Be first to meet her.</h1>
+        <p class="lead">Albena is opening to early access in small groups. Leave your email and we will write when it is your turn.</p>
+        <ul class="perks">
+          <li>One email when your invitation is ready</li>
+          <li>Occasional updates on what we ship</li>
+          <li>No spam, and you can leave any time</li>
+        </ul>
+      </div>
+    </section>
+    <section class="formside" id="waitlist" aria-label="Waitlist form">
+      <div class="card"><h2>Join the waitlist</h2><WaitlistForm id="page" /></div>
+      <p class="small">Already on the list or want to leave it? Email <a href="mailto:omar@dbaomarhuertasllc.com">omar@dbaomarhuertasllc.com</a> or visit <a href="/support">support</a>.</p>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1fr); min-height: calc(100vh - 56px); }
+  .pitch { padding: 64px 20px 40px; background: radial-gradient(ellipse 80% 70% at 30% 20%, rgba(113, 112, 255, 0.26), transparent 70%), var(--bg-2); border-bottom: 1px solid var(--line); }
+  .pitch-in { max-width: 520px; margin: 0 auto; }
+  .orb { width: 88px; height: 88px; margin-bottom: 28px; filter: drop-shadow(0 0 40px rgba(113, 112, 255, 0.6)); animation: pulse 4s ease-in-out infinite; }
+  h1 { font-size: clamp(40px, 7vw, 64px); margin-bottom: 20px; }
+  .perks { margin-top: 28px; display: grid; gap: 10px; }
+  .perks li { position: relative; padding-left: 24px; color: var(--fg-2); }
+  .perks li::before { content: ''; position: absolute; left: 3px; top: 6px; width: 5px; height: 9px; border: solid var(--green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .formside { padding: 48px 20px 72px; display: grid; align-content: center; justify-items: center; gap: 20px; }
+  .card { width: 100%; max-width: 460px; padding: 28px; border: 1px solid var(--line-2); border-radius: 20px; background: linear-gradient(180deg, #131417, #0e0f11); }
+  .card h2 { font-size: 22px; letter-spacing: -0.025em; margin-bottom: 18px; }
+  .small { max-width: 460px; font-size: 13.5px; color: var(--mut); }
+  .small a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+  @media (min-width: 900px) {
+    .split { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    .pitch { padding: 96px 56px; border-bottom: 0; border-right: 1px solid var(--line); display: grid; align-content: center; }
+    .pitch-in { margin: 0 0 0 auto; }
+    .formside { padding: 96px 56px; }
+  }
+</style>

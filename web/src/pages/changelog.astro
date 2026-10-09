@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro';
+import { entries } from '../data/changelog';
+---
+<Base title="Changelog" description="Dated release notes for Albena. Starting with the October 9, 2026 early-access launch.">
+  <div class="wrap page">
+    <header class="head">
+      <p class="eyebrow">Changelog</p>
+      <h1 class="h-section">What is new in Albena</h1>
+      <p class="sub">Release notes, newest first. For what is coming, see the <a href="/roadmap">roadmap</a>.</p>
+    </header>
+
+    <ol class="log">
+      {entries.map((e) => (
+        <li>
+          <article class="entry" aria-labelledby={`e-${e.iso}`}>
+            <div class="when"><time datetime={e.iso}>{e.date}</time><span class="chip indigo">{e.version}</span></div>
+            <div class="body">
+              <h2 id={`e-${e.iso}`}>{e.title}</h2>
+              <p class="sum">{e.summary}</p>
+              {e.groups.map((g) => (
+                <section>
+                  <h3><span class={`tag ${g.tag.toLowerCase()}`}>{g.tag}</span></h3>
+                  <ul>{g.items.map((i) => <li>{i}</li>)}</ul>
+                </section>
+              ))}
+            </div>
+          </article>
+        </li>
+      ))}
+    </ol>
+    <p class="more">That is everything so far. Join the <a href="/waitlist">waitlist</a> to hear about each release.</p>
+  </div>
+</Base>
+
+<style>
+  .page { max-width: 900px; padding-top: 72px; padding-bottom: 96px; }
+  .head { margin-bottom: 56px; }
+  .head a, .more a { text-decoration: underline; text-underline-offset: 3px; color: var(--fg); }
+  .log { position: relative; }
+  .entry { display: grid; gap: 18px; padding-bottom: 48px; }
+  .when { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--fg-2); font-weight: 500; }
+  .body { position: relative; padding-left: 24px; border-left: 1px solid var(--line-2); }
+  .body::before { content: ''; position: absolute; left: -5px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 12px var(--acc); }
+  .body h2 { font-size: clamp(22px, 3vw, 28px); letter-spacing: -0.03em; line-height: 1.15; font-weight: 580; }
+  .sum { margin-top: 10px; color: var(--mut); max-width: 60ch; }
+  section { margin-top: 24px; }
+  h3 { margin-bottom: 10px; }
+  .tag { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 6px; }
+  .tag.new { color: #7fd9a8; background: rgba(76, 183, 130, 0.12); }
+  .tag.improved { color: #b6b8ff; background: rgba(113, 112, 255, 0.14); }
+  .tag.fixed { color: #f4d675; background: rgba(242, 201, 76, 0.1); }
+  section ul { display: grid; gap: 8px; }
+  section li { position: relative; padding-left: 18px; color: var(--fg-2); font-size: 15px; }
+  section li::before { content: ''; position: absolute; left: 0; top: 11px; width: 6px; height: 1px; background: var(--mut); }
+  .more { color: var(--mut); border-top: 1px solid var(--line); padding-top: 24px; font-size: 14px; }
+  @media (min-width: 760px) {
+    .entry { grid-template-columns: 200px 1fr; gap: 40px; }
+    .when { flex-direction: column; align-items: flex-start; gap: 10px; position: sticky; top: 88px; align-self: start; }
+  }
+</style>
