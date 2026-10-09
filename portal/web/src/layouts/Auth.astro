@@ -1,0 +1,25 @@
+---
+import Logo from '../components/Logo.astro';
+import '../styles/portal.css';
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} | Albena account</title>
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="theme-color" content="#08090a" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="referrer" content="same-origin" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="auth">
+  <main id="main" class="auth-card">
+    <a class="brand" href="https://albena.ai" aria-label="Albena home"><Logo size={26} id="au" /><span>Albena</span></a>
+    <slot />
+  </main>
+</body>
+</html>
