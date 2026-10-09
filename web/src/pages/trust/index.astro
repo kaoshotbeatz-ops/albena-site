@@ -66,6 +66,7 @@ const principles = [
           <li>Nightly backups to private storage with checksums, 35-day retention and weekly verification.</li>
           <li>Weekly automated security scans of our code and live site, filed as issues when something fails.</li>
           <li>HTTPS only with HSTS preload, TLS 1.2 or newer, and a strict content security policy.</li>
+          <li>Admin pages now sit behind Cloudflare Access (owner-only, 8 hour sessions) and our code is protected by required reviews and checks. The owner can still bypass these as sole maintainer.</li>
           <li>Control statuses re-scored against evidence; items waiting on us are marked partial.</li>
         </ul>
       </div>

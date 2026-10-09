@@ -18,7 +18,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "Cloudflare Access policy; GitHub org members; access review record (planned)"
+    "evidence": "controls/evidence/2026-10-09-access-app.json; GitHub org members; access review record (planned)"
   },
   {
     "id": "AC-3",
@@ -28,8 +28,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/src/admin.ts; worker/test/api.test.ts"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-access-app.json; worker/src/admin.ts; worker/test/api.test.ts"
   },
   {
     "id": "AC-4",
@@ -71,7 +71,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": "worker/wrangler.jsonc (ratelimits); worker/src/public.ts; worker/test/api.test.ts"
+    "evidence": "worker/wrangler.jsonc (ratelimits); worker/src/public.ts; worker/test/api.test.ts; controls/evidence/2026-10-09-access-app.json"
   },
   {
     "id": "AC-8",
@@ -100,8 +100,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "planned",
-    "evidence": "Access application session duration (not yet configured)"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-access-app.json"
   },
   {
     "id": "AC-14",
@@ -122,7 +122,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "worker/src/admin.ts; .github/workflows/ci.yml (deploy job); GitHub org 2FA setting (to capture)"
+    "evidence": "controls/evidence/2026-10-09-access-app.json; worker/src/admin.ts; .github/workflows/ci.yml (deploy job); GitHub org 2FA setting (to capture)"
   },
   {
     "id": "AC-20",
@@ -152,8 +152,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "partial",
-    "evidence": ".github/CODEOWNERS; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS; .github/workflows/ci.yml; scripts/apply-github-protections.sh"
   },
   {
     "id": "AT-1",
@@ -416,8 +416,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": ".github/pull_request_template.md; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/pull_request_template.md; .github/workflows/ci.yml; scripts/apply-github-protections.sh"
   },
   {
     "id": "CM-4",
@@ -439,7 +439,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": ".github/CODEOWNERS; scripts/apply-github-protections.sh (not applied)"
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS"
   },
   {
     "id": "CM-6",
@@ -608,7 +608,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "Access policy; GitHub org 2FA setting"
+    "evidence": "controls/evidence/2026-10-09-access-app.json; GitHub org 2FA setting (to capture)"
   },
   {
     "id": "IA-4",
@@ -1243,7 +1243,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": ".github/workflows/ci.yml; .github/workflows/scheduled-security.yml; .github/dependabot.yml"
+    "evidence": ".github/workflows/ci.yml; .github/workflows/scheduled-security.yml; .github/dependabot.yml; controls/evidence/2026-10-09-github-protections.json"
   },
   {
     "id": "RA-7",
@@ -1347,8 +1347,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": ".github/CODEOWNERS; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS; .github/workflows/ci.yml"
   },
   {
     "id": "SA-11",

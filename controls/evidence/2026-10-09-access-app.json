@@ -1,0 +1,29 @@
+{
+  "captured": "2026-10-09",
+  "source": "cf zero-trust access applications list (filtered; AUD, IdP ids and owner email omitted)",
+  "applications": [
+    {
+      "name": "Albena admin",
+      "domain": "albena.ai/admin",
+      "destinations": [
+        "albena.ai/admin",
+        "albena.ai/api/admin"
+      ],
+      "session_duration": "8h",
+      "auto_redirect_to_identity": true,
+      "http_only_cookie_attribute": true,
+      "same_site_cookie_attribute": "strict",
+      "policies": [
+        {
+          "name": "Owner only",
+          "decision": "allow",
+          "include": [
+            "email (single owner address, redacted)"
+          ],
+          "require": [],
+          "exclude": []
+        }
+      ]
+    }
+  ]
+}
