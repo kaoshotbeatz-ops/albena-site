@@ -48,7 +48,7 @@
     msg.textContent = '';
     var subject = encodeURIComponent('Albena waitlist');
     var body = encodeURIComponent('Please add me to the Albena waitlist: ' + v);
-    window.location.href = 'mailto:hello@albena.ai?subject=' + subject + '&body=' + body;
+    window.location.href = 'mailto:omar@dbaomarhuertasllc.com?subject=' + subject + '&body=' + body;
     form.hidden = true;
     thanks.hidden = false;
     thanks.focus();
