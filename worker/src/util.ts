@@ -48,7 +48,10 @@ export async function verifyTurnstile(
     if (!r.ok) return "unavailable";
     const data = (await r.json()) as { success?: boolean; hostname?: string; action?: string };
     const hosts = new Set(["albena.ai", "www.albena.ai"]);
-    if (env.ENVIRONMENT !== "production") hosts.add("localhost");
+    if (env.ENVIRONMENT !== "production") {
+      hosts.add("localhost");
+      for (const h of (env.EXTRA_TURNSTILE_HOSTS ?? "").split(",")) if (h.trim()) hosts.add(h.trim());
+    }
     return data.success === true && typeof data.hostname === "string" && hosts.has(data.hostname) &&
       data.action === expectedAction
       ? "ok"

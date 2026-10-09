@@ -10,6 +10,7 @@ export interface Env {
   TEAM_DOMAIN: string;
   NOTIFY_FROM?: string;
   ENVIRONMENT?: string;
+  EXTRA_TURNSTILE_HOSTS?: string;
 }
 
 export type Vars = {

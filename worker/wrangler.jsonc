@@ -26,7 +26,7 @@
     {
       "binding": "DB",
       "database_name": "albena",
-      "database_id": "TO_BE_CREATED",
+      "database_id": "70026d77-8cec-40a4-9340-e7f5113a0404",
       "migrations_dir": "migrations"
     }
   ],
@@ -42,14 +42,33 @@
   ],
 
   "vars": {
-    "TURNSTILE_SITE_KEY": "TO_BE_SET",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
     "NOTIFY_FROM": "notifications@albena.ai",
     "ENVIRONMENT": "production"
-  }
+  },
 
   // Secrets (set with `wrangler secret put`, never in this file):
   //   TURNSTILE_SECRET_KEY  Turnstile widget secret
   //   IP_SALT               random string, salt for SHA-256 IP hashing
   //   ADMIN_AUD             Cloudflare Access application AUD tag
   //   TEAM_DOMAIN           e.g. yourteam.cloudflareaccess.com
+  "env": {
+    "staging": {
+      "name": "albena-site-staging",
+      "workers_dev": true,
+      "routes": [],
+      "d1_databases": [
+        { "binding": "DB", "database_name": "albena", "database_id": "70026d77-8cec-40a4-9340-e7f5113a0404", "migrations_dir": "migrations" }
+      ],
+      "ratelimits": [
+        { "name": "POST_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } }
+      ],
+      "vars": {
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
+        "NOTIFY_FROM": "notifications@albena.ai",
+        "ENVIRONMENT": "staging",
+        "EXTRA_TURNSTILE_HOSTS": "albena-site-staging.albena-site.workers.dev"
+      }
+    }
+  }
 }
