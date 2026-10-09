@@ -47,11 +47,14 @@ To permanently delete your account:
 2. Scroll to **Danger zone**
 3. Click **Delete my account**
 4. Confirm your email address
-5. Your account is deleted, along with all portal data
+5. If you still have a subscription or an unfinished checkout, the portal tells you and asks whether to cancel it first. Cancelling happens immediately and is not refunded. If you decline, nothing is deleted.
+6. Your account is deleted, along with all portal data
+
+Deleting your account does **not** by itself cancel billing. The portal checks with Stripe and will not delete the account while anything can still charge you, unless you choose to cancel it as part of the deletion. If it cannot reach Stripe it stops and deletes nothing.
 
 Deleting your account does **not** delete:
 - Data stored on your Hub (conversations, memory)
-- Paid subscription charges (handled by Stripe)
+- Charges already made (handled by Stripe)
 
 Data on your Hub stays there until you manually delete it.
 

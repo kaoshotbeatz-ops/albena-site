@@ -3,6 +3,7 @@ import type { AppEnv } from "../types";
 import { audit, requireUser } from "../auth";
 import { clearSession } from "../auth/sessions";
 import { getEntitlement } from "../billing/entitlements";
+import { cancelOpenBilling, listOpenBilling } from "../billing/open";
 
 export const migrations: string[] = [];
 
@@ -30,7 +31,7 @@ export function mount(app: Hono<AppEnv>): void {
       members: await q("SELECT u.id, u.email, m.role FROM members m JOIN users u ON u.id = m.user_id WHERE m.account_id = ?"),
       entitlement: await getEntitlement(c.env.DB, u.accountId),
       hubs: await q("SELECT id, name, edition, profile, version, update_channel AS updateChannel, remote_access AS remoteAccess, last_seen AS lastSeen, created_at AS createdAt FROM hubs WHERE account_id = ?"),
-      orders: await q("SELECT id, plan, shipping_status AS shippingStatus, refunded, amount_total AS amountTotal, currency, shipping_json AS shipping, created_at AS createdAt FROM hardware_orders WHERE account_id = ?"),
+      orders: await q("SELECT id, plan, shipping_status AS shippingStatus, refunded, refund_status AS refundStatus, amount_total AS amountTotal, currency, shipping_json AS shipping, created_at AS createdAt FROM hardware_orders WHERE account_id = ?"),
       passkeys: (await c.env.DB.prepare("SELECT id, created_at AS createdAt FROM passkeys WHERE user_id = ?").bind(u.id).all()).results,
     };
     await audit(c, "account.export", u.accountId);
@@ -40,10 +41,25 @@ export function mount(app: Hono<AppEnv>): void {
   app.post("/api/account/delete", requireUser, async (c) => {
     const u = c.get("user");
     if (u.role !== "owner") return c.json({ error: "forbidden" }, 403);
-    const body = await c.req.json<{ confirm?: unknown }>().catch(() => ({} as { confirm?: unknown }));
+    const body = await c.req.json<{ confirm?: unknown; cancelBilling?: unknown }>().catch(() => ({} as { confirm?: unknown; cancelBilling?: unknown }));
     if (body.confirm !== "DELETE") return c.json({ error: "confirmation_required" }, 400);
-    // A live subscription would keep billing a deleted account; the customer must cancel it first.
-    if ((await getEntitlement(c.env.DB, u.accountId)).active) return c.json({ error: "cancel_subscription_first" }, 409);
+    // Deleting the account removes our link to Stripe, so nothing that can still bill may be left behind.
+    // Stripe (not our entitlement row) is asked, because past_due / incomplete subscriptions keep invoicing.
+    const cust = (await c.env.DB.prepare("SELECT stripe_customer_id AS id FROM billing_customers WHERE account_id = ?").bind(u.accountId).first<{ id: string }>())?.id;
+    if (cust) {
+      try {
+        const open = await listOpenBilling(c.env, cust);
+        if (open.subscriptions.length || open.checkoutSessions.length) {
+          if (body.cancelBilling !== true) return c.json({ error: "billing_active", ...open }, 409);
+          if (!(await cancelOpenBilling(c.env, cust, open))) return c.json({ error: "cancel_failed" }, 502);
+          await audit(c, "account.billing_canceled", u.accountId, { subscriptions: open.subscriptions.length, checkoutSessions: open.checkoutSessions.length });
+        }
+      } catch {
+        return c.json({ error: "stripe_error" }, 502); // cannot prove billing is closed: do not delete
+      }
+    } else if ((await getEntitlement(c.env.DB, u.accountId)).active) {
+      return c.json({ error: "billing_active", subscriptions: [], checkoutSessions: [] }, 409);
+    }
     // Audit first: the chain keeps only the nonsecret user id and a keyed IP hash, never the email.
     await audit(c, "account.delete", u.accountId);
     const a = u.accountId, id = u.id, db = c.env.DB;
@@ -55,6 +71,7 @@ export function mount(app: Hono<AppEnv>): void {
       db.prepare("DELETE FROM hubs WHERE account_id = ?").bind(a),
       db.prepare("DELETE FROM hub_pair_codes WHERE account_id = ?").bind(a),
       db.prepare("DELETE FROM entitlements WHERE account_id = ?").bind(a),
+      db.prepare("DELETE FROM checkout_pending WHERE account_id = ?").bind(a),
       db.prepare("DELETE FROM billing_customers WHERE account_id = ?").bind(a),
       // Order rows are kept for accounting; the shipping address is personal data and goes.
       db.prepare("UPDATE hardware_orders SET shipping_json = NULL WHERE account_id = ?").bind(a),

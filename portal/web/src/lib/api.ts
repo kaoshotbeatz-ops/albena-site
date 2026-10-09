@@ -2,7 +2,7 @@
 import type { Account, BillingSummary, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string) { super(code); }
+  constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
 }
 
 /** Mock mode: `astro dev` only. `import.meta.env.DEV` is false in prod so this whole branch is dead-code-eliminated. */
@@ -33,7 +33,7 @@ export async function req<T>(method: string, path: string, body?: unknown, opts:
   });
   if (res.status === 401 && !opts.noRedirect) { goLogin(); throw new ApiError(401, 'unauthorized'); }
   const data: unknown = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, String((data as { error?: string }).error ?? 'error'));
+  if (!res.ok) throw new ApiError(res.status, String((data as { error?: string }).error ?? 'error'), data);
   return data as T;
 }
 const get = <T>(p: string) => req<T>('GET', p);
@@ -63,7 +63,7 @@ const iso = (s: number) => new Date(s * 1000).toISOString();
 const isoOrNull = (s: number | null) => (s === null ? null : iso(s));
 const ONLINE_WINDOW_S = 10 * 60; // hubs heartbeat every few minutes
 const PLAN_NAMES: Record<PlanId | 'none', string> = { none: 'No plan', byo: 'Bring your own', hub_mac: 'Hub for Mac', hub_nvidia: 'Hub for NVIDIA', estate: 'Estate' };
-const ORDER_STATUS: Record<string, Order['status']> = { pending_fulfillment: 'processing', shipped: 'shipped', delivered: 'delivered', cancelled_refunded: 'canceled' };
+const ORDER_STATUS: Record<string, Order['status']> = { pending_fulfillment: 'processing', shipped: 'shipped', delivered: 'delivered', cancelled_refunded: 'canceled', awaiting_payment: 'processing', payment_failed: 'canceled' };
 const hub = (h: W.WireHub): Hub => ({
   id: h.id, name: h.name, edition: h.edition, version: h.version, profile: h.profile, updateChannel: h.updateChannel, remoteAccess: h.remoteAccess,
   lastSeenAt: isoOrNull(h.lastSeen), online: h.lastSeen !== null && Date.now() / 1000 - h.lastSeen < ONLINE_WINDOW_S,
@@ -107,7 +107,7 @@ export const api = {
   },
   account: async (): Promise<Account> => { const r = await get<W.Account>('/api/account'); return { id: r.account.id, members: r.members, connectors: r.connectors }; },
   exportData: () => get<unknown>('/api/account/export'),
-  deleteAccount: (confirm: string) => req<unknown>('POST', '/api/account/delete', { confirm }),
+  deleteAccount: (confirm: string, cancelBilling = false) => req<unknown>('POST', '/api/account/delete', cancelBilling ? { confirm, cancelBilling: true } : { confirm }),
 };
 
 export function errMsg(e: unknown): string {

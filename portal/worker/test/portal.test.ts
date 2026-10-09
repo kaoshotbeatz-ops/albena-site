@@ -4,7 +4,7 @@ import { prune } from "../src/cron";
 import worker from "../src/index";
 import { cloudflareMailer, devMailer, selectMailer, sendMail } from "../src/auth/mail";
 import { now, IDLE_SECONDS } from "../src/auth/sessions";
-import { auditSince, clearPortalTables, client, e, lastAuditId, login, seedMember, seedOwner, testBindings } from "./helpers";
+import { auditSince, clearPortalTables, client, e, fakeStripe, lastAuditId, login, seedMember, seedOwner, testBindings } from "./helpers";
 
 let env: ReturnType<typeof testBindings>;
 beforeEach(async () => { env = testBindings(); await clearPortalTables(); });
@@ -65,10 +65,69 @@ describe("account", () => {
     expect((await del(oc, {})).status).toBe(400);
     expect((await del(oc, { confirm: "delete" })).status).toBe(400);
     await applyEntitlement(e.DB, "dacct", { plan: "byo", status: "active" }, 1);
-    expect((await del(oc, { confirm: "DELETE" })).status).toBe(409);
+    expect((await del(oc, { confirm: "DELETE" })).status).toBe(409); // no Stripe customer to prove it is closed
     expect(await e.DB.prepare("SELECT id FROM users WHERE id='do'").first()).not.toBeNull();
   });
+  describe("[5] delete checks Stripe for anything that can still bill", () => {
+    let fake: ReturnType<typeof fakeStripe>, oc: string;
+    const del = (body: unknown) => client(oc, env).request("/api/account/delete", { method: "POST", body: JSON.stringify(body) });
+    const alive = async () => !!(await e.DB.prepare("SELECT id FROM users WHERE id='bo'").first());
+    beforeEach(async () => {
+      fake = fakeStripe(); fake.install();
+      oc = await login(await seedOwner("bo", "bacct"));
+      await e.DB.prepare("INSERT INTO billing_customers VALUES ('bacct','cus_b',1)").run();
+    });
+    it("no billing objects: deletes", async () => {
+      expect((await del({ confirm: "DELETE" })).status).toBe(200);
+      expect(await alive()).toBe(false);
+    });
+    it.each(["past_due", "unpaid", "incomplete", "trialing", "active", "paused"])("a %s subscription refuses deletion with 409 and lists it", async (status) => {
+      fake.subs.sub_b = { id: "sub_b", customer: "cus_b", status };
+      const r = await del({ confirm: "DELETE" });
+      expect(r.status).toBe(409);
+      expect(await r.json()).toMatchObject({ error: "billing_active", subscriptions: [{ id: "sub_b", status }], checkoutSessions: [] });
+      expect(await alive()).toBe(true);
+      expect(fake.calls.some((c) => c.method === "DELETE")).toBe(false);
+    });
+    it("terminal subscriptions do not block", async () => {
+      fake.subs.sub_b = { id: "sub_b", customer: "cus_b", status: "canceled" };
+      fake.subs.sub_c = { id: "sub_c", customer: "cus_b", status: "incomplete_expired" };
+      expect((await del({ confirm: "DELETE" })).status).toBe(200);
+    });
+    it("an open checkout session refuses deletion", async () => {
+      fake.sessions.cs_b = { id: "cs_b", customer: "cus_b", status: "open" };
+      const r = await del({ confirm: "DELETE" });
+      expect(r.status).toBe(409);
+      expect(await r.json()).toMatchObject({ error: "billing_active", checkoutSessions: ["cs_b"] });
+      expect(await alive()).toBe(true);
+    });
+    it("cancelBilling cancels subscriptions, expires sessions, verifies, then deletes", async () => {
+      fake.subs.sub_b = { id: "sub_b", customer: "cus_b", status: "past_due" };
+      fake.sessions.cs_b = { id: "cs_b", customer: "cus_b", status: "open" };
+      const mark = await lastAuditId();
+      const r = await del({ confirm: "DELETE", cancelBilling: true });
+      expect(r.status).toBe(200);
+      expect(fake.subs.sub_b.status).toBe("canceled");
+      expect(fake.sessions.cs_b.status).toBe("expired");
+      expect(await alive()).toBe(false);
+      expect((await auditSince(mark)).map((a) => a.action)).toEqual(expect.arrayContaining(["account.billing_canceled", "account.delete"]));
+    });
+    it("if cancellation cannot be verified, nothing is deleted", async () => {
+      fake.subs.sub_b = { id: "sub_b", customer: "cus_b", status: "active" };
+      const orig = globalThis.fetch;
+      vi.stubGlobal("fetch", vi.fn(async (u: any, i: any) => (i?.method === "DELETE" ? new Response("{}", { status: 200 }) : orig(u, i)))); // Stripe "accepts" but state is unchanged
+      const r = await del({ confirm: "DELETE", cancelBilling: true });
+      expect(r.status).toBe(502);
+      expect(await alive()).toBe(true);
+    });
+    it("a Stripe outage fails closed", async () => {
+      fake.failPaths.add("/subscriptions");
+      expect((await del({ confirm: "DELETE" })).status).toBe(502);
+      expect(await alive()).toBe(true);
+    });
+  });
   it("delete removes the account and personal data but keeps the audit chain and order rows", async () => {
+    fakeStripe().install(); // customer exists at Stripe with nothing open
     const o = await seedOwner("zo", "zacct"); await seedMember("zm", "zacct");
     const oc = await login(o);
     await e.DB.batch([

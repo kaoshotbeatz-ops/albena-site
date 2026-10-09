@@ -33,14 +33,14 @@ Security
 
 Billing
 - GET /api/billing/summary -> `{entitlement: {...as above}, hasBillingAccount}`
-- GET /api/billing/orders -> `{orders: [{id, plan, shippingStatus, refunded, amountTotal, currency, createdAt}]}` (hardware orders; shippingStatus: pending_fulfillment|shipped|delivered|cancelled_refunded)
+- GET /api/billing/orders -> `{orders: [{id, plan, shippingStatus, refunded, amountTotal, currency, createdAt}]}` (hardware orders; shippingStatus: awaiting_payment|pending_fulfillment|shipped|delivered|payment_failed|cancelled_refunded; refundStatus: none|partially_refunded|refunded; `refunded` is true only for a full refund)
 - GET /api/billing/invoices -> `{invoices: [{id, number, status, amountPaid, amountDue, currency, created, hostedInvoiceUrl, pdf}]}`
-- POST /api/billing/checkout `{plan: "byo"|"hub_mac"|"hub_nvidia"|"estate", interval: "monthly"|"annual"}` -> `{url}` (estate: 400 `contact_sales`; unconfigured price: 503; already subscribed: 409)
+- POST /api/billing/checkout `{plan: "byo"|"hub_mac"|"hub_nvidia"|"estate", interval: "monthly"|"annual"}` -> `{url}` (estate: 400 `contact_sales`; unconfigured price: 503; a subscription that can still bill, or another checkout in progress: 409; one open checkout per account, same plan reuses it)
 - POST /api/billing/portal -> `{url}`
 - POST /api/stripe/webhook (Stripe-Signature over the raw body)
 
 Hubs
-- POST /api/hubs/pair/start (owner) -> `{code, expiresAt}`; 402 when the plan has no free hub slot
+- POST /api/hubs/pair/start (owner) -> `{code, expiresAt}`; 402 when the plan has no free hub slot. `pair/complete` re-checks entitlement and slot count atomically with consuming the code (402 and the code stays unused otherwise); public key and signatures must be canonical padded base64
 - POST /api/hubs/pair/complete (hub) `{code, hubPublicKey, edition, profile, version}` -> `{hubId}`. No token: the hub keeps an Ed25519 key and signs every later request (`X-Hub-Id`, `X-Hub-Timestamp`, `X-Hub-Signature`).
 - POST /api/hubs/heartbeat (hub, signed) `{version, profile, updateChannel, health}` -> `{ok, updateChannel, remoteAccess}`
 - GET /api/hubs -> `{hubs: [{id, name, edition, profile, version, updateChannel, remoteAccess, health: {ok, services}|null, lastSeen, createdAt}]}`
@@ -50,7 +50,7 @@ Hubs
 Account (owner-only where noted)
 - GET /api/account -> `{account: {id, createdAt}, members: [{id, email, role, status: "active"}], connectors: []}`. Connectors live on the Hub, so this is always an empty list.
 - GET /api/account/export (owner) -> JSON of account, members, entitlement, hubs, orders, own passkey ids
-- POST /api/account/delete (owner) `{confirm: "DELETE"}` -> `{ok}`. 409 `cancel_subscription_first` while the subscription is active. Removes users, sessions, passkeys, hubs, billing links; hardware order rows stay (accounting) without the shipping address; the audit chain is append-only and keeps only ids and keyed IP hashes.
+- POST /api/account/delete (owner) `{confirm: "DELETE", cancelBilling?: true}` -> `{ok}`. Stripe is asked for non-terminal subscriptions and open checkout sessions: 409 `{error: "billing_active", subscriptions: [{id,status}], checkoutSessions: [id]}` and nothing is deleted, unless `cancelBilling` is true (they are then cancelled, verified terminal, and deletion proceeds). Stripe unreachable or cancellation unverifiable: 502, nothing deleted. Removes users, sessions, passkeys, hubs, billing links; hardware order rows stay (accounting) without the shipping address; the audit chain is append-only and keeps only ids and keyed IP hashes.
 - POST /api/account/members/invite -> 501 `not_implemented` (invitations are not built yet). There is no PATCH /api/account.
 
 Static UI: every other GET is served from the `ASSETS` binding (portal/web build) with the same security headers.
