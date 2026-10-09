@@ -1,0 +1,24 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Audit log" section="audit" lead="Tamper-evident record of every public submission and admin action. IP hashes are never shown.">
+  <div id="chain" class="banner" role="status"><span>Checking audit chain…</span></div>
+  <div class="toolbar" role="search">
+    <div class="grow"><label class="sr" for="q">Filter loaded entries</label><input class="input" id="q" type="search" placeholder="Filter loaded entries by actor, action, target or request" autocomplete="off" /></div>
+    <p class="count" id="count" role="status" aria-live="polite"></p>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl" id="tbl">
+      <caption class="sr">Audit log entries, newest first</caption>
+      <thead><tr>
+        <th scope="col">ID</th><th scope="col">Time</th><th scope="col">Actor</th><th scope="col">Action</th>
+        <th scope="col">Target</th><th scope="col">Request</th><th scope="col">Hash</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="tbl-more"><button class="btn" id="more" type="button" hidden>Load older entries</button></div>
+  </div>
+  <script>
+    import '../../scripts/admin/audit';
+  </script>
+</Admin>

@@ -1,0 +1,28 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Tickets" section="tickets" lead="Support requests from albena.ai/support.">
+  <a slot="actions" class="btn" href="/api/admin/export/tickets.csv" download="tickets.csv">Export CSV</a>
+  <div class="toolbar">
+    <div class="seg" id="seg" role="group" aria-label="Filter by status"></div>
+    <div class="grow"><label class="sr" for="q">Search tickets</label><input class="input" id="q" type="search" placeholder="Search ticket, sender, topic or message" autocomplete="off" /></div>
+    <p class="count" id="count" role="status" aria-live="polite"></p>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl" id="tbl">
+      <caption class="sr">Support tickets. Column headers are buttons that sort the table. Select a ticket to read the message.</caption>
+      <thead><tr>
+        <th scope="col" data-key="ticket_id"><button type="button">Ticket</button></th>
+        <th scope="col" data-key="topic"><button type="button">Topic</button></th>
+        <th scope="col" data-key="name"><button type="button">From</button></th>
+        <th scope="col" data-key="status"><button type="button">Status</button></th>
+        <th scope="col" data-key="updated_at"><button type="button">Updated</button></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <dialog id="drawer" class="drawer" aria-labelledby="drawer-title"><div class="drawer-in" id="drawer-body"></div></dialog>
+  <script>
+    import '../../scripts/admin/tickets';
+  </script>
+</Admin>

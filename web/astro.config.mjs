@@ -11,7 +11,7 @@ export default defineConfig({
     // CSP is script-src 'self' https://challenges.cloudflare.com: never inline CSS/JS.
     inlineStylesheets: 'never',
   },
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !new URL(page).pathname.startsWith('/admin') })],
   vite: {
     build: { assetsInlineLimit: 0 },
   },

@@ -1,0 +1,28 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="System" section="system" lead="Backup health and audit chain verification.">
+  <button slot="actions" class="btn" id="refresh" type="button">Re-verify</button>
+  <div id="sys" class="grid-2">
+    <section class="panel" aria-labelledby="h-chain">
+      <header><h2 id="h-chain">Audit chain</h2></header>
+      <div class="panel-body"><dl class="kv" id="chain-kv"><dt>Status</dt><dd>Loading…</dd></dl></div>
+    </section>
+    <section class="panel" aria-labelledby="h-bk">
+      <header><h2 id="h-bk">Backups</h2></header>
+      <div class="panel-body"><dl class="kv" id="backup-kv"><dt>Status</dt><dd>Loading…</dd></dl></div>
+    </section>
+    <section class="panel" aria-labelledby="h-ln">
+      <header><h2 id="h-ln">Reference</h2></header>
+      <div class="panel-body links-list">
+        <a href="/trust">Trust center</a>
+        <a href="/trust/controls">Control status</a>
+        <a href="/api/admin/export/waitlist.csv" download="waitlist.csv">Download waitlist CSV</a>
+        <a href="/api/admin/export/tickets.csv" download="tickets.csv">Download tickets CSV</a>
+      </div>
+    </section>
+  </div>
+  <script>
+    import '../../scripts/admin/system';
+  </script>
+</Admin>

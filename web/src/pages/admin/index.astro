@@ -1,0 +1,39 @@
+---
+import Admin from '../../layouts/Admin.astro';
+const kpis = [
+  ['total', 'Waitlist total'], ['week', 'Signups, last 7 days'], ['tickets', 'Open tickets'],
+  ['backup', 'Backups'], ['verify', 'Last verified'], ['chain', 'Audit chain'],
+];
+---
+<Admin title="Overview" section="overview" lead="Signups, support load and system integrity at a glance.">
+  <dl class="grid-kpi" id="kpis" aria-label="Key figures">
+    {kpis.map(([id, label]) => (
+      <div class="kpi skel" data-kpi={id}><dt>{label}</dt><dd>Loading</dd><p class="sub2"></p></div>
+    ))}
+  </dl>
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-int">
+      <header><h2 id="h-int">Waitlist by interest</h2><a href="/admin/waitlist">View all</a></header>
+      <div class="panel-body"><ul class="bars" id="by-interest"><li class="mut">Loading…</li></ul></div>
+    </section>
+    <section class="panel" aria-labelledby="h-tk">
+      <header><h2 id="h-tk">Recent tickets</h2><a href="/admin/tickets">View all</a></header>
+      <div class="tbl-wrap"><table class="tbl">
+        <caption class="sr">Most recent support tickets</caption>
+        <thead><tr><th scope="col">Ticket</th><th scope="col">Topic</th><th scope="col">Status</th><th scope="col">Opened</th></tr></thead>
+        <tbody id="recent-tickets"><tr><td class="empty" colspan="4">Loading…</td></tr></tbody>
+      </table></div>
+    </section>
+    <section class="panel" aria-labelledby="h-au">
+      <header><h2 id="h-au">Recent activity</h2><a href="/admin/audit">Audit log</a></header>
+      <div class="tbl-wrap"><table class="tbl">
+        <caption class="sr">Most recent audit log entries</caption>
+        <thead><tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th></tr></thead>
+        <tbody id="recent-audit"><tr><td class="empty" colspan="3">Loading…</td></tr></tbody>
+      </table></div>
+    </section>
+  </div>
+  <script>
+    import '../../scripts/admin/overview';
+  </script>
+</Admin>

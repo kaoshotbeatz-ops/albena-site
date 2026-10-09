@@ -72,8 +72,26 @@ const patchSchema = z.object({ status: z.enum(["open", "in_progress", "resolved"
 const WAITLIST_COLS = ["id", "email", "name", "interest", "created_at"];
 const TICKET_COLS = ["ticket_id", "name", "email", "topic", "message", "status", "created_at", "updated_at"];
 
+export const CSRF_HEADER = "X-Requested-With";
+export const CSRF_VALUE = "albena-admin";
+
+/** CSRF defense in depth: state-changing admin requests must carry the custom header (forces a CORS preflight). */
+export async function requireCsrfHeader(c: import("hono").Context<AppEnv>, next: () => Promise<void>) {
+  const m = c.req.method;
+  if (m !== "GET" && m !== "HEAD" && m !== "OPTIONS" && c.req.header(CSRF_HEADER) !== CSRF_VALUE) {
+    return json({ error: "csrf_header_required" }, 403);
+  }
+  await next();
+}
+
+const auditPageSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  before: z.coerce.number().int().min(1).optional(),
+});
+
 export const adminApi = new Hono<AppEnv>();
 adminApi.use("*", requireAccess);
+adminApi.use("*", requireCsrfHeader);
 
 adminApi.get("/waitlist", async (c) => {
   const q = pageSchema.safeParse(c.req.query());
@@ -142,6 +160,23 @@ adminApi.get("/integrity", async (c) => {
   const s = await statusSummary(c.env);
   await audit(c.env, { actor: c.get("actor"), action: "admin.integrity", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
   return json({ chain, lastBackupOk: s.lastBackupOk, lastBackupAt: s.lastBackupAt, lastVerifiedAt: s.lastVerifiedAt });
+});
+
+/** Read-only audit trail, newest first, keyset-paginated by id. ip_hash and full hashes are never returned. */
+adminApi.get("/audit", async (c) => {
+  const q = auditPageSchema.safeParse(c.req.query());
+  if (!q.success) return json({ error: "invalid_query" }, 400);
+  const { limit, before } = q.data;
+  const { results } = await c.env.DB.prepare(
+    "SELECT id, ts, actor, action, target, request_id, substr(hash, 1, 12) AS hash_prefix FROM audit_log " +
+      (before ? "WHERE id < ? " : "") +
+      "ORDER BY id DESC LIMIT ?",
+  ).bind(...(before ? [before, limit + 1] : [limit + 1])).all<{ id: number }>();
+  const hasMore = results.length > limit;
+  const items = hasMore ? results.slice(0, limit) : results;
+  const next = hasMore ? items[items.length - 1].id : null;
+  await audit(c.env, { actor: c.get("actor"), action: "admin.audit.list", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
+  return json({ items, limit, next_before: next });
 });
 
 adminApi.all("*", () => json({ error: "not_found" }, 404));

@@ -246,8 +246,16 @@ describe("POST /api/support", () => {
   });
 });
 
+// The worker caches the Access JWKS per team domain for the isolate's lifetime, so all tests share one keypair.
+let keyPromise: ReturnType<typeof makeKey> | undefined;
+async function makeKey() {
+  const { publicKey, privateKey } = await generateKeyPair("RS256");
+  return { privateKey, jwk: { ...(await exportJWK(publicKey)), kid: "k1", alg: "RS256", use: "sig" } };
+}
+const accessKey = () => (keyPromise ??= makeKey());
+
 describe("admin", () => {
-  const paths = ["/api/admin/integrity", "/api/admin/waitlist", "/api/admin/tickets", "/api/admin/export/waitlist.csv", "/api/admin/export/tickets.csv", "/admin/", "/admin/index.html"];
+  const paths = ["/api/admin/integrity", "/api/admin/waitlist", "/api/admin/tickets", "/api/admin/export/waitlist.csv", "/api/admin/export/tickets.csv", "/api/admin/audit", "/admin/", "/admin/index.html"];
 
   it("denies without JWT (deny by default)", async () => {
     for (const p of paths) {
@@ -265,8 +273,7 @@ describe("admin", () => {
   });
 
   it("allows a valid Access JWT, lists, updates, exports and audits", async () => {
-    const { publicKey, privateKey } = await generateKeyPair("RS256");
-    const jwk = { ...(await exportJWK(publicKey)), kid: "k1", alg: "RS256", use: "sig" };
+    const { privateKey, jwk } = await accessKey();
     const jwt = await new SignJWT({ email: "omar@dbaomarhuertasllc.com" })
       .setProtectedHeader({ alg: "RS256", kid: "k1" })
       .setIssuer(`https://${env.TEAM_DOMAIN}`)
@@ -298,7 +305,17 @@ describe("admin", () => {
     const patch = await call(`/api/admin/tickets/${items[0].ticket_id}`, {
       method: "PATCH", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify({ status: "resolved" }),
     });
-    expect(patch.status).toBe(200);
+    expect(patch.status).toBe(403);
+    expect(((await patch.json()) as any).error).toBe("csrf_header_required");
+    const wrongCsrf = await call(`/api/admin/tickets/${items[0].ticket_id}`, {
+      method: "PATCH", headers: { ...h, "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json" }, body: JSON.stringify({ status: "resolved" }),
+    });
+    expect(wrongCsrf.status).toBe(403);
+    const patchOk = await call(`/api/admin/tickets/${items[0].ticket_id}`, {
+      method: "PATCH", headers: { ...h, "X-Requested-With": "albena-admin", "Content-Type": "application/json" }, body: JSON.stringify({ status: "resolved" }),
+    });
+    expect(patchOk.status).toBe(200);
+    expect((await env.DB.prepare("SELECT status FROM tickets").first<{ status: string }>())!.status).toBe("resolved");
 
     const integ = await call("/api/admin/integrity", { headers: h });
     expect(integ.status).toBe(200);
@@ -314,5 +331,49 @@ describe("admin", () => {
     const actions = ((await env.DB.prepare("SELECT actor, action FROM audit_log").all()).results as any[]);
     expect(actions.some((a) => a.actor === "omar@dbaomarhuertasllc.com" && a.action === "admin.ticket.status:resolved")).toBe(true);
     expect(actions.some((a) => a.action === "admin.denied")).toBe(true);
+  });
+});
+
+describe("admin audit list", () => {
+  async function accessHeaders() {
+    const { privateKey, jwk } = await accessKey();
+    const jwt = await new SignJWT({ email: "omar@dbaomarhuertasllc.com" })
+      .setProtectedHeader({ alg: "RS256", kid: "k1" })
+      .setIssuer(`https://${env.TEAM_DOMAIN}`).setAudience(env.ADMIN_AUD).setSubject("u1").setExpirationTime("5m").sign(privateKey);
+    const realFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.endsWith("/cdn-cgi/access/certs")) return Response.json({ keys: [jwk] });
+      return realFetch(input, init);
+    });
+    return { "Cf-Access-Jwt-Assertion": jwt };
+  }
+
+  it("is denied without Access and is noindex", async () => {
+    const res = await call("/api/admin/audit");
+    expect(res.status).toBe(403);
+    expect(res.headers.get("X-Robots-Tag")).toContain("noindex");
+  });
+
+  it("paginates newest-first, hides ip_hash and full hashes, and rejects bad params", async () => {
+    const h = await accessHeaders();
+    await env.DB.batch([1, 2, 3, 4, 5].map((i) =>
+      env.DB.prepare("INSERT INTO audit_log (actor, action, target, request_id, ip_hash) VALUES ('x', ?, 't', 'r', 'secretiphash')").bind(`seed${i}`)));
+    const p1 = await call("/api/admin/audit?limit=2", { headers: h });
+    expect(p1.status).toBe(200);
+    const b1 = (await p1.json()) as any;
+    expect(b1.items).toHaveLength(2);
+    expect(b1.items[0].id).toBeGreaterThan(b1.items[1].id);
+    expect(Object.keys(b1.items[0]).sort()).toEqual(["action", "actor", "hash_prefix", "id", "request_id", "target", "ts"]);
+    expect(JSON.stringify(b1)).not.toContain("secretiphash");
+    expect(b1.items.every((i: any) => i.hash_prefix === null || i.hash_prefix.length === 12)).toBe(true);
+    expect(b1.next_before).toBe(b1.items[1].id);
+    const p2 = (await (await call(`/api/admin/audit?limit=2&before=${b1.next_before}`, { headers: h })).json()) as any;
+    expect(p2.items.every((i: any) => i.id < b1.next_before)).toBe(true);
+    const all = (await (await call("/api/admin/audit?limit=200", { headers: h })).json()) as any;
+    expect(all.next_before).toBeNull();
+    for (const bad of ["limit=0", "limit=201", "before=abc", "before=0"]) {
+      expect((await call(`/api/admin/audit?${bad}`, { headers: h })).status, bad).toBe(400);
+    }
   });
 });
