@@ -33,6 +33,7 @@ export function withSecurityHeaders(req: Request, res: Response): Response {
   const { pathname } = new URL(req.url);
   if (isSensitivePath(pathname)) {
     out.headers.set("Cache-Control", "no-store");
+    out.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   return out;
 }

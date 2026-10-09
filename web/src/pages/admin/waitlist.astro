@@ -1,0 +1,28 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Waitlist" section="waitlist" lead="Everyone who has asked for early access.">
+  <a slot="actions" class="btn" href="/api/admin/export/waitlist.csv" download="waitlist.csv">Export CSV</a>
+  <div class="toolbar" role="search">
+    <div class="grow"><label class="sr" for="q">Search waitlist</label><input class="input" id="q" type="search" placeholder="Search email, name or interest" autocomplete="off" /></div>
+    <div><label class="sr" for="interest">Filter by interest</label><select class="select" id="interest"><option value="">All interests</option></select></div>
+    <p class="count" id="count" role="status" aria-live="polite"></p>
+  </div>
+  <p class="banner is-warn" id="trunc" hidden>Showing the most recent 5,000 signups. Use Export CSV for the full list.</p>
+  <div class="tbl-wrap">
+    <table class="tbl" id="tbl">
+      <caption class="sr">Waitlist signups. Column headers are buttons that sort the table.</caption>
+      <thead><tr>
+        <th scope="col" data-key="email"><button type="button">Email</button></th>
+        <th scope="col" data-key="name"><button type="button">Name</button></th>
+        <th scope="col" data-key="interest"><button type="button">Interest</button></th>
+        <th scope="col" data-key="created_at"><button type="button">Signed up</button></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="tbl-more"><button class="btn" id="more" type="button" hidden>Show more</button></div>
+  </div>
+  <script>
+    import '../../scripts/admin/waitlist';
+  </script>
+</Admin>
