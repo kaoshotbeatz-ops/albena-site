@@ -80,6 +80,71 @@ jobs:
         if: hashFiles('worker/package.json') == ''
         run: echo "No worker/ directory; skipping."
 
+  portal-worker:
+    name: Portal worker (typecheck + tests + dry-run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+      - name: Build portal web (the worker serves its dist)
+        working-directory: portal/web
+        run: |
+          npm ci
+          # CI build only: Cloudflare test Turnstile key. Never deployed.
+          ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
+      - name: Install, typecheck, test
+        working-directory: portal/worker
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - name: wrangler deploy --dry-run (no deploy, no cloud access)
+        working-directory: portal/worker
+        run: npx wrangler deploy --dry-run
+
+  portal-web:
+    name: Portal web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+      - name: Install and build
+        working-directory: portal/web
+        run: |
+          npm ci
+          # CI build only: Cloudflare test Turnstile key. Never deployed.
+          ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
+
+  portal-hub-client:
+    name: Portal hub client tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python tests
+        working-directory: portal/hub-client
+        run: python3 -m unittest discover -s tests
+
+  portal-audit:
+    name: Portal npm audit (high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+      - name: Audit portal packages
+        run: |
+          status=0
+          for dir in portal/web portal/worker; do
+            echo "== npm audit in $dir"
+            (cd "$dir" && npm audit --audit-level=high) || status=1
+          done
+          exit $status
+
   secrets:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
