@@ -6,30 +6,36 @@ import { randomToken, sha256, equalHash, randomCode } from "./crypto";
 import { allowed, turnstile } from "./limits";
 import { sendMail } from "./mail";
 import { createSession, now, userById } from "./sessions";
+import { joinHousehold } from "../account/household";
 
 const COOKIE = "__Host-albena_magic";
 const cookieOptions = { httpOnly: true, secure: true, sameSite: "Lax" as const, path: "/", maxAge: 900 };
 const MAX_ATTEMPTS = 5;
 const accepted = { ok: true, message: "If this address can receive mail, a sign-in link will arrive shortly." };
+/** Issues a magic token bound to this browser (cookie) and emails the link and code. Delivery failure deletes the token. */
+export async function startMagic(c: Context<AppEnv>, email: string): Promise<void> {
+  const secret = randomToken(), id = crypto.randomUUID(), browser = randomToken(), code = randomCode();
+  await c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at, code_hash) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(id, await sha256(secret), await sha256(browser), email, now() + 900, await sha256(`${id}:${code}`)).run();
+  setCookie(c, COOKIE, browser, cookieOptions);
+  try {
+    await sendMail(c.env, { to: email, url: `${c.env.PORTAL_ORIGIN}/api/auth/magic/verify?token=${id}.${secret}`, code });
+  } catch {
+    await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ?").bind(id).run();
+    await audit(c, "auth.magic.delivery_failed", id);
+  }
+}
+export const EMAIL_RE = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i;
 export function mountMagic(app: Hono<AppEnv>): void {
   app.post("/api/auth/magic/start", async c => {
     const body = await c.req.json<{ email?: unknown; turnstileToken?: unknown }>();
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     // Restrict to a conservative mailbox grammar, also preventing MIME header injection.
-    if (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(email) ||
+    if (email.length > 254 || !EMAIL_RE.test(email) ||
       typeof body.turnstileToken !== "string" || body.turnstileToken.length > 2048) return c.json({ error: "invalid_request" }, 400);
     if (!(await allowed(c, email))) return c.json(accepted, 202);
     if (!(await turnstile(c, body.turnstileToken))) return c.json({ error: "challenge_failed" }, 400);
-    const secret = randomToken(), id = crypto.randomUUID(), browser = randomToken(), code = randomCode();
-    await c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at, code_hash) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(id, await sha256(secret), await sha256(browser), email, now() + 900, await sha256(`${id}:${code}`)).run();
-    setCookie(c, COOKIE, browser, cookieOptions);
-    try {
-      await sendMail(c.env, { to: email, url: `${c.env.PORTAL_ORIGIN}/api/auth/magic/verify?token=${id}.${secret}`, code });
-    } catch {
-      await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ?").bind(id).run();
-      await audit(c, "auth.magic.delivery_failed", id);
-    }
+    await startMagic(c, email);
     // Identical path for existing/new users; users are created only after verification.
     return c.json(accepted, 202);
   });
@@ -85,10 +91,13 @@ export function mountMagic(app: Hono<AppEnv>): void {
 
 /** Shared by link verify and code entry: create the user/account on first login, then the session. */
 async function finishLogin(c: Context<AppEnv>, email: string): Promise<void> {
-    const userId = crypto.randomUUID();
+    await c.env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").bind(crypto.randomUUID(), email).run();
+    const made = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<{ id: string }>();
+    // A pending household invite for this email makes them a member of that account instead of getting an account of their own.
+    if (made) await joinHousehold(c, made.id, email);
     await c.env.DB.batch([
-      c.env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").bind(userId, email),
-      c.env.DB.prepare("INSERT OR IGNORE INTO accounts (id, owner) SELECT id, id FROM users WHERE email = ?").bind(email),
+      // Own account only for someone with no membership at all (a household member keeps just the household).
+      c.env.DB.prepare("INSERT OR IGNORE INTO accounts (id, owner) SELECT id, id FROM users WHERE email = ? AND NOT EXISTS (SELECT 1 FROM members WHERE user_id = users.id)").bind(email),
       c.env.DB.prepare("INSERT OR IGNORE INTO members (account_id, user_id, role) SELECT a.id, u.id, 'owner' FROM users u JOIN accounts a ON a.owner = u.id WHERE u.email = ?").bind(email),
     ]);
     const u = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<{ id: string }>();

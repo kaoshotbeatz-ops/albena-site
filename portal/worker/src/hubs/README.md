@@ -15,3 +15,4 @@ Notes
 - pair/complete is one D1 batch: insert the hub only if the code is live, the entitlement is active and the account is under its `MAX_HUBS`; consume the code only if the insert happened. pair/start's check is only a convenience.
 - Rate limits (`rateHit`) are a single UPSERT ... RETURNING per call. The failure counter reserves a slot up front and refunds it on success, so concurrent guesses cannot exceed the limit.
 - Known limits: rate limit is per IP (fixed window, D1).
+- Credentials: pair/complete accepts exactly one of `code`, `serial` (staff reserved Hub, table `reserved_hubs`) or `licenseKey` (BYO, table `license_keys`). All three run in the same atomic batch with the entitlement and slot check (`entitledSql`).

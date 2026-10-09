@@ -61,3 +61,23 @@ export function normalizeCode(s: unknown): string | null {
   const c = s.replace(/[\s-]/g, "").toUpperCase();
   return c.length === 8 && [...c].every((ch) => CODE_ALPHABET.includes(ch)) ? c : null;
 }
+
+/** BYO license key: ALB-XXXXX-XXXXX-XXXXX-XXXXX (20 symbols, ~100 bits). Shown once; only a peppered hash is stored. */
+export function newLicenseKey(): string {
+  const out: string[] = [];
+  const limit = 256 - (256 % CODE_ALPHABET.length);
+  while (out.length < 20) {
+    for (const b of crypto.getRandomValues(new Uint8Array(32))) {
+      if (b < limit && out.length < 20) out.push(CODE_ALPHABET[b % CODE_ALPHABET.length]);
+    }
+  }
+  const s = out.join("");
+  return `ALB-${s.slice(0, 5)}-${s.slice(5, 10)}-${s.slice(10, 15)}-${s.slice(15)}`;
+}
+export function normalizeLicenseKey(s: unknown): string | null {
+  if (typeof s !== "string") return null;
+  const c = s.replace(/[\s-]/g, "").toUpperCase();
+  return c.length === 23 && c.startsWith("ALB") && [...c.slice(3)].every((ch) => CODE_ALPHABET.includes(ch)) ? c : null;
+}
+
+export const licenseKeyHash = (secret: string, normalizedKey: string) => sha256Hex(`${secret}|licensekey|${normalizedKey}`);

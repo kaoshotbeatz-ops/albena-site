@@ -2,7 +2,8 @@ import type { Bindings } from "../types";
 
 export interface Mail { to: string; url: string; code: string }
 /** Delivery adapter. The magic URL and recipient must never reach production logs. */
-export interface MailProvider { send(mail: Mail): Promise<void> }
+export interface Notice { to: string; subject: string; text: string }
+export interface MailProvider { send(mail: Mail): Promise<void>; notice(notice: Notice): Promise<void> }
 
 const SUBJECT = "Sign in to Albena";
 const body = (url: string, code: string) =>
@@ -15,6 +16,10 @@ export function cloudflareMailer(env: Bindings): MailProvider {
       if (!env.EMAIL) throw new Error("mail_not_configured");
       await env.EMAIL.send({ to: mail.to, from: { email: env.MAIL_FROM, name: "Albena" }, subject: SUBJECT, text: body(mail.url, mail.code) });
     },
+    async notice(n) {
+      if (!env.EMAIL) throw new Error("mail_not_configured");
+      await env.EMAIL.send({ to: n.to, from: { email: env.MAIL_FROM, name: "Albena" }, subject: n.subject, text: n.text });
+    },
   };
 }
 
@@ -24,6 +29,10 @@ export function devMailer(env: Bindings): MailProvider {
     async send(mail) {
       if (env.ENVIRONMENT === "production") throw new Error("mail_not_configured");
       console.info(env.ENVIRONMENT === "development" ? `[portal mail] sign-in link for ${mail.to}: ${mail.url} code: ${mail.code}` : "[portal mail] magic-link delivery requested (redacted)");
+    },
+    async notice(n) {
+      if (env.ENVIRONMENT === "production") throw new Error("mail_not_configured");
+      console.info(env.ENVIRONMENT === "development" ? `[portal mail] ${n.subject} for ${n.to}: ${n.text}` : "[portal mail] notice delivery requested (redacted)");
     },
   };
 }
@@ -35,3 +44,6 @@ export function selectMailer(env: Bindings): MailProvider {
 }
 
 export const sendMail = (env: Bindings, mail: Mail): Promise<void> => selectMailer(env).send(mail);
+
+/** Transactional notice (invitations). The body may hold a one-time link: never log it. */
+export const sendNotice = (env: Bindings, notice: Notice): Promise<void> => selectMailer(env).notice(notice);

@@ -134,10 +134,14 @@ class PortalClient:
             raise PortalError(e.code, msg) from None
 
     # --- API ---
-    def pair(self, code):
-        """Bind this hub to the account that generated `code`. Stores only the hub id."""
+    def pair(self, code=None, *, serial=None, license_key=None):
+        """Bind this hub to an account. Present exactly one credential: `code` (from the portal), `serial`
+        (staff pre-provisioned the hub) or `license_key` (BYO). Stores only the hub id."""
+        cred = {k: v for k, v in (("code", code), ("serial", serial), ("licenseKey", license_key)) if v}
+        if len(cred) != 1:
+            raise ValueError("pair() needs exactly one of code, serial, license_key")
         out = self._request("POST", "/api/hubs/pair/complete", signed=False, body={
-            "code": code, "hubPublicKey": self.public_key_b64(), "edition": self.edition,
+            **cred, "hubPublicKey": self.public_key_b64(), "edition": self.edition,
             "profile": self.profile, "version": self.version})
         with open(self.id_path, "w") as f:
             f.write(out["hubId"])

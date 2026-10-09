@@ -3,8 +3,8 @@ import type { AppEnv } from "../types";
 import { audit, requireUser } from "../auth";
 import { getEntitlement } from "../billing/entitlements";
 import { MAX_HUBS } from "../billing/plans";
-import { MAX_BODY, CHANNELS, EDITIONS, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
-import { b64decodeStrict, b64encode, newPairCode, normalizeCode, sha256Hex, signingString, verifyEd25519 } from "./crypto";
+import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
+import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
 export const migrations: string[] = ["0300_hubs_init.sql"];
 
@@ -14,7 +14,11 @@ export const PAIR_RATE = { limit: 10, windowS: 60 }; // per client IP
 export const PAIR_FAIL_RATE = { limit: 20, windowS: 600 }; // failed codes per IP
 
 /** SQL CASE giving the hub allowance per plan, generated from MAX_HUBS so the two cannot drift. */
-const MAX_HUBS_SQL = `CASE e.plan ${Object.entries(MAX_HUBS).map(([plan, n]) => `WHEN '${plan}' THEN ${Number(n)}`).join(" ")} ELSE 0 END`;
+const MAX_HUBS_SQL = `COALESCE(e.max_hubs, CASE e.plan ${Object.entries(MAX_HUBS).map(([plan, n]) => `WHEN '${plan}' THEN ${Number(n)}`).join(" ")} ELSE 0 END)`;
+/** True when the account's entitlement is live (active/trialing, not past a manual end date) and it has a free Hub slot. */
+const entitledSql = (acct: string, t: string) =>
+  `EXISTS (SELECT 1 FROM entitlements e WHERE e.account_id = ${acct} AND e.status IN ('active','trialing') AND (e.ends_at IS NULL OR e.ends_at > ${t})
+     AND (SELECT COUNT(*) FROM hubs h WHERE h.account_id = ${acct}) < ${MAX_HUBS_SQL})`;
 
 const now = () => Math.floor(Date.now() / 1000);
 type C = Context<AppEnv>;
@@ -114,39 +118,68 @@ export function mount(app: Hono<AppEnv>): void {
       if (body instanceof Response) return body;
       const p = parsePairComplete(body.json);
       if (!p.ok) return c.json({ error: p.error }, 400);
-      const code = normalizeCode(p.value.code);
       const pub = b64decodeStrict(p.value.hubPublicKey);
-      if (!code || !pub || pub.length !== 32) return c.json({ error: "invalid request" }, 400);
+      if (!pub || pub.length !== 32) return c.json({ error: "invalid request" }, 400);
       const publicKey = b64encode(pub); // canonical spelling is what gets stored and what the UNIQUE index sees
       const t = now();
-      const hash = await pepper(c, code);
       const hubId = crypto.randomUUID();
-      // One transaction: the hub is inserted only if the code is live AND the account's entitlement is active AND
-      // it still has a free slot; the code is consumed only if that insert happened.
+      const { edition, profile, version } = p.value;
+      // One transaction: the hub is inserted only if the credential is live AND the account's entitlement is active AND
+      // it still has a free slot; the credential is consumed (code, serial) or counted (license key) only if that insert happened.
+      let insert: D1PreparedStatement, consume: D1PreparedStatement, live: D1PreparedStatement, via: "code" | "serial" | "license_key";
+      const head = `INSERT INTO hubs(id,account_id,name,public_key,edition,profile,version,created_at)`;
+      if (p.value.code !== undefined) {
+        const code = normalizeCode(p.value.code);
+        if (!code) return c.json({ error: "invalid request" }, 400);
+        const hash = await pepper(c, code);
+        via = "code";
+        insert = db.prepare(
+          `${head} SELECT ?1, pc.account_id, 'My Hub', ?2, ?3, ?4, ?5, ?6 FROM hub_pair_codes pc
+           WHERE pc.code_hash = ?7 AND pc.used_at IS NULL AND pc.expires_at >= ?6 AND ${entitledSql("pc.account_id", "?6")}`,
+        ).bind(hubId, publicKey, edition, profile, version, t, hash);
+        consume = db.prepare("UPDATE hub_pair_codes SET used_at=?1 WHERE code_hash=?2 AND used_at IS NULL AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, hash, hubId);
+        live = db.prepare("SELECT 1 AS x FROM hub_pair_codes WHERE code_hash=? AND used_at IS NULL AND expires_at>=?").bind(hash, t);
+      } else if (p.value.serial !== undefined) {
+        const serial = p.value.serial.trim().toUpperCase();
+        if (!SERIAL.test(serial)) return c.json({ error: "invalid request" }, 400);
+        via = "serial";
+        // The serial is an identifier, not a secret: it binds only the key staff expected (when recorded), only once, only before it expires.
+        insert = db.prepare(
+          `${head} SELECT ?1, rh.account_id, COALESCE(rh.name, 'My Hub'), ?2, ?3, ?4, ?5, ?6 FROM reserved_hubs rh
+           WHERE rh.serial = ?7 AND rh.used_at IS NULL AND rh.expires_at >= ?6 AND rh.edition = ?3 AND (rh.public_key IS NULL OR rh.public_key = ?2)
+             AND ${entitledSql("rh.account_id", "?6")}`,
+        ).bind(hubId, publicKey, edition, profile, version, t, serial);
+        consume = db.prepare("UPDATE reserved_hubs SET used_at=?1, hub_id=?3 WHERE serial=?2 AND used_at IS NULL AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, serial, hubId);
+        live = db.prepare("SELECT 1 AS x FROM reserved_hubs WHERE serial=? AND used_at IS NULL AND expires_at>=? AND edition=? AND (public_key IS NULL OR public_key=?)").bind(serial, t, edition, publicKey);
+      } else {
+        const key = normalizeLicenseKey(p.value.licenseKey);
+        if (!key) return c.json({ error: "invalid request" }, 400);
+        const hash = await licenseKeyHash(c.env.PORTAL_SECRETS, key);
+        via = "license_key";
+        // BYO only; the key stays valid for the next Hub slot until revoked.
+        insert = db.prepare(
+          `${head} SELECT ?1, lk.account_id, 'My Hub', ?2, ?3, ?4, ?5, ?6 FROM license_keys lk
+           WHERE lk.key_hash = ?7 AND lk.revoked_at IS NULL
+             AND EXISTS (SELECT 1 FROM entitlements b WHERE b.account_id = lk.account_id AND b.plan = 'byo')
+             AND ${entitledSql("lk.account_id", "?6")}`,
+        ).bind(hubId, publicKey, edition, profile, version, t, hash);
+        consume = db.prepare("UPDATE license_keys SET last_used_at=?1, use_count=use_count+1 WHERE key_hash=?2 AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, hash, hubId);
+        live = db.prepare("SELECT 1 AS x FROM license_keys WHERE key_hash=? AND revoked_at IS NULL").bind(hash);
+      }
       let results: D1Result[];
       try {
-        results = await db.batch([
-          db.prepare(
-            `INSERT INTO hubs(id,account_id,public_key,edition,profile,version,created_at)
-             SELECT ?1, pc.account_id, ?2, ?3, ?4, ?5, ?6 FROM hub_pair_codes pc
-             WHERE pc.code_hash = ?7 AND pc.used_at IS NULL AND pc.expires_at >= ?6
-               AND EXISTS (SELECT 1 FROM entitlements e WHERE e.account_id = pc.account_id AND e.status IN ('active','trialing')
-                           AND (SELECT COUNT(*) FROM hubs h WHERE h.account_id = pc.account_id) < ${MAX_HUBS_SQL})`,
-          ).bind(hubId, publicKey, p.value.edition, p.value.profile, p.value.version, t, hash),
-          db.prepare("UPDATE hub_pair_codes SET used_at=?1 WHERE code_hash=?2 AND used_at IS NULL AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, hash, hubId),
-        ]);
+        results = await db.batch([insert, consume]);
       } catch (err) {
-        if (/UNIQUE/i.test(String((err as Error)?.message))) return c.json({ error: "hub key already registered" }, 409); // batch rolled back: code stays unused
+        if (/UNIQUE/i.test(String((err as Error)?.message))) return c.json({ error: "hub key already registered" }, 409); // batch rolled back: credential stays unused
         throw err;
       }
       if (!results[0].meta?.changes || !results[1].meta?.changes) {
-        const row = await db.prepare("SELECT 1 AS x FROM hub_pair_codes WHERE code_hash=? AND used_at IS NULL AND expires_at>=?").bind(hash, t).first();
-        if (row) { success = true; return c.json({ error: "plan does not allow another hub" }, 402); } // not a code guess: refund the slot // live code, but no active entitlement or no free slot
+        if (await live.first()) { success = true; return c.json({ error: "plan does not allow another hub" }, 402); } // not a guess: refund the slot // live credential, but no active entitlement or no free slot
         return c.json({ error: "invalid or expired code" }, 400);
       }
       const acct = (await db.prepare("SELECT account_id FROM hubs WHERE id=?").bind(hubId).first<{ account_id: string }>())!.account_id;
       success = true;
-      await audit(c, "hub.pair.complete", hubId, { accountId: acct, edition: p.value.edition });
+      await audit(c, "hub.pair.complete", hubId, { accountId: acct, edition, via });
       return c.json({ hubId });
     } finally {
       if (success) await rateRefund(db, `pairfail:${ip}`, PAIR_FAIL_RATE);

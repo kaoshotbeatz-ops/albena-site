@@ -130,7 +130,7 @@ export function mount(app: Hono<AppEnv>): void {
   app.get("/api/billing/orders", requireUser, async (c) => {
     const { accountId } = c.get("user");
     const { results } = await c.env.DB.prepare(
-      "SELECT id, plan, shipping_status AS shippingStatus, refunded, refund_status AS refundStatus, amount_total AS amountTotal, currency, created_at AS createdAt FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
+      "SELECT id, plan, source, edition, carrier, tracking, shipping_status AS shippingStatus, refunded, refund_status AS refundStatus, amount_total AS amountTotal, currency, created_at AS createdAt FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
     ).bind(accountId).all<{ refunded: number }>();
     return c.json({ orders: results.map((o) => ({ ...o, refunded: !!o.refunded })) });
   });

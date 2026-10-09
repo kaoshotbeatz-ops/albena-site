@@ -5,8 +5,10 @@ import { audit } from "../auditchain";
 import { randomToken, sha256 } from "../auth/crypto";
 import { VIEWAS_COOKIE, VIEWAS_SECONDS, viewAsCookieOptions, now } from "../auth/sessions";
 import { requireSupportAdmin } from "./access";
+import { mountInvites } from "./invites";
+import { mountOps } from "./ops";
 
-export const migrations = ["0400_viewas.sql"];
+export const migrations = ["0400_viewas.sql", "0500_customer_ops.sql"];
 const EXIT_URL = "https://albena.ai/admin";
 
 /**
@@ -35,13 +37,19 @@ export function mount(app: Hono<AppEnv>): void {
 
   app.get("/api/support/accounts", async (c) => {
     const { results } = await c.env.DB.prepare(
-      `SELECT a.id, u.email, COALESCE(e.plan, 'none') AS plan, COALESCE(e.status, 'none') AS status,
+      `SELECT a.id, u.email, COALESCE(e.plan, 'none') AS plan, COALESCE(e.status, 'none') AS status, COALESCE(e.source, 'stripe') AS source, e.ends_at AS endsAt, COALESCE(e.comp, 0) AS comp,
         (SELECT COUNT(*) FROM hubs h WHERE h.account_id = a.id) AS hubs, a.created_at AS created
        FROM accounts a JOIN users u ON u.id = a.owner LEFT JOIN entitlements e ON e.account_id = a.id
        ORDER BY a.created_at DESC LIMIT 500`,
     ).all();
     return c.json({ accounts: results, me: c.get("supportActor") });
   });
+
+  // One static page serves every customer: /support/customers/<id> (the page script reads the id from the path). Access-gated above.
+  app.get("/support/customers/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/support/customer", c.req.url), { headers: c.req.raw.headers })));
+
+  mountOps(app);
+  mountInvites(app);
 
   // Authenticated by the view-as cookie itself (the customer UI is not behind Access). Allowed in read-only mode.
   app.post("/api/support/view-as/end", async (c) => {

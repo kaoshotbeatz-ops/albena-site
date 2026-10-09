@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getEntitlement } from "../src/billing";
 import { verifyStripeSignature, hmacHex } from "../src/billing/signature";
-import { applyEntitlement } from "../src/billing/entitlements";
+import { applyEntitlement, writeManualEntitlement } from "../src/billing/entitlements";
 import { WEBHOOK_SECRET as SECRET, fakeStripe, auditSince, clearPortalTables, client, e, lastAuditId, login, seedMember, seedOwner, testBindings } from "./helpers";
 
 let fake: ReturnType<typeof fakeStripe>;
@@ -375,5 +375,68 @@ describe("orders", () => {
     const s = await (await app.request("/api/billing/summary")).json() as any;
     expect(Object.keys(s).sort()).toEqual(["entitlement", "hasBillingAccount"]);
     expect(s.entitlement.maxHubs).toBe(0);
+  });
+});
+
+describe("manual grant vs Stripe precedence", () => {
+  const manual = (over: Partial<Parameters<typeof writeManualEntitlement>[2]> = {}) =>
+    writeManualEntitlement(db, "acct_1", { plan: "pilot", status: "active", endsAt: Math.floor(Date.now() / 1000) + 86400, note: "pilot for Dana", maxHubs: null, comp: false, ...over });
+  const history = async () => (await db.prepare("SELECT kind, source, plan, status FROM entitlement_history WHERE account_id = 'acct_1' ORDER BY id").all<any>()).results;
+  beforeEach(async () => {
+    seedStripe();
+    await db.prepare("INSERT INTO billing_customers VALUES ('acct_1','cus_1',1)").run();
+    await db.prepare("DELETE FROM entitlement_history").run();
+  });
+
+  it("a manual grant is active with the pilot allowance of one hub and its end date", async () => {
+    expect(await manual()).toBe(true);
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "pilot", status: "active", active: true, maxHubs: 1, source: "manual", comp: false });
+  });
+  it("Stripe events that are not an active subscription never touch a manual grant", async () => {
+    await manual();
+    for (const [i, status] of (["canceled", "past_due", "incomplete", "unpaid"] as const).entries()) {
+      fake.subs.sub_1.status = status;
+      await postEvent(app, env, evSub(`m${i}`, "customer.subscription.updated", 100 + i));
+      expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "pilot", status: "active", active: true, source: "manual" });
+    }
+    // unknown price (fail-closed "none") and a deleted subscription are equally ignored
+    fake.subs.sub_1 = subscription({ items: { data: [{ price: { id: "price_unknown" } }] } });
+    await postEvent(app, env, evSub("m10", "customer.subscription.updated", 200));
+    delete fake.subs.sub_1;
+    await postEvent(app, env, evSub("m11", "customer.subscription.deleted", 300));
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "pilot", status: "active", source: "manual" });
+    expect(await history()).toEqual([]);
+  });
+  it("an active Stripe subscription wins and the manual grant is archived", async () => {
+    await manual();
+    await postEvent(app, env, evSub("w1", "customer.subscription.created", 100));
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "hub_mac", status: "active", source: "stripe", stripeSubscriptionId: "sub_1", endsAt: null, comp: false, maxHubs: 1 });
+    expect(await history()).toEqual([{ kind: "archived_by_stripe", source: "manual", plan: "pilot", status: "active" }]);
+    // once Stripe owns it, the ordinary Stripe rules apply again (cancel is honored)
+    fake.subs.sub_1.status = "canceled";
+    await postEvent(app, env, evSub("w2", "customer.subscription.deleted", 200));
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ status: "canceled", source: "stripe", active: false });
+  });
+  it("trialing also counts as a Stripe subscription becoming active", async () => {
+    await manual({ plan: "byo" });
+    fake.subs.sub_1.status = "trialing";
+    await postEvent(app, env, evSub("w3", "customer.subscription.created", 100));
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ source: "stripe", status: "trialing", active: true });
+  });
+  it("a manual grant can be written again after Stripe ended, but not while a subscription can still bill", async () => {
+    await postEvent(app, env, evCheckout());
+    expect(await manual()).toBe(false); // live Stripe subscription
+    expect((await getEntitlement(db, "acct_1")).source).toBe("stripe");
+    fake.subs.sub_1.status = "canceled";
+    await postEvent(app, env, evSub("c1", "customer.subscription.deleted", 500));
+    expect(await manual({ plan: "comp", status: "active" })).toBe(true);
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ source: "manual", stripeSubscriptionId: null });
+    // a late replay of the old, now-canceled subscription does not displace it
+    await postEvent(app, env, evSub("c2", "customer.subscription.updated", 600));
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ source: "manual", status: "active" });
+  });
+  it("a manual grant lapses by its end date even before the cron runs", async () => {
+    await manual({ endsAt: Math.floor(Date.now() / 1000) - 5 });
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ status: "active", active: false, maxHubs: 0 });
   });
 });

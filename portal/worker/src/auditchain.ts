@@ -124,3 +124,11 @@ export async function verifyChain(env: Env): Promise<ChainStatus> {
   return { ok: true, rows, sealed, unsealed, headHash: prev === GENESIS ? null : prev };
 }
 
+
+/** Audit row for work with no request (cron). Same chain, same sealing. */
+export async function auditSystem(env: Env, actor: string, action: string, target: string, meta?: Record<string, unknown>): Promise<void> {
+  await env.DB.prepare(
+    "INSERT INTO audit_log (actor, action, target, request_id, ip_hash, meta) VALUES (?, ?, ?, ?, NULL, ?)",
+  ).bind(actor, action, target, crypto.randomUUID(), meta ? JSON.stringify(meta) : null).run();
+  await sealAudit(env);
+}

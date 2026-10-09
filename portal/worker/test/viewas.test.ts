@@ -112,7 +112,8 @@ describe("view-as session", () => {
     const f = fakeStripe(); f.install();
     const c = client(cookie, env());
     // Routes that never read a session cookie (login flow, machine auth, the exit endpoint) are exempt.
-    const sessionless = /^\/api\/(stripe\/webhook|hubs\/(pair\/complete|heartbeat)|auth\/(magic\/|passkey\/login\/)|support\/view-as\/end)/;
+    // /api/support/* is Access-gated (a view-as cookie is not an Access token; see customerops.test.ts) and /api/invite/accept is the public invite redemption.
+    const sessionless = /^\/api\/(stripe\/webhook|hubs\/(pair\/complete|heartbeat)|auth\/(magic\/|passkey\/login\/)|support\/|invite\/accept)/;
     const writes = app.routes.filter(r => r.method !== "GET" && r.method !== "ALL" && r.path.startsWith("/api/") && !sessionless.test(r.path));
     expect(writes.length).toBeGreaterThan(8);
     const before = await lastAuditId();

@@ -58,6 +58,14 @@ class T(unittest.TestCase):
         self.assertEqual(h["X-Hub-Id"], "123e4567")
         self.assertFalse(json.loads(body)["health"]["ok"])
 
+    def test_pair_with_serial_or_license_key_sends_exactly_one_credential(self):
+        c = self.client()
+        c.pair(serial="ALB-0001"); self.assertEqual(json.loads(Fake.calls[-1][3])["serial"], "ALB-0001")
+        c.pair(license_key="ALB-AAAAA-AAAAA-AAAAA-AAAAA"); pb = json.loads(Fake.calls[-1][3])
+        self.assertEqual(pb["licenseKey"], "ALB-AAAAA-AAAAA-AAAAA-AAAAA"); self.assertNotIn("code", pb); self.assertNotIn("serial", pb)
+        for kw in ({}, {"code": "ABCD2345", "serial": "ALB-0001"}):
+            with self.assertRaises(ValueError): c.pair(**kw)
+
     def test_heartbeat_rejects_free_form_service_names(self):
         c = self.client(); c.pair("ABCD2345")
         with self.assertRaises(ValueError): c.heartbeat([("alice's phone", "ok")])
