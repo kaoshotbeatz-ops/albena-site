@@ -5,6 +5,25 @@ export const entries: Entry[] = [
   {
     date: 'October 9, 2026',
     iso: '2026-10-09',
+    slug: 'trust-update',
+    version: 'Trust',
+    title: 'Trust: tamper-evident audit log, nightly encrypted-at-rest backups, weekly security scans, TLS 1.2+',
+    summary: 'We hardened the platform behind albena.ai and re-scored our public control mapping against the evidence we hold today. This is our own assessment, not an audit or certification.',
+    groups: [
+      { tag: 'New', items: [
+        'Tamper-evident audit log: each record is hash-chained to the previous one so changes can be detected.',
+        'Nightly backups to private storage that is encrypted at rest, with SHA-256 checksums, 35-day retention and weekly verification.',
+        'Weekly automated security scans of our code and live site.',
+        'A live backup indicator and a refreshed control mapping on the Trust center.',
+      ] },
+      { tag: 'Improved', items: [
+        'HTTPS only with HSTS preload and TLS 1.2 or newer, plus a strict content security policy.',
+      ] },
+    ],
+  },
+  {
+    date: 'October 9, 2026',
+    iso: '2026-10-09',
     slug: 'hardware-editions',
     version: 'Announcement',
     title: 'Albena Hub editions announced (Mac, NVIDIA)',

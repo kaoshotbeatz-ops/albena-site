@@ -4,46 +4,46 @@ CC1.2,Security,Board oversight of internal control,PM-1;CA-6,planned,No board; o
 CC1.3,Security,Structures reporting lines and authorities,PL-2;PS-9,planned,Roles and responsibilities not documented
 CC1.4,Security,Commitment to competence,AT-2;AT-3;PS-3,planned,No training or screening records
 CC1.5,Security,Accountability for internal control,PL-4;PS-8;CA-2,planned,No accountability evidence beyond CODEOWNERS
-CC2.1,Security,Obtains and uses relevant information,AU-6;SI-4;CA-7,partial,Logs exist but review is not scheduled
+CC2.1,Security,Obtains and uses relevant information,AU-6;SI-4;CA-7,partial,Hash-chained audit_log and /api/status exist; scheduled log review not yet defined
 CC2.2,Security,Communicates internal information,AT-2;PL-4;IR-6,planned,No internal communications of policy
 CC2.3,Security,Communicates externally,IR-6;PL-2;SA-5,partial,SECURITY.md and security/privacy pages exist; incident notification process undefined
 CC3.1,Security,Specifies suitable objectives,PL-2;RA-2,planned,Objectives not documented
-CC3.2,Security,Identifies and analyzes risk,RA-3;RA-5,partial,Automated scanning only; no risk assessment
+CC3.2,Security,Identifies and analyzes risk,RA-3;RA-5,partial,Automated scanning (CI and weekly) only; no documented risk assessment
 CC3.3,Security,Considers potential for fraud,RA-3,planned,Not assessed
 CC3.4,Security,Identifies and assesses changes impacting controls,CM-4;RA-3,partial,PR template covers change impact; no annual risk review
-CC4.1,Security,Ongoing and separate evaluations,CA-2;CA-7,partial,CI scans continuous; no independent evaluation
+CC4.1,Security,Ongoing and separate evaluations,CA-2;CA-7,implemented,Continuous CI plus weekly scheduled scans of repo and live site; no independent evaluation yet
 CC4.2,Security,Communicates deficiencies,CA-5;RA-7,partial,GAPS.md exists; owners and dates missing
 CC5.1,Security,Selects and develops control activities,PL-10;PL-11;CA-2,implemented,Baseline selected and tailored in controls/
-CC5.2,Security,Selects technology general controls,CM-2;CM-6;SA-3,partial,Technology controls in CI; policy approval pending
+CC5.2,Security,Selects technology general controls,CM-2;CM-6;SA-3,partial,Technology controls run in CI and on the live Worker; policy approval pending (Omar)
 CC5.3,Security,Deploys through policies and procedures,all -1 controls,planned,Policies are DRAFT
-CC6.1,Security,Logical access security,AC-2;AC-3;AC-6;IA-2;IA-5;SC-7,partial,MFA enforcement and token rotation not evidenced
+CC6.1,Security,Logical access security,AC-2;AC-3;AC-6;IA-2;IA-5;SC-7,partial,"Admin deny-by-default; Cloudflare Access not enabled, MFA and token rotation not evidenced (Omar)"
 CC6.2,Security,Registers and authorizes users,AC-2;IA-4,partial,No documented provisioning workflow
 CC6.3,Security,Removes or modifies access,AC-2;PS-4;PS-5,planned,No periodic access review or offboarding checklist
 CC6.4,Security,Restricts physical access,PE-2;PE-3,partial,Inherited from Cloudflare/GitHub; SOC reports not obtained
 CC6.5,Security,Disposes of physical assets,MP-6;SR-12,partial,Inherited; operator workstation disposal undefined
-CC6.6,Security,Restricts access from outside boundaries,SC-7;AC-17;SC-5,partial,Edge protection inherited; Worker cutover pending
-CC6.7,Security,Restricts transmission and movement of information,SC-8;SC-13;SC-28;AC-4,partial,Header and TLS verification pending post-deploy
-CC6.8,Security,Prevents or detects unauthorized software,SI-3;CM-7;CM-11;SI-7,partial,SAST and secret scan in CI; workstation malware protection unevidenced
-CC7.1,Security,Detects configuration changes and vulnerabilities,RA-5;CM-6;SI-2,implemented,CI scans and Dependabot
-CC7.2,Security,Monitors for anomalies,SI-4;AU-6;AU-12,partial,No alerting or log review cadence
+CC6.6,Security,Restricts access from outside boundaries,SC-7;AC-17;SC-5,implemented,"Edge protection inherited from Cloudflare; Worker live with CSP, rate limiting and HSTS preload; verified by header and TLS checks"
+CC6.7,Security,Restricts transmission and movement of information,SC-8;SC-13;SC-28;AC-4,implemented,"HSTS preload, TLS 1.2+, strict SSL verified live (header gate, sslyze); data at rest encrypted by Cloudflare; DNSSEC not enabled"
+CC6.8,Security,Prevents or detects unauthorized software,SI-3;CM-7;CM-11;SI-7,partial,SAST and secret scan in CI and weekly; workstation malware protection unevidenced
+CC7.1,Security,Detects configuration changes and vulnerabilities,RA-5;CM-6;SI-2,implemented,CI and weekly scheduled scans plus Dependabot
+CC7.2,Security,Monitors for anomalies,SI-4;AU-6;AU-12,partial,Hash-chained audit log and backup status indicator exist; no alerting or log review cadence
 CC7.3,Security,Evaluates security events,IR-4;IR-5;AU-6,planned,No triage procedure in use
-CC7.4,Security,Responds to security incidents,IR-4;IR-8,planned,IR plan DRAFT and untested
-CC7.5,Security,Recovers from incidents,CP-10;IR-4,planned,Recovery untested
-CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,Branch protection and production approval must be enabled; Obvera Change id required in PR
-CC9.1,Security,Mitigates business disruption risk,CP-2;RA-3,planned,No business continuity plan
-CC9.2,Security,Manages vendor and partner risk,SA-9;SR-6;CA-3,planned,Vendor register and SOC report reviews missing
-A1.1,Availability,Capacity management,AU-4;SC-5;CP-2,partial,Provider capacity; no monitoring thresholds
-A1.2,Availability,Environmental protections and recovery infrastructure,PE-9;PE-11;PE-13;CP-6;CP-7;CP-9,partial,Inherited; D1 backup export not scheduled
-A1.3,Availability,Tests recovery plan procedures,CP-4;CP-10,planned,No restore test performed
+CC7.4,Security,Responds to security incidents,IR-4;IR-8,partial,IR runbook drafted; policy unapproved and tabletop not yet run (Omar)
+CC7.5,Security,Recovers from incidents,CP-10;IR-4,partial,Restore runbook and weekly restore verification built; first backup due 2026-10-10 and no restore drill yet
+CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,"PR template, CI gates and environment approval in place; branch protection script not yet applied (Omar)"
+CC9.1,Security,Mitigates business disruption risk,CP-2;RA-3,partial,Contingency plan drafted (RPO 24h); not approved or tested (Omar)
+CC9.2,Security,Manages vendor and partner risk,SA-9;SR-6;CA-3,partial,Vendor register drafted; SOC report reviews missing (Omar)
+A1.1,Availability,Capacity management,AU-4;SC-5;CP-2,partial,Provider capacity; backup status indicator exists; no monitoring thresholds
+A1.2,Availability,Environmental protections and recovery infrastructure,PE-9;PE-11;PE-13;CP-6;CP-7;CP-9,partial,"Inherited redundancy; nightly R2 backup deployed, first run due 2026-10-10 03:17 UTC"
+A1.3,Availability,Tests recovery plan procedures,CP-4;CP-10,partial,Weekly restore verification built; no restore test performed yet
 C1.1,Confidentiality,Identifies and maintains confidential information,RA-2;SC-28;SI-12,planned,Data classification not documented
-C1.2,Confidentiality,Disposes of confidential information,MP-6;SI-12;AU-11,planned,Retention and deletion not enforced
+C1.2,Confidentiality,Disposes of confidential information,MP-6;SI-12;AU-11,partial,Ticket anonymization and 35-day backup pruning enforced in Worker; retention policy unapproved (Omar)
 P1.1,Privacy,Privacy notice,PT-5;PL-2,partial,privacy.html exists; review against practice needed (PT family is outside Moderate baseline)
 P2.1,Privacy,Choice and consent,PT-4;AC-21,partial,Waitlist consent wording to confirm
 P3.1,Privacy,Collects personal information consistent with objectives,PT-2;SI-12,partial,Data minimization review pending
 P3.2,Privacy,Explicit consent for sensitive information,PT-4,planned,No sensitive data intended; confirm and document
 P4.1,Privacy,Limits use of personal information,PT-2;AC-21,planned,Use limits in DRAFT policy only
-P4.2,Privacy,Retains personal information,SI-12;AU-11,planned,Retention schedule not enforced
-P4.3,Privacy,Disposes of personal information,SI-12;MP-6,planned,No deletion procedure
+P4.2,Privacy,Retains personal information,SI-12;AU-11,partial,Retention enforced in Worker for tickets (365 days); policy unapproved (Omar)
+P4.3,Privacy,Disposes of personal information,SI-12;MP-6,partial,Automated anonymization of resolved tickets; no subject-initiated deletion procedure
 P5.1,Privacy,Access to personal information,PT-5;AC-3,planned,No data subject access procedure
 P5.2,Privacy,Correction of personal information,PT-5,planned,No correction procedure
 P6.1,Privacy,Disclosure to third parties with consent,AC-21;SA-9,planned,Processor list missing

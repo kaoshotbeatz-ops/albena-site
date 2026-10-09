@@ -29,7 +29,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "worker/ (not in this branch); Access policy export"
+    "evidence": "worker/src/admin.ts; worker/test/api.test.ts"
   },
   {
     "id": "AC-4",
@@ -39,8 +39,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "scripts/check-headers.sh; worker/ CSP config"
+    "status": "implemented",
+    "evidence": "worker/src/security.ts; worker/src/public.ts (same-origin guard); scripts/check-headers.sh; .github/workflows/ci.yml (post-deploy header check)"
   },
   {
     "id": "AC-5",
@@ -71,7 +71,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": "worker/ (not in this branch) rate limiter; IdP policy"
+    "evidence": "worker/wrangler.jsonc (ratelimits); worker/src/public.ts; worker/test/api.test.ts"
   },
   {
     "id": "AC-8",
@@ -100,8 +100,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "partial",
-    "evidence": "Access application session duration setting"
+    "status": "planned",
+    "evidence": "Access application session duration (not yet configured)"
   },
   {
     "id": "AC-14",
@@ -122,7 +122,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "Access policy; GitHub org 2FA setting"
+    "evidence": "worker/src/admin.ts; .github/workflows/ci.yml (deploy job); GitHub org 2FA setting (to capture)"
   },
   {
     "id": "AC-20",
@@ -152,8 +152,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "implemented",
-    "evidence": "CODEOWNERS; .github/workflows/ci.yml"
+    "status": "partial",
+    "evidence": ".github/CODEOWNERS; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
   },
   {
     "id": "AT-1",
@@ -215,8 +215,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/ (not in this branch) audit_log table"
+    "status": "implemented",
+    "evidence": "worker/src/auditchain.ts; worker/src/maintenance.ts; worker/test/hardening.test.ts"
   },
   {
     "id": "AU-3",
@@ -225,8 +225,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "partial",
-    "evidence": "worker/ (not in this branch) audit_log schema"
+    "status": "implemented",
+    "evidence": "worker/migrations/0001_init.sql; worker/migrations/0002_audit_hash_chain.sql; worker/src/auditchain.ts"
   },
   {
     "id": "AU-4",
@@ -288,7 +288,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": "D1 access policy; export job (planned)"
+    "evidence": "worker/src/auditchain.ts (verifyChain); worker/src/maintenance.ts; worker/test/hardening.test.ts"
   },
   {
     "id": "AU-11",
@@ -298,8 +298,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+    "status": "partial",
+    "evidence": "worker/src/maintenance.ts (RETENTION_DAYS, KEEP_BACKUPS); controls/policies/data-retention-privacy.md (DRAFT)"
   },
   {
     "id": "AU-12",
@@ -309,8 +309,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/ (not in this branch)"
+    "status": "implemented",
+    "evidence": "worker/src/auditchain.ts; worker/src/public.ts; worker/test/hardening.test.ts"
   },
   {
     "id": "CA-1",
@@ -342,7 +342,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "Vendor register (planned)"
+    "evidence": "controls/vendor-register.md (DRAFT); controls/inventory.md (DRAFT)"
   },
   {
     "id": "CA-5",
@@ -374,8 +374,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": ".github/workflows/ci.yml (schedule)"
+    "status": "implemented",
+    "evidence": ".github/workflows/scheduled-security.yml; .github/workflows/ci.yml"
   },
   {
     "id": "CA-9",
@@ -417,7 +417,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "pull_request_template.md; .github/workflows/ci.yml deploy job; Obvera Change records"
+    "evidence": ".github/pull_request_template.md; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
   },
   {
     "id": "CM-4",
@@ -439,7 +439,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "CODEOWNERS; GitHub branch protection (pending)"
+    "evidence": ".github/CODEOWNERS; scripts/apply-github-protections.sh (not applied)"
   },
   {
     "id": "CM-6",
@@ -449,8 +449,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "scripts/check-headers.sh; controls/stig-cis-web.md"
+    "status": "implemented",
+    "evidence": "scripts/check-headers.sh; scripts/check-cloudflare-baseline.sh; controls/evidence/2026-10-09-cloudflare-baseline.json"
   },
   {
     "id": "CM-7",
@@ -460,8 +460,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/ (not in this branch)"
+    "status": "implemented",
+    "evidence": "worker/src/index.ts; worker/src/security.ts; worker/test/hardening.test.ts"
   },
   {
     "id": "CM-8",
@@ -471,7 +471,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": "package-lock.json; Obvera CMDB (planned)"
+    "evidence": "controls/inventory.md (DRAFT); .github/workflows/ci.yml (sbom job)"
   },
   {
     "id": "CM-9",
@@ -511,8 +511,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "controls/policies/incident-response.md (DRAFT)"
+    "status": "partial",
+    "evidence": "controls/runbooks/contingency-plan.md (DRAFT); worker/RUNBOOK-restore.md"
   },
   {
     "id": "CP-3",
@@ -532,8 +532,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "Restore test record (planned)"
+    "status": "partial",
+    "evidence": "worker/src/maintenance.ts (runVerify); worker/RUNBOOK-restore.md"
   },
   {
     "id": "CP-6",
@@ -576,7 +576,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "D1 Time Travel; backup export (planned)"
+    "evidence": "worker/src/maintenance.ts; worker/wrangler.jsonc (triggers, r2_buckets); /api/status"
   },
   {
     "id": "CP-10",
@@ -586,8 +586,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "Recovery runbook (planned)"
+    "status": "partial",
+    "evidence": "worker/RUNBOOK-restore.md; controls/runbooks/contingency-plan.md (DRAFT)"
   },
   {
     "id": "IA-1",
@@ -690,7 +690,7 @@
       "NIST 800-53"
     ],
     "status": "planned",
-    "evidence": "controls/policies/incident-response.md (DRAFT)"
+    "evidence": "controls/runbooks/tabletop-2026Q4.md"
   },
   {
     "id": "IR-4",
@@ -700,8 +700,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "controls/policies/incident-response.md (DRAFT)"
+    "status": "partial",
+    "evidence": "controls/runbooks/incident-response.md (DRAFT); .github/workflows/scheduled-security.yml"
   },
   {
     "id": "IR-5",
@@ -743,8 +743,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "controls/policies/incident-response.md (DRAFT)"
+    "status": "partial",
+    "evidence": "controls/runbooks/incident-response.md (DRAFT); controls/policies/incident-response.md (DRAFT)"
   },
   {
     "id": "MA-1",
@@ -1243,7 +1243,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": ".github/workflows/ci.yml; .github/dependabot.yml"
+    "evidence": ".github/workflows/ci.yml; .github/workflows/scheduled-security.yml; .github/dependabot.yml"
   },
   {
     "id": "RA-7",
@@ -1347,8 +1347,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "implemented",
-    "evidence": "CODEOWNERS; .github/workflows/ci.yml"
+    "status": "partial",
+    "evidence": ".github/CODEOWNERS; .github/workflows/ci.yml; scripts/apply-github-protections.sh (not applied)"
   },
   {
     "id": "SA-11",
@@ -1440,8 +1440,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "scripts/check-headers.sh; .github/workflows/ci.yml"
+    "status": "implemented",
+    "evidence": "scripts/check-headers.sh; scripts/check-tls.sh; controls/evidence/2026-10-09-cloudflare-baseline.json"
   },
   {
     "id": "SC-10",
@@ -1491,8 +1491,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "partial",
-    "evidence": "scripts/check-headers.sh"
+    "status": "implemented",
+    "evidence": "worker/src/security.ts; scripts/check-headers.sh"
   },
   {
     "id": "SC-20",
@@ -1502,7 +1502,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": "Cloudflare DNS settings"
+    "evidence": "controls/evidence/2026-10-09-cloudflare-baseline.json"
   },
   {
     "id": "SC-21",
@@ -1543,7 +1543,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04); worker/wrangler.jsonc"
   },
   {
     "id": "SC-39",
@@ -1596,7 +1596,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "Cloudflare dashboards; audit_log"
+    "evidence": "worker/wrangler.jsonc (observability); worker/src/public.ts (/status); worker/src/auditchain.ts"
   },
   {
     "id": "SI-5",
@@ -1617,7 +1617,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": ".github/workflows/ci.yml"
+    "evidence": ".github/workflows/ci.yml; worker/src/auditchain.ts; worker/src/maintenance.ts"
   },
   {
     "id": "SI-8",
@@ -1626,8 +1626,8 @@
     "framework": [
       "NIST 800-53"
     ],
-    "status": "partial",
-    "evidence": "Turnstile config; worker/ (not in this branch)"
+    "status": "implemented",
+    "evidence": "worker/src/public.ts; worker/src/security.ts; worker/test/api.test.ts"
   },
   {
     "id": "SI-10",
@@ -1637,8 +1637,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/ tests (not in this branch)"
+    "status": "implemented",
+    "evidence": "worker/src/public.ts; worker/test/api.test.ts; worker/test/hardening.test.ts"
   },
   {
     "id": "SI-11",
@@ -1658,8 +1658,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "planned",
-    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+    "status": "partial",
+    "evidence": "worker/src/maintenance.ts; controls/policies/data-retention-privacy.md (DRAFT)"
   },
   {
     "id": "SI-16",
@@ -1699,7 +1699,7 @@
       "NIST 800-53"
     ],
     "status": "partial",
-    "evidence": ".github/workflows/ci.yml"
+    "evidence": ".github/workflows/ci.yml; .github/dependabot.yml"
   },
   {
     "id": "SR-5",

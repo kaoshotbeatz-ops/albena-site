@@ -32,6 +32,7 @@ const principles = [
       <aside class="banner" aria-labelledby="status-h">
         <h2 id="status-h">Where we are today</h2>
         <p><strong>We hold no third-party certification or attestation.</strong> No external audit of Albena has been completed. Statuses below describe our own work.</p>
+        <p class="reviewed">Last reviewed <time datetime="2026-10-09">October 9, 2026</time>. Self-assessed, not independently audited.</p>
         <p class="legend"><span class="chip indigo">Aligned</span><span class="chip amber">In progress</span><span class="chip">Audit not yet completed</span></p>
       </aside>
     </div>
@@ -44,6 +45,30 @@ const principles = [
         {principles.map(([t, d], i) => <li><span class="idx">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{d}</p></li>)}
       </ul>
       <p class="more">Read the full <a href="/security">security practices</a>, or report a vulnerability at <a href="/.well-known/security.txt">security.txt</a>.</p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="live-h" id="live">
+    <div class="wrap live-grid">
+      <div>
+        <h2 id="live-h" class="h-section">Backups &amp; integrity</h2>
+        <p class="sub">Our database is exported nightly to private storage with a SHA-256 manifest, and the export is verified weekly. This indicator reads the live status of that job.</p>
+        <p class="bk" data-backup data-state="neutral" role="status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span>
+          <span data-backup-text>Checking backup status...</span>
+        </p>
+        <p class="fine" data-backup-detail>The first scheduled backup runs on October 10, 2026 (03:17 UTC). Until then this shows a neutral state, not a failure.</p>
+      </div>
+      <div>
+        <h3 class="chg-h">What changed today</h3>
+        <ul class="chg">
+          <li>Tamper-evident audit log: each entry is hash-chained to the one before it.</li>
+          <li>Nightly backups to private storage with checksums, 35-day retention and weekly verification.</li>
+          <li>Weekly automated security scans of our code and live site, filed as issues when something fails.</li>
+          <li>HTTPS only with HSTS preload, TLS 1.2 or newer, and a strict content security policy.</li>
+          <li>Control statuses re-scored against evidence; items waiting on us are marked partial.</li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -97,6 +122,17 @@ const principles = [
   .legend { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
   @media (min-width: 900px) { .hero-grid { grid-template-columns: 1.3fr 1fr; } }
 
+  .reviewed { margin-top: 12px; color: var(--mut); font-size: 13.5px; }
+  .live-grid { display: grid; gap: 32px; }
+  @media (min-width: 900px) { .live-grid { grid-template-columns: 1.2fr 1fr; } }
+  .bk { margin-top: 20px; display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line-2); border-radius: 12px; font-size: 14.5px; color: var(--fg-2); }
+  .bk .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mut); }
+  .bk[data-state="ok"] .dot { background: #4ade80; }
+  .bk[data-state="warn"] .dot { background: #f4d675; }
+  .fine { margin-top: 12px; color: var(--mut); font-size: 13.5px; max-width: 60ch; }
+  .chg-h { font-size: 17px; margin-bottom: 10px; }
+  .chg { display: grid; gap: 8px; color: var(--mut); font-size: 14.5px; padding-left: 18px; list-style: disc; }
+
   .band { padding: 80px 0; border-bottom: 1px solid var(--line); }
   .band.alt { background: var(--bg-2); }
   .band h2.h-section { margin-bottom: 8px; }
@@ -134,3 +170,25 @@ const principles = [
   .docs span { color: var(--mut); font-size: 14px; }
   @media (min-width: 760px) { .docs { grid-template-columns: repeat(4, 1fr); } }
 </style>
+
+<script>
+  const box = document.querySelector<HTMLElement>('[data-backup]');
+  const text = document.querySelector<HTMLElement>('[data-backup-text]');
+  const detail = document.querySelector<HTMLElement>('[data-backup-detail]');
+  const set = (state: string, msg: string, more?: string) => {
+    if (box) box.dataset.state = state;
+    if (text) text.textContent = msg;
+    if (detail && more) detail.textContent = more;
+  };
+  fetch('/api/status', { headers: { accept: 'application/json' }, cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('status ' + r.status))))
+    .then((d: { lastBackupOk?: boolean; lastVerifiedAt?: string | null }) => {
+      if (d.lastBackupOk) {
+        const v = d.lastVerifiedAt ? new Date(d.lastVerifiedAt).toISOString().slice(0, 10) : null;
+        set('ok', 'Latest nightly backup completed', v ? `Last weekly integrity verification: ${v}.` : 'Weekly integrity verification has not run yet.');
+      } else {
+        set('neutral', 'No completed backup recorded yet', 'The first scheduled backup runs on October 10, 2026 (03:17 UTC). Until a backup has completed this shows a neutral state.');
+      }
+    })
+    .catch(() => set('neutral', 'Status unavailable right now', 'We could not reach the status endpoint. This is not a statement about backup health.'));
+</script>

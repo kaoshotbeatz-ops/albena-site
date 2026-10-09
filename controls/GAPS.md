@@ -2,36 +2,43 @@
 
 > **No public claim of compliance or certification.** Do not state or imply that albena.ai or Omar Huertas LLC is "SOC 2 compliant", "NIST 800-53 compliant", "STIG/CIS compliant" or "certified" until an independent auditor issues a report. The site's controls page may say only that controls are being "mapped to" or "aligned with" frameworks, with the status shown. SOC 2 is an attestation by a licensed CPA firm; NIST 800-53 and CSF are frameworks, not certifications.
 
-Snapshot (2026-10-09): see `nist-800-53-moderate.csv`. Counts: 176 baseline controls; 21 implemented, 87 partial, 61 planned, 7 not applicable. 49 controls are inherited (47 Cloudflare, 2 GitHub) and depend on obtaining vendor assurance.
+Snapshot (2026-10-09, re-scored after Worker cutover): see `nist-800-53-moderate.csv`. Counts: 176 baseline controls; 30 implemented, 84 partial, 55 planned, 7 not applicable. 49 controls are inherited (47 Cloudflare, 2 GitHub) and depend on obtaining vendor assurance.
 
-## P0 (do first, this month)
-| ID | Gap | What Omar must do |
-|----|-----|-------------------|
-| G-01 | Policies are DRAFT only | Review and approve the 8 policies in `controls/policies/`, sign and date, store approved copies (Obvera KB) and set an annual review date |
-| G-02 | Branch protection and approvals | In GitHub: require PR + passing checks on main, require CODEOWNERS review, create environment `production` with required reviewer; add secret `CLOUDFLARE_API_TOKEN` (least-privilege token); enforce 2FA for the org |
-| G-03 | Backups untested | Schedule a D1 export, store encrypted copy, perform and record a restore test (CP-4, CP-9, A1.3) |
-| G-04 | Vendor assurance missing | Download Cloudflare SOC 2 Type II and ISO 27001 reports and GitHub SOC 2 Type II/ISAE report (trust portals), file them, record review date and complementary user entity controls (CUECs); note Turnstile is covered by Cloudflare |
-| G-05 | Worker cutover not live | Deploy Worker so headers/HSTS/CSP/rate limiting apply; run `scripts/check-headers.sh https://albena.ai` until green |
+## Closed
+| ID | Gap | Closed by |
+|----|-----|-----------|
+| G-05 | Worker cutover not live | Worker is live on albena.ai; header gate and TLS scan pass; Cloudflare zone baseline recorded in `controls/evidence/2026-10-09-cloudflare-baseline.json` (2026-10-09) |
+| G-15a | SBOM and vendor register | CycloneDX SBOM job in `.github/workflows/ci.yml`; `controls/vendor-register.md` and `controls/inventory.md` written (DRAFT, awaiting approval) |
+| G-13a | Retention enforcement in code | Nightly ticket anonymization and 35-day backup pruning in `worker/src/maintenance.ts` (policy approval still open under G-01) |
+| G-08a | Tamper-evident audit log | Hash-chained audit_log, migration 0002, verified on each backup (`worker/src/auditchain.ts`) |
 
-## P1 (next 60 days)
+## P0 (do first, this month). Owner: Omar unless noted
+| ID | Gap | What remains |
+|----|-----|--------------|
+| G-01 | Policies are DRAFT only | Review and approve the 8 policies in `controls/policies/` (plus contingency and IR runbooks), sign and date, store approved copies (Obvera KB) and set an annual review date. Blocks many `-1` controls and moves several partial controls to implemented |
+| G-02 | Branch protection and approvals | Run `scripts/apply-github-protections.sh` (written, NOT applied): require PR and passing checks on main, CODEOWNERS review, environment `production` with required reviewer, enforce 2FA for the org. Blocks AC-22, CM-3, CM-5, SA-10 |
+| G-03 | Backups unproven | Nightly R2 backup is deployed; first run 2026-10-10 03:17 UTC. Then confirm `/api/status` lastBackupOk=true, record the first weekly verification (Sunday) and perform one full restore drill per `worker/RUNBOOK-restore.md`. Then flip CP-9, CP-4, A1.3 |
+| G-04 | Vendor assurance missing | Download Cloudflare SOC 2 Type II and ISO 27001 reports and GitHub SOC 2 Type II/ISAE report, file them, record review date and CUECs; note Turnstile is covered by Cloudflare |
+| G-19 | Cloudflare Access not enabled | Enable Zero Trust, create the Access application for admin routes, set ADMIN_AUD and TEAM_DOMAIN secrets, require MFA, document session duration. Admin routes are deny-by-default until then. Blocks AC-3, AC-7, AC-12, AC-17, IA-2 |
+
+## P1 (next 60 days). Owner: Omar
 | ID | Gap | Action |
 |----|-----|--------|
 | G-06 | Access reviews | Quarterly review of GitHub org, Cloudflare account and Access policy members; record outcome (AC-2, CC6.3) |
 | G-07 | Token and secret rotation | Rotate Cloudflare token every 90 days; record in Obvera (IA-5) |
-| G-08 | Audit log review and alerting | Monthly audit_log review; alert on audit write failure and admin anomalies (AU-5, AU-6, CC7.2) |
-| G-09 | Incident response test | Tabletop exercise per IR policy; define breach notification steps (IR-3, P6.6) |
+| G-08 | Audit log review and alerting | Monthly audit_log review; alert on backup/audit failure and admin anomalies (AU-5, AU-6, CC7.2) |
+| G-09 | Incident response test | Run the tabletop in `controls/runbooks/tabletop-2026Q4.md`; define breach notification steps (IR-3, P6.6) |
 | G-10 | Risk assessment | Complete a documented risk assessment and categorize data (RA-2, RA-3) |
 | G-11 | Training | Record annual security and privacy awareness for operator and any contractors (AT-2) |
 | G-12 | MFA evidence | Capture screenshots/exports showing MFA enforced on GitHub, Cloudflare and IdP |
 
-## P2 (next 6 months)
+## P2 (next 6 months). Owner: Omar / team
 | ID | Gap | Action |
 |----|-----|--------|
-| G-13 | Data retention enforcement | Implement retention and deletion for waitlist/support/audit data per policy (SI-12, P4.2, P4.3) |
 | G-14 | Privacy operations | Subject access/correction procedure, processor list, DPAs (P5-P6) |
-| G-15 | Supply chain | Vendor register, SBOM generation, npm provenance checks (SR-3, SR-6) |
+| G-15 | Supply chain | npm provenance checks, formal supply chain risk policy approval (SR-3, SR-6) |
 | G-16 | Personnel security | Contractor access agreements and offboarding checklist (PS family) |
-| G-17 | security.txt, admin banner, DNSSEC/CAA | Small hardening items (AC-8, SC-20) |
+| G-17 | DNSSEC, admin banner, CAA | Enable DNSSEC (currently disabled) and add DS at registrar; admin use-notification banner (AC-8, SC-20) |
 | G-18 | ZAP blocking | After two clean baseline runs, remove `continue-on-error` and fail on medium alerts |
 
 ## Auditor readiness steps (SOC 2)
@@ -41,4 +48,4 @@ Snapshot (2026-10-09): see `nist-800-53-moderate.csv`. Counts: 176 baseline cont
 4. Pick a readiness tool or advisor (optional) and a CPA firm; request a readiness assessment against this mapping (`soc2-tsc.csv`).
 5. Inherited controls: auditor will rely on Cloudflare/GitHub reports as subservice organizations (carve-out); you must show you reviewed them and implemented their CUECs.
 
-Honesty note: counts above reflect repo and design as of this branch. Items marked implemented that depend on merged CI (e.g. RA-5, SI-2) are true only after this branch is merged and branch protection is enabled.
+Honesty note: statuses were re-scored on 2026-10-09 against what is live and evidenced. A control is "implemented" only where the cited file, workflow or evidence exists today; items awaiting an Omar action (policy approval, Cloudflare Access, branch protection, first backup run) are "partial" and name the blocker in the implementation text. Nothing here is a certification or audit result.
