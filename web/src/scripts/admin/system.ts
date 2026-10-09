@@ -11,6 +11,7 @@ async function load() {
   try {
     const i = await api<Integrity>('/api/admin/integrity');
     const c = i.chain;
+    repairBtn.hidden = c.ok || c.reason !== 'prev_hash_mismatch';   // only offered for the one break the repair is allowed to fix
     must('#chain-kv').replaceChildren(
       ...row('Status', state(c.ok, 'Intact', `Broken (${c.reason ?? 'mismatch'} at #${c.brokenAtId ?? '?'})`)),
       ...row('Entries', c.rows.toLocaleString()), ...row('Sealed', c.sealed.toLocaleString()),
@@ -28,6 +29,7 @@ async function load() {
   } finally { refresh.removeAttribute('disabled'); }
 }
 const runBtn = must<HTMLButtonElement>('#run-backup');
+const repairBtn = must<HTMLButtonElement>('#repair-chain');
 const msg = must('#sys-msg');
 async function act(btn: HTMLButtonElement, path: string, ok: (r: any) => string) {
   btn.setAttribute('disabled', '');
@@ -39,4 +41,8 @@ async function act(btn: HTMLButtonElement, path: string, ok: (r: any) => string)
 }
 refresh.addEventListener('click', () => void act(refresh, '/api/admin/backup/verify', (r) => (r.ok ? 'Verified: backup and audit chain are intact.' : `Verification problems: ${r.problems.join(', ')}`)));
 runBtn.addEventListener('click', () => void act(runBtn, '/api/admin/backup/run', (r) => `Backup written for ${r.date}.`));
+repairBtn.addEventListener('click', () => {
+  if (!confirm('Re-link the audit log from the broken entry onward? The old hashes are kept and the repair is itself logged.')) return;
+  void act(repairBtn, '/api/admin/audit/repair', (r) => `Repaired from #${r.repairedFrom} to #${r.repairedTo}; chain ${r.chain?.ok ? 'intact' : 'still broken'}.`);
+});
 void load();
