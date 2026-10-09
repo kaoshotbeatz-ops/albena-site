@@ -13,7 +13,7 @@ import Turnstile from '../components/Turnstile.astro';
       <input class="input lg" id="email" name="email" type="email" autocomplete="email webauthn" inputmode="email" required aria-describedby="email-err" placeholder="you@example.com" />
       <p class="err" id="email-err"></p>
     </div>
-    <Turnstile action="portal_login" />
+    <Turnstile action="magic_login" />
     <button class="btn btn-primary btn-lg" id="send" type="submit">Email me a sign-in link</button>
     <p class="form-status" id="status" role="status" aria-live="polite"></p>
   </form>
