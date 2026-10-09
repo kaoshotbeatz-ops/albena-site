@@ -55,7 +55,7 @@ jobs:
             mkdir -p dist-out
             rsync -a --exclude '.git' --exclude '.github' --exclude 'controls' --exclude 'scripts' --exclude 'worker' --exclude 'BRIEF.md' --exclude 'site-dist' --exclude 'dist-out' --exclude 'web' --exclude 'lighthouserc.json' --exclude 'SECURITY.md' --exclude 'README.md' ./ dist-out/
           fi
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: site-dist
           path: dist-out
@@ -225,7 +225,7 @@ jobs:
           for dir in web worker; do
             (cd "$dir" && npm ci --ignore-scripts && npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file "../sbom/sbom-$dir.cdx.json")
           done
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom
           path: sbom
