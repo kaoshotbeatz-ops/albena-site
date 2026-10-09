@@ -1,0 +1,8 @@
+{
+  "name": "albena-portal-billing-dev",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "vitest run", "typecheck": "tsc -p tsconfig.json" },
+  "dependencies": { "hono": "^4.6.0" },
+  "devDependencies": { "@cloudflare/workers-types": "^4.20250101.0", "@types/node": "^24.0.0", "typescript": "^5.6.0", "vitest": "^2.1.0" }
+}
