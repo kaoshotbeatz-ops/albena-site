@@ -30,6 +30,28 @@ export const supportSchema = z.object({
 
 export const publicApi = new Hono<AppEnv>();
 
+/** Read the body as UTF-8, aborting once more than `max` bytes arrive. Null = too large. */
+async function readLimited(req: Request, max: number): Promise<string | null> {
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const ch of chunks) { buf.set(ch, off); off += ch.byteLength; }
+  return new TextDecoder().decode(buf);
+}
+
 publicApi.get("/health", (c) => json({ ok: true, ts: new Date().toISOString() }));
 publicApi.get("/config", (c) => json({ turnstileSiteKey: c.env.TURNSTILE_SITE_KEY }));
 
@@ -45,8 +67,10 @@ publicApi.post("*", async (c, next) => {
   if (!(c.req.header("Content-Type") ?? "").toLowerCase().startsWith("application/json")) {
     return json({ error: "unsupported_media_type" }, 415);
   }
-  const text = await c.req.text();
-  if (text.length > MAX_BODY) return json({ error: "payload_too_large" }, 413);
+  const declared = c.req.header("Content-Length");
+  if (declared !== undefined && !(Number(declared) <= MAX_BODY)) return json({ error: "payload_too_large" }, 413);
+  const text = await readLimited(c.req.raw, MAX_BODY);
+  if (text === null) return json({ error: "payload_too_large" }, 413);
   try {
     const parsed = JSON.parse(text);
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error();
@@ -62,7 +86,7 @@ publicApi.post("*", async (c, next) => {
 async function guard(
   c: import("hono").Context<AppEnv>,
   schema: z.ZodType<{ turnstileToken: string }>,
-  what: string,
+  what: "waitlist" | "support",
 ): Promise<{ res: Response } | { data: any }> {
   const raw = c.get("body");
   const ipHash = c.get("ipHash");
@@ -76,7 +100,7 @@ async function guard(
   if (!parsed.success) {
     return { res: json({ error: "validation_failed", fields: parsed.error.issues.map((i) => i.path.join(".")) }, 400) };
   }
-  const t = await verifyTurnstile(c.env, parsed.data.turnstileToken, clientIp(c.req.raw));
+  const t = await verifyTurnstile(c.env, parsed.data.turnstileToken, clientIp(c.req.raw), what);
   if (t === "unavailable") return { res: json({ error: "verification_unavailable" }, 503) };
   if (t === "failed") {
     await audit(c.env, { actor: "public", action: `${what}.turnstile_failed`, requestId, ipHash });
@@ -90,17 +114,17 @@ publicApi.post("/waitlist", async (c) => {
   if ("res" in g) return g.res;
   const d = g.data as z.infer<typeof waitlistSchema>;
   const { email: em, key } = normalizeEmail(d.email);
-  const r = await c.env.DB.prepare(
-    "INSERT INTO waitlist (email, email_key, name, interest, ip_hash) VALUES (?, ?, ?, ?, ?) ON CONFLICT(email_key) DO NOTHING",
-  ).bind(em, key, d.name ?? null, d.interest ?? null, c.get("ipHash")).run();
+  const [r] = await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO waitlist (email, email_key, name, interest, ip_hash) VALUES (?, ?, ?, ?, ?) ON CONFLICT(email_key) DO NOTHING",
+    ).bind(em, key, d.name ?? null, d.interest ?? null, c.get("ipHash")),
+    c.env.DB.prepare(
+      `INSERT INTO audit_log (actor, action, target, request_id, ip_hash) VALUES ('public',
+        CASE WHEN changes() > 0 THEN 'waitlist.create' ELSE 'waitlist.duplicate' END,
+        CASE WHEN changes() > 0 THEN 'waitlist:' || last_insert_rowid() END, ?, ?)`,
+    ).bind(c.get("requestId"), c.get("ipHash")),
+  ]);
   const created = r.meta.changes > 0;
-  await audit(c.env, {
-    actor: "public",
-    action: created ? "waitlist.create" : "waitlist.duplicate",
-    target: created ? `waitlist:${r.meta.last_row_id}` : undefined,
-    requestId: c.get("requestId"),
-    ipHash: c.get("ipHash"),
-  });
   if (created) c.executionCtx.waitUntil(notify(c.env, "New Albena waitlist signup", "A new waitlist signup was recorded."));
   return json({ ok: true }, created ? 201 : 200);
 });
@@ -109,17 +133,18 @@ publicApi.post("/support", async (c) => {
   const g = await guard(c, supportSchema, "support");
   if ("res" in g) return g.res;
   const d = g.data as z.infer<typeof supportSchema>;
-  const row = await c.env.DB.prepare(
-    "INSERT INTO tickets (name, email, topic, message, ip_hash) VALUES (?, ?, ?, ?, ?) RETURNING ticket_id",
-  ).bind(d.name, normalizeEmail(d.email).email, d.topic, d.message, c.get("ipHash")).first<{ ticket_id: string }>();
-  const id = row!.ticket_id;
-  await audit(c.env, {
-    actor: "public",
-    action: "support.create",
-    target: `ticket:${id}`,
-    requestId: c.get("requestId"),
-    ipHash: c.get("ipHash"),
-  });
+  // One atomic batch: ticket row, read back its generated id, audit row.
+  const [, sel] = await c.env.DB.batch([
+    c.env.DB.prepare(
+      "INSERT INTO tickets (name, email, topic, message, ip_hash) VALUES (?, ?, ?, ?, ?)",
+    ).bind(d.name, normalizeEmail(d.email).email, d.topic, d.message, c.get("ipHash")),
+    c.env.DB.prepare("SELECT ticket_id FROM tickets WHERE id = last_insert_rowid()"),
+    c.env.DB.prepare(
+      `INSERT INTO audit_log (actor, action, target, request_id, ip_hash)
+       VALUES ('public', 'support.create', 'ticket:' || (SELECT ticket_id FROM tickets WHERE id = last_insert_rowid()), ?, ?)`,
+    ).bind(c.get("requestId"), c.get("ipHash")),
+  ]);
+  const id = (sel.results[0] as { ticket_id: string }).ticket_id;
   c.executionCtx.waitUntil(notify(c.env, `New Albena support ticket ${id}`, `Ticket ${id} (${d.topic}) was opened.`));
   return json({ ok: true, id }, 201);
 });

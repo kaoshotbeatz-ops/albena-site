@@ -14,7 +14,7 @@ const { id = 'wl' } = Astro.props;
       <label for={`${id}-web`}>Website</label>
       <input id={`${id}-web`} name="website" type="text" tabindex="-1" autocomplete="off" />
     </div>
-    <Turnstile />
+    <Turnstile action="waitlist" />
     <button class="btn btn-primary" type="submit">Join the waitlist</button>
     <p class="form-status" data-status role="status" aria-live="polite"></p>
     <p class="form-note">We use your email only for early-access news. No spam, and you can leave any time. See the <a href="/privacy">Privacy Policy</a>.</p>

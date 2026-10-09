@@ -43,7 +43,8 @@
 
   "vars": {
     "TURNSTILE_SITE_KEY": "TO_BE_SET",
-    "NOTIFY_FROM": "notifications@albena.ai"
+    "NOTIFY_FROM": "notifications@albena.ai",
+    "ENVIRONMENT": "production"
   }
 
   // Secrets (set with `wrangler secret put`, never in this file):

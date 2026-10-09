@@ -9,6 +9,7 @@ export interface Env {
   ADMIN_AUD: string;
   TEAM_DOMAIN: string;
   NOTIFY_FROM?: string;
+  ENVIRONMENT?: string;
 }
 
 export type Vars = {

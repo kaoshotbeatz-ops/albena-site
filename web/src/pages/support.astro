@@ -75,7 +75,7 @@ const cats = [...new Set(faqs.map((f) => f.cat))];
           <div class="field"><label for="s-msg">How can we help?</label>
             <textarea id="s-msg" name="message" required data-validate data-min="10" aria-describedby="s-msg-err"></textarea><p class="err" id="s-msg-err"></p></div>
           <div class="field hp" aria-hidden="true"><label for="s-web">Website</label><input id="s-web" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
-          <Turnstile />
+          <Turnstile action="support" />
           <button class="btn btn-primary" type="submit">Send message</button>
           <p class="form-status" data-status role="status" aria-live="polite"></p>
           <p class="form-note">We use what you send only to reply to you. See the <a href="/privacy">Privacy Policy</a>. Prefer email? <a href="mailto:omar@dbaomarhuertasllc.com?subject=Albena%20support">omar@dbaomarhuertasllc.com</a></p>

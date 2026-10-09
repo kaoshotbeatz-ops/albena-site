@@ -36,6 +36,7 @@ export async function verifyTurnstile(
   env: Env,
   token: string,
   ip: string,
+  expectedAction: string,
 ): Promise<"ok" | "failed" | "unavailable"> {
   try {
     const body = new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: token });
@@ -45,8 +46,13 @@ export async function verifyTurnstile(
       body,
     });
     if (!r.ok) return "unavailable";
-    const data = (await r.json()) as { success?: boolean };
-    return data.success === true ? "ok" : "failed";
+    const data = (await r.json()) as { success?: boolean; hostname?: string; action?: string };
+    const hosts = new Set(["albena.ai", "www.albena.ai"]);
+    if (env.ENVIRONMENT !== "production") hosts.add("localhost");
+    return data.success === true && typeof data.hostname === "string" && hosts.has(data.hostname) &&
+      data.action === expectedAction
+      ? "ok"
+      : "failed";
   } catch {
     return "unavailable";
   }

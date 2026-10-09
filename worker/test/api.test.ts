@@ -19,18 +19,22 @@ async function call(path: string, init: RequestInit & { ip?: string; host?: stri
   return res;
 }
 
-const post = (path: string, body: unknown, extra: RequestInit & { ip?: string } = {}) =>
-  call(path, {
+// The Turnstile mock echoes the action the real widget would have been rendered with.
+let currentAction = "waitlist";
+const post = (path: string, body: unknown, extra: RequestInit & { ip?: string } = {}) => {
+  currentAction = path.includes("support") ? "support" : "waitlist";
+  return call(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: typeof body === "string" ? body : JSON.stringify(body),
     ...extra,
   });
+};
 
-const mockTurnstile = (success: boolean) =>
+const mockTurnstile = (success: boolean, over: Record<string, unknown> = {}) =>
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = String(input instanceof Request ? input.url : input);
-    if (url.includes("challenges.cloudflare.com")) return Response.json({ success });
+    if (url.includes("challenges.cloudflare.com")) return Response.json({ success, hostname: "albena.ai", action: currentAction, ...over });
     throw new Error(`unexpected fetch ${url}`);
   });
 
@@ -134,6 +138,57 @@ describe("POST /api/waitlist", () => {
     expect((await env.DB.prepare("SELECT count(*) c FROM waitlist").first<{ c: number }>())!.c).toBe(0);
   });
 
+  it("turnstile wrong hostname or action -> 403 and nothing stored", async () => {
+    for (const over of [{ hostname: "evil.example" }, { action: "support" }, { action: undefined }, { hostname: "localhost" }]) {
+      vi.restoreAllMocks();
+      mockTurnstile(true, over);
+      const res = await post("/api/waitlist", valid);
+      expect(res.status, JSON.stringify(over)).toBe(403);
+    }
+    expect((await env.DB.prepare("SELECT count(*) c FROM waitlist").first<{ c: number }>())!.c).toBe(0);
+    vi.restoreAllMocks();
+    mockTurnstile(true, { hostname: "www.albena.ai" });
+    expect((await post("/api/waitlist", valid)).status).toBe(201);
+  });
+
+  it("waitlist row and audit row are written atomically", async () => {
+    mockTurnstile(true);
+    expect((await post("/api/waitlist", valid)).status).toBe(201);
+    const a = (await env.DB.prepare("SELECT action, target FROM audit_log").all()).results as any[];
+    expect(a).toHaveLength(1);
+    expect(a[0].action).toBe("waitlist.create");
+    expect(a[0].target).toMatch(/^waitlist:\d+$/);
+    // Break audit_log: the whole batch must roll back, leaving no PII row.
+    await env.DB.prepare("ALTER TABLE audit_log RENAME TO audit_log_x").run();
+    try {
+      const res = await post("/api/waitlist", { ...valid, email: "other@example.com" });
+      expect(res.status).toBe(500);
+      expect((await env.DB.prepare("SELECT count(*) c FROM waitlist").first<{ c: number }>())!.c).toBe(1);
+    } finally {
+      await env.DB.prepare("ALTER TABLE audit_log_x RENAME TO audit_log").run();
+    }
+  });
+
+  it("rejects oversized bodies by Content-Length and by actual bytes", async () => {
+    const spy = mockTurnstile(true);
+    const big = JSON.stringify({ ...valid, interest: "x".repeat(17000) });
+    expect((await post("/api/waitlist", big)).status).toBe(413);
+    // multi-byte: < 16384 chars but > 16384 bytes
+    const mb = JSON.stringify({ ...valid, interest: "\u00e9".repeat(9000) });
+    expect(mb.length).toBeLessThan(16384);
+    expect((await post("/api/waitlist", mb)).status).toBe(413);
+    // lying / absent Content-Length (chunked stream) is still capped
+    const stream = new ReadableStream({
+      start(c) { c.enqueue(new TextEncoder().encode(big)); c.close(); },
+    });
+    const res = await call("/api/waitlist", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: stream, duplex: "half",
+    } as RequestInit);
+    expect(res.status).toBe(413);
+    expect((await call("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json", "Content-Length": "99999" }, body: "{}" })).status).toBe(413);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it("turnstile unreachable -> 503", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("network"));
     expect((await post("/api/waitlist", valid)).status).toBe(503);
@@ -169,6 +224,8 @@ describe("POST /api/support", () => {
     expect(res.status).toBe(201);
     const { id } = (await res.json()) as { id: string };
     expect(id).toMatch(/^ALB-\d{6}$/);
+    const a = await env.DB.prepare("SELECT action, target FROM audit_log WHERE action = 'support.create'").first<any>();
+    expect(a.target).toBe(`ticket:${id}`);
     const row = await env.DB.prepare("SELECT status, ip_hash FROM tickets WHERE ticket_id = ?").bind(id).first<any>();
     expect(row.status).toBe("open");
     expect(row.ip_hash).toMatch(/^[0-9a-f]{64}$/);
@@ -224,7 +281,7 @@ describe("admin", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = String(input instanceof Request ? input.url : input);
       if (url.endsWith("/cdn-cgi/access/certs")) return Response.json({ keys: [jwk] });
-      if (url.includes("challenges.cloudflare.com")) return Response.json({ success: true });
+      if (url.includes("challenges.cloudflare.com")) return Response.json({ success: true, hostname: "albena.ai", action: "support" });
       return realFetch(input, init);
     });
 

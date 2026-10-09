@@ -1,4 +1,20 @@
 ---
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+interface Props { action: 'waitlist' | 'support' }
+const { action } = Astro.props;
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+// Cloudflare's published dummy keys (always pass / always block / force challenge).
+const TEST_KEYS = new Set([
+  '1x00000000000000000000AA', '2x00000000000000000000AB', '3x00000000000000000000FF',
+  '1x00000000000000000000BB', '2x00000000000000000000BB',
+]);
+const allowTest = process.env.ALBENA_ALLOW_TEST_TURNSTILE === '1';
+if (!siteKey || TEST_KEYS.has(siteKey)) {
+  if (!allowTest) {
+    throw new Error(
+      'PUBLIC_TURNSTILE_SITE_KEY is missing or a Cloudflare test key. Set the real site key, or ALBENA_ALLOW_TEST_TURNSTILE=1 for local/CI preview builds only.',
+    );
+  }
+}
+const key = siteKey || '1x00000000000000000000AA';
 ---
-<div class="ts-widget" data-turnstile data-sitekey={siteKey}></div>
+<div class="ts-widget" data-turnstile data-sitekey={key} data-action={action}></div>

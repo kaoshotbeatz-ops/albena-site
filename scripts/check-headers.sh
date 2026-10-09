@@ -30,8 +30,16 @@ csp="$(hdr content-security-policy)"
 if [ -z "$csp" ]; then bad "Content-Security-Policy missing"
 else
   pass "CSP present"
-  printf '%s' "$csp" | grep -qi "unsafe-eval" && bad "CSP allows unsafe-eval"
-  printf '%s' "$csp" | grep -qi "default-src\|script-src" || bad "CSP lacks default-src/script-src"
+  # directive <name>: value string of the named directive (empty if absent)
+  dir() { printf '%s' "$csp" | tr ';' '\n' | sed 's/^ *//;s/ *$//' | awk -v n="$1" 'tolower($1)==n {$1=""; sub(/^ /,""); print; exit}'; }
+  for d in default-src frame-ancestors object-src base-uri; do
+    [ "$(dir $d)" = "'none'" ] && pass "CSP $d 'none'" || bad "CSP $d must be exactly 'none' (got: $(dir $d))"
+  done
+  printf '%s' "$csp" | grep -qi "'unsafe-eval'" && bad "CSP allows 'unsafe-eval'"
+  printf '%s' "$csp" | grep -qiE "(^|[ ;])\*([ ;]|$)" && bad "CSP contains wildcard *"
+  # script-src falls back to default-src when absent
+  ss="$(dir script-src)"; [ -z "$ss" ] && ss="$(dir default-src)"
+  printf '%s' "$ss" | grep -qi "'unsafe-inline'" && bad "CSP script-src allows 'unsafe-inline'"
 fi
 
 xfo="$(hdr x-frame-options)"

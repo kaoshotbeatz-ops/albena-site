@@ -40,6 +40,7 @@ function initForm(form: HTMLFormElement) {
       if (!window.turnstile || widgetId) return;
       widgetId = window.turnstile.render(widget, {
         sitekey: widget.dataset.sitekey,
+        action: widget.dataset.action,
         theme: 'dark',
         callback: (t: string) => { token = t; },
         'expired-callback': () => { token = ''; },

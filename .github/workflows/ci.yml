@@ -23,24 +23,21 @@ jobs:
     name: Controls data
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - name: controls.json is current
         run: node scripts/build-controls.mjs --check
       - name: Header check script self-test
-        run: |
-          printf 'HTTP/2 200\nstrict-transport-security: max-age=31536000\ncontent-security-policy: default-src self; frame-ancestors none\nx-frame-options: DENY\nx-content-type-options: nosniff\nreferrer-policy: no-referrer\npermissions-policy: camera=()\n' > good.txt
-          bash scripts/check-headers.sh --file good.txt
-          if bash scripts/check-headers.sh --file /dev/null; then echo "script should fail on empty headers"; exit 1; fi
+        run: bash scripts/test-check-headers.sh
 
   build-web:
     name: Build web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - name: Install and build (web/ if present, else static root)
@@ -48,14 +45,15 @@ jobs:
           if [ -f web/package.json ]; then
             cd web
             npm ci
-            npm run build
+            # Preview/CI build only: uses Cloudflare's test Turnstile key. Never deployed.
+            ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
             cd ..
             rsync -a web/dist/ dist-out/
           else
             mkdir -p dist-out
             rsync -a --exclude '.git' --exclude '.github' --exclude 'controls' --exclude 'scripts' --exclude 'worker' --exclude 'BRIEF.md' --exclude 'site-dist' --exclude 'dist-out' --exclude 'web' --exclude 'lighthouserc.json' --exclude 'SECURITY.md' --exclude 'README.md' ./ dist-out/
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: site-dist
           path: dist-out
@@ -65,8 +63,8 @@ jobs:
     name: Worker tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: hashFiles('worker/package.json') != ''
         with:
           node-version: 24
@@ -84,7 +82,7 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
       - name: gitleaks
@@ -96,8 +94,8 @@ jobs:
     name: npm audit (high)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - name: Audit each package with a lockfile
@@ -118,9 +116,10 @@ jobs:
     name: Semgrep (p/default)
     runs-on: ubuntu-latest
     container:
-      image: semgrep/semgrep:latest
+      # digest of :latest resolved 2026-10-09; refresh manually (Dependabot does not track workflow container images)
+      image: semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Semgrep scan
         run: semgrep scan --config p/default --error --metrics=off --exclude controls --exclude node_modules
 
@@ -129,11 +128,11 @@ jobs:
     needs: build-web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: site-dist
           path: artifact
@@ -148,17 +147,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: production # configure required reviewers in repo settings
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-      - uses: actions/download-artifact@v4
-        with:
-          name: site-dist
-          path: artifact
-      - name: Restore built web into place
+      - name: Rebuild web with production Turnstile site key
         run: |
-          if [ -f web/package.json ]; then mkdir -p web/dist && cp -R artifact/. web/dist/; fi
+          if [ -f web/package.json ]; then
+            cd web
+            npm ci
+            npm run build
+          fi
+        env:
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          ALBENA_ALLOW_TEST_TURNSTILE: ""
       - name: Install worker dependencies
         if: hashFiles('worker/package.json') != ''
         working-directory: worker
@@ -184,9 +186,9 @@ jobs:
       contents: read
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: ZAP baseline scan
-        uses: zaproxy/action-baseline@v0.14.0
+        uses: zaproxy/action-baseline@7c4deb10e6261301961c86d65d54a516394f9aed # v0.14.0
         with:
           target: ${{ env.SITE_URL }}
           fail_action: false
