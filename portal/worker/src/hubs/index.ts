@@ -2,8 +2,9 @@ import type { Context, Hono } from "hono";
 import type { AppEnv } from "../types";
 import { audit, requireUser } from "../auth";
 import { getEntitlement } from "../billing/entitlements";
+import { MAX_HUBS } from "../billing/plans";
 import { MAX_BODY, CHANNELS, EDITIONS, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
-import { b64decode, newPairCode, normalizeCode, sha256Hex, signingString, verifyEd25519 } from "./crypto";
+import { b64decodeStrict, b64encode, newPairCode, normalizeCode, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
 export const migrations: string[] = ["0300_hubs_init.sql"];
 
@@ -11,6 +12,9 @@ export const PAIR_TTL_S = 600;
 export const SKEW_S = 300;
 export const PAIR_RATE = { limit: 10, windowS: 60 }; // per client IP
 export const PAIR_FAIL_RATE = { limit: 20, windowS: 600 }; // failed codes per IP
+
+/** SQL CASE giving the hub allowance per plan, generated from MAX_HUBS so the two cannot drift. */
+const MAX_HUBS_SQL = `CASE e.plan ${Object.entries(MAX_HUBS).map(([plan, n]) => `WHEN '${plan}' THEN ${Number(n)}`).join(" ")} ELSE 0 END`;
 
 const now = () => Math.floor(Date.now() / 1000);
 type C = Context<AppEnv>;
@@ -20,17 +24,25 @@ async function pepper(c: C, code: string) {
   return sha256Hex(`${c.env.PORTAL_SECRETS}|paircode|${code}`);
 }
 
-/** Fixed-window counter in D1. Returns true if the call is allowed. */
-async function rateOk(c: C, bucket: string, rule: { limit: number; windowS: number }, consume = true): Promise<boolean> {
-  const t = now();
-  const row = await c.env.DB.prepare("SELECT window_start, count FROM hub_rate WHERE bucket=?").bind(bucket).first<{ window_start: number; count: number }>();
-  if (!row || t - row.window_start >= rule.windowS) {
-    if (consume) await c.env.DB.prepare("INSERT OR REPLACE INTO hub_rate(bucket,window_start,count) VALUES(?,?,1)").bind(bucket, t).run();
-    return true;
-  }
-  if (row.count >= rule.limit) return false;
-  if (consume) await c.env.DB.prepare("UPDATE hub_rate SET count=count+1 WHERE bucket=?").bind(bucket).run();
-  return true;
+/**
+ * Fixed-window counter in ONE atomic UPSERT ... RETURNING (no read-then-write). Every call counts, including
+ * denied ones, and the window never extends. Returns the count including this call; allowed iff count <= limit.
+ */
+export async function rateHit(db: D1Database, bucket: string, rule: { limit: number; windowS: number }): Promise<{ ok: boolean; count: number }> {
+  const row = await db.prepare(
+    `INSERT INTO hub_rate(bucket, window_start, count) VALUES(?1, ?2, 1)
+     ON CONFLICT(bucket) DO UPDATE SET
+       window_start = CASE WHEN ?2 - hub_rate.window_start >= ?3 THEN ?2 ELSE hub_rate.window_start END,
+       count = CASE WHEN ?2 - hub_rate.window_start >= ?3 THEN 1 ELSE hub_rate.count + 1 END
+     RETURNING count`,
+  ).bind(bucket, now(), rule.windowS).first<{ count: number }>();
+  const count = row?.count ?? rule.limit + 1;
+  return { ok: count <= rule.limit, count };
+}
+
+/** Gives back a slot taken by rateHit (same window only). */
+async function rateRefund(db: D1Database, bucket: string, rule: { windowS: number }): Promise<void> {
+  await db.prepare("UPDATE hub_rate SET count = count - 1 WHERE bucket = ? AND count > 0 AND ? - window_start < ?").bind(bucket, now(), rule.windowS).run();
 }
 
 async function readBody(c: C): Promise<{ raw: Uint8Array; json: unknown } | Response> {
@@ -51,6 +63,8 @@ async function verifyHub(c: C, raw: Uint8Array): Promise<any | Response> {
   const fail = () => c.json({ error: "invalid signature" }, 401);
   if (!id || !/^\d{9,12}$/.test(ts) || !sig || sig.length > 128) return fail();
   if (Math.abs(now() - Number(ts)) > SKEW_S) return c.json({ error: "timestamp out of range" }, 401);
+  const sigBytes = b64decodeStrict(sig); // one spelling per signature, so the replay key below cannot be dodged
+  if (!sigBytes) return fail();
   const hub = await c.env.DB.prepare("SELECT * FROM hubs WHERE id=?").bind(id).first<any>();
   if (!hub) return fail();
   const url = new URL(c.req.url);
@@ -59,7 +73,7 @@ async function verifyHub(c: C, raw: Uint8Array): Promise<any | Response> {
   // replay: a valid signature may be seen only once inside the window
   const t = now();
   await c.env.DB.prepare("DELETE FROM hub_nonces WHERE expires_at < ?").bind(t).run();
-  const sh = await sha256Hex(sig);
+  const sh = await sha256Hex(sigBytes);
   const ins = await c.env.DB.prepare("INSERT OR IGNORE INTO hub_nonces(hub_id,sig_hash,expires_at) VALUES(?,?,?)").bind(id, sh, t + SKEW_S * 2).run();
   if (!ins.meta?.changes) return c.json({ error: "replay" }, 401);
   return hub;
@@ -90,34 +104,53 @@ export function mount(app: Hono<AppEnv>): void {
 
   app.post("/api/hubs/pair/complete", async (c) => {
     const ip = c.req.header("cf-connecting-ip") ?? "unknown";
-    if (!(await rateOk(c, `pair:${ip}`, PAIR_RATE)) || !(await rateOk(c, `pairfail:${ip}`, PAIR_FAIL_RATE, false)))
-      return c.json({ error: "rate limited" }, 429);
-    const body = await readBody(c);
-    if (body instanceof Response) return body;
-    const p = parsePairComplete(body.json);
-    if (!p.ok) return c.json({ error: p.error }, 400);
-    const code = normalizeCode(p.value.code);
-    const pub = b64decode(p.value.hubPublicKey);
-    if (!code || !pub || pub.length !== 32) return c.json({ error: "invalid request" }, 400);
-    const bad = async () => {
-      await rateOk(c, `pairfail:${ip}`, PAIR_FAIL_RATE);
-      return c.json({ error: "invalid or expired code" }, 400);
-    };
-    const t = now();
-    const hash = await pepper(c, code);
-    // atomic single-use claim
-    const claim = await c.env.DB.prepare("UPDATE hub_pair_codes SET used_at=? WHERE code_hash=? AND used_at IS NULL AND expires_at>=?").bind(t, hash, t).run();
-    if (!claim.meta?.changes) return bad();
-    const row = (await c.env.DB.prepare("SELECT account_id FROM hub_pair_codes WHERE code_hash=?").bind(hash).first<{ account_id: string }>())!;
-    const hubId = crypto.randomUUID();
+    const db = c.env.DB;
+    if (!(await rateHit(db, `pair:${ip}`, PAIR_RATE)).ok) return c.json({ error: "rate limited" }, 429);
+    // Reserve a failure slot up front (atomic); it is given back below if the attempt succeeds.
+    if (!(await rateHit(db, `pairfail:${ip}`, PAIR_FAIL_RATE)).ok) return c.json({ error: "rate limited" }, 429);
+    let success = false;
     try {
-      await c.env.DB.prepare("INSERT INTO hubs(id,account_id,public_key,edition,profile,version,created_at) VALUES(?,?,?,?,?,?,?)")
-        .bind(hubId, row.account_id, p.value.hubPublicKey, p.value.edition, p.value.profile, p.value.version, t).run();
-    } catch {
-      return c.json({ error: "hub key already registered" }, 409);
+      const body = await readBody(c);
+      if (body instanceof Response) return body;
+      const p = parsePairComplete(body.json);
+      if (!p.ok) return c.json({ error: p.error }, 400);
+      const code = normalizeCode(p.value.code);
+      const pub = b64decodeStrict(p.value.hubPublicKey);
+      if (!code || !pub || pub.length !== 32) return c.json({ error: "invalid request" }, 400);
+      const publicKey = b64encode(pub); // canonical spelling is what gets stored and what the UNIQUE index sees
+      const t = now();
+      const hash = await pepper(c, code);
+      const hubId = crypto.randomUUID();
+      // One transaction: the hub is inserted only if the code is live AND the account's entitlement is active AND
+      // it still has a free slot; the code is consumed only if that insert happened.
+      let results: D1Result[];
+      try {
+        results = await db.batch([
+          db.prepare(
+            `INSERT INTO hubs(id,account_id,public_key,edition,profile,version,created_at)
+             SELECT ?1, pc.account_id, ?2, ?3, ?4, ?5, ?6 FROM hub_pair_codes pc
+             WHERE pc.code_hash = ?7 AND pc.used_at IS NULL AND pc.expires_at >= ?6
+               AND EXISTS (SELECT 1 FROM entitlements e WHERE e.account_id = pc.account_id AND e.status IN ('active','trialing')
+                           AND (SELECT COUNT(*) FROM hubs h WHERE h.account_id = pc.account_id) < ${MAX_HUBS_SQL})`,
+          ).bind(hubId, publicKey, p.value.edition, p.value.profile, p.value.version, t, hash),
+          db.prepare("UPDATE hub_pair_codes SET used_at=?1 WHERE code_hash=?2 AND used_at IS NULL AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, hash, hubId),
+        ]);
+      } catch (err) {
+        if (/UNIQUE/i.test(String((err as Error)?.message))) return c.json({ error: "hub key already registered" }, 409); // batch rolled back: code stays unused
+        throw err;
+      }
+      if (!results[0].meta?.changes || !results[1].meta?.changes) {
+        const row = await db.prepare("SELECT 1 AS x FROM hub_pair_codes WHERE code_hash=? AND used_at IS NULL AND expires_at>=?").bind(hash, t).first();
+        if (row) { success = true; return c.json({ error: "plan does not allow another hub" }, 402); } // not a code guess: refund the slot // live code, but no active entitlement or no free slot
+        return c.json({ error: "invalid or expired code" }, 400);
+      }
+      const acct = (await db.prepare("SELECT account_id FROM hubs WHERE id=?").bind(hubId).first<{ account_id: string }>())!.account_id;
+      success = true;
+      await audit(c, "hub.pair.complete", hubId, { accountId: acct, edition: p.value.edition });
+      return c.json({ hubId });
+    } finally {
+      if (success) await rateRefund(db, `pairfail:${ip}`, PAIR_FAIL_RATE);
     }
-    await audit(c, "hub.pair.complete", hubId, { accountId: row.account_id, edition: p.value.edition });
-    return c.json({ hubId });
   });
 
   app.get("/api/hubs", requireUser, async (c) => {

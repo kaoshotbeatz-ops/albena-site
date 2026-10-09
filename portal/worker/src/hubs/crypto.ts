@@ -8,6 +8,15 @@ export function b64decode(s: string): Uint8Array | null {
     return null;
   }
 }
+/**
+ * Canonical standard base64 only: padded, no whitespace, no URL alphabet, and the bytes re-encode to the exact input.
+ * Anything else (stripped padding, inserted whitespace, non-zero trailing bits) is rejected, so one value has one spelling.
+ */
+export function b64decodeStrict(s: unknown): Uint8Array | null {
+  if (typeof s !== "string" || s.length === 0 || s.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(s)) return null;
+  const b = b64decode(s);
+  return b && b64encode(b) === s ? b : null;
+}
 export function b64encode(b: Uint8Array): string {
   let s = "";
   for (const x of b) s += String.fromCharCode(x);
@@ -24,8 +33,8 @@ export async function signingString(method: string, path: string, ts: string, bo
 }
 
 export async function verifyEd25519(pubB64: string, sigB64: string, message: string): Promise<boolean> {
-  const pub = b64decode(pubB64);
-  const sig = b64decode(sigB64);
+  const pub = b64decodeStrict(pubB64);
+  const sig = b64decodeStrict(sigB64);
   if (!pub || !sig || pub.length !== 32 || sig.length !== 64) return false;
   try {
     const key = await crypto.subtle.importKey("raw", pub as BufferSource, { name: "Ed25519" }, false, ["verify"]);
