@@ -53,7 +53,7 @@ describe("health + headers", () => {
   it("GET /api/health works and has all security headers + no-store", async () => {
     const res = await call("/api/health");
     expect(res.status).toBe(200);
-    expect(res.headers.get("Cache-Control")).toBe("no-store");
+    expect(res.headers.get("Cache-Control")).toBe("no-store, no-transform");
     expect(res.headers.get("Strict-Transport-Security")).toBe("max-age=63072000; includeSubDomains; preload");
     expect(res.headers.get("Content-Security-Policy")).toContain("default-src 'none'");
     expect(res.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
@@ -261,7 +261,7 @@ describe("admin", () => {
     for (const p of paths) {
       const res = await call(p);
       expect(res.status, p).toBe(403);
-      expect(res.headers.get("Cache-Control")).toBe("no-store");
+      expect(res.headers.get("Cache-Control")).toBe("no-store, no-transform");
       expect(res.headers.get("X-Frame-Options")).toBe("DENY");
     }
     expect((await call("/api/admin/tickets/ALB-000001", { method: "PATCH", body: "{}" })).status).toBe(403);

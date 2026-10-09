@@ -32,7 +32,8 @@ export function withSecurityHeaders(req: Request, res: Response): Response {
   out.headers.delete("X-Powered-By");
   const { pathname } = new URL(req.url);
   if (isSensitivePath(pathname)) {
-    out.headers.set("Cache-Control", "no-store");
+    // no-transform stops Cloudflare auto-injecting the Web Analytics beacon (owner-only/API paths; CSP blocks it anyway).
+    out.headers.set("Cache-Control", "no-store, no-transform");
     out.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   return out;
