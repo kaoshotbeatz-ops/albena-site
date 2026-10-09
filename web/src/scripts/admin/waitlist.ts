@@ -8,6 +8,7 @@ const filter = must<HTMLSelectElement>('#interest');
 const count = must('#count');
 const more = must<HTMLButtonElement>('#more');
 const PAGE = 100;
+const INVITE_URL = 'https://account.albena.ai/support/invite';
 
 let all: WaitlistRow[] = [];
 let shown = PAGE;
@@ -31,8 +32,10 @@ function render() {
     h('td', { class: 'clip' }, r.email),
     h('td', { class: 'clip' }, r.name ?? ''),
     h('td', {}, r.interest ? r.interest : h('span', { class: 'mut' }, 'Not specified')),
-    h('td', { class: 'mut num' }, timeEl(r.created_at)))));
-  if (!slice.length) body.replaceChildren(emptyRow(4, all.length ? 'No signups match your filters.' : 'No signups yet.'));
+    h('td', { class: 'mut num' }, timeEl(r.created_at)),
+    // Opens the staff invite form on the portal with the address prefilled (the portal side is behind Cloudflare Access).
+    h('td', {}, h('a', { class: 'btn btn-sm', href: `${INVITE_URL}?email=${encodeURIComponent(r.email)}`, rel: 'noopener', 'aria-label': `Invite ${r.email}` }, 'Invite')))));
+  if (!slice.length) body.replaceChildren(emptyRow(5, all.length ? 'No signups match your filters.' : 'No signups yet.'));
   count.textContent = `${slice.length} of ${rows.length} shown${rows.length !== all.length ? ` (${all.length} total)` : ''}`;
   more.hidden = slice.length >= rows.length;
 }
@@ -43,7 +46,7 @@ more.addEventListener('click', () => { shown += PAGE; render(); });
 wireSort(table, sort, () => { shown = PAGE; render(); });
 
 setBusy(table, true);
-body.replaceChildren(emptyRow(4, 'Loading…'));
+body.replaceChildren(emptyRow(5, 'Loading…'));
 fetchAll<WaitlistRow>('/api/admin/waitlist').then(({ items, truncated }) => {
   all = items;
   const kinds = [...new Set(items.map((r) => labelInterest(r.interest)))].sort();
@@ -51,6 +54,6 @@ fetchAll<WaitlistRow>('/api/admin/waitlist').then(({ items, truncated }) => {
   if (truncated) must('#trunc').hidden = false;
   render();
 }).catch((e) => {
-  if (!handleError(e)) body.replaceChildren(emptyRow(4, 'Could not load the waitlist.'));
-  else body.replaceChildren(emptyRow(4, 'Session expired — reload to sign in.'));
+  if (!handleError(e)) body.replaceChildren(emptyRow(5, 'Could not load the waitlist.'));
+  else body.replaceChildren(emptyRow(5, 'Session expired — reload to sign in.'));
 }).finally(() => setBusy(table, false));

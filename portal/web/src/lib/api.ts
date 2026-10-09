@@ -1,5 +1,5 @@
 // Same-origin portal API client (see portal/CONTRACT.md). Session cookie is HttpOnly; no tokens in JS.
-import type { Account, BillingSummary, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
+import type { Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
@@ -45,25 +45,25 @@ namespace W {
   export interface History { events: { at: string; method: 'passkey' | 'magic_link' }[] } // at: ISO-8601 from the audit chain
   export interface Passkeys { passkeys: { id: string; createdAt: number }[] }
   export interface Summary {
-    entitlement: { plan: PlanId | 'none'; status: BillingSummary['status']; active: boolean; maxHubs: number; billingInterval: Interval | null;
-      currentPeriodEnd: number | null; cancelAtPeriodEnd: boolean; stripeSubscriptionId: string | null };
+    entitlement: { plan: HeldPlan | 'none'; status: BillingSummary['status']; active: boolean; maxHubs: number; billingInterval: Interval | null;
+      currentPeriodEnd: number | null; cancelAtPeriodEnd: boolean; stripeSubscriptionId: string | null; source: 'stripe' | 'manual'; endsAt: number | null; comp: boolean };
     hasBillingAccount: boolean;
   }
   export interface Invoices { invoices: { id: string; number: string | null; status: Invoice['status']; amountPaid: number; amountDue: number; currency: string; created: number; hostedInvoiceUrl: string | null; pdf: string | null }[] }
-  export interface Orders { orders: { id: string; plan: PlanId; shippingStatus: string; refunded: boolean; amountTotal: number | null; currency: string | null; createdAt: number }[] }
+  export interface Orders { orders: { id: string; plan: PlanId; shippingStatus: string; refunded: boolean; amountTotal: number | null; currency: string | null; createdAt: number; carrier: string | null; tracking: string | null }[] }
   export interface WireHub {
     id: string; name: string; edition: 'mac' | 'nvidia'; profile: string; version: string; updateChannel: 'stable' | 'beta'; remoteAccess: boolean;
     health: { ok: boolean; services: [string, string][] } | null; lastSeen: number | null; createdAt: number;
   }
   export interface Release { edition: string; channel: string; version: string; manifestUrl: string; signatureUrl: string; signature: string | null; signatureScheme: string; namespace: string; sha256: string; releasedAt: number }
-  export interface Account { account: { id: string; createdAt: number }; members: Member[]; connectors: Connector[] }
+  export interface Account { account: { id: string; createdAt: number }; members: Member[]; invites?: { id: string; email: string; createdAt: number; expiresAt: number }[]; connectors: Connector[] }
 }
 
 const iso = (s: number) => new Date(s * 1000).toISOString();
 const isoOrNull = (s: number | null) => (s === null ? null : iso(s));
 const ONLINE_WINDOW_S = 10 * 60; // hubs heartbeat every few minutes
-const PLAN_NAMES: Record<PlanId | 'none', string> = { none: 'No plan', byo: 'Bring your own', hub_mac: 'Hub for Mac', hub_nvidia: 'Hub for NVIDIA', estate: 'Estate' };
-const ORDER_STATUS: Record<string, Order['status']> = { pending_fulfillment: 'processing', shipped: 'shipped', delivered: 'delivered', cancelled_refunded: 'canceled', awaiting_payment: 'processing', payment_failed: 'canceled' };
+const PLAN_NAMES: Record<HeldPlan | 'none', string> = { none: 'No plan', byo: 'Bring your own', hub_mac: 'Hub for Mac', hub_nvidia: 'Hub for NVIDIA', estate: 'Estate', pilot: 'Pilot' };
+const ORDER_STATUS: Record<string, Order['status']> = { pending_fulfillment: 'processing', pending: 'processing', preparing: 'processing', shipped: 'shipped', delivered: 'delivered', cancelled_refunded: 'canceled', cancelled: 'canceled', awaiting_payment: 'processing', payment_failed: 'canceled' };
 const hub = (h: W.WireHub): Hub => ({
   id: h.id, name: h.name, edition: h.edition, version: h.version, profile: h.profile, updateChannel: h.updateChannel, remoteAccess: h.remoteAccess,
   lastSeenAt: isoOrNull(h.lastSeen), online: h.lastSeen !== null && Date.now() / 1000 - h.lastSeen < ONLINE_WINDOW_S,
@@ -89,7 +89,7 @@ export const api = {
   history: async (): Promise<SignIn[]> => (await get<W.History>('/api/security/history')).events,
   billing: async (): Promise<BillingSummary> => {
     const { entitlement: e } = await get<W.Summary>('/api/billing/summary');
-    return { plan: e.plan, planName: PLAN_NAMES[e.plan], status: e.status, interval: e.billingInterval, renewsAt: isoOrNull(e.currentPeriodEnd), cancelAtPeriodEnd: e.cancelAtPeriodEnd, maxHubs: e.maxHubs };
+    return { plan: e.plan, planName: PLAN_NAMES[e.plan] + (e.comp ? ' (complimentary)' : ''), status: e.status, interval: e.billingInterval, renewsAt: isoOrNull(e.currentPeriodEnd), cancelAtPeriodEnd: e.cancelAtPeriodEnd, maxHubs: e.maxHubs, source: e.source ?? 'stripe', endsAt: isoOrNull(e.endsAt ?? null), comp: !!e.comp };
   },
   invoices: async (): Promise<Invoice[]> => (await get<W.Invoices>('/api/billing/invoices')).invoices.map((i) => ({
     id: i.id, number: i.number ?? i.id, date: iso(i.created), amount: i.status === 'paid' ? i.amountPaid : i.amountDue, currency: i.currency, status: i.status, url: i.hostedInvoiceUrl,
@@ -98,7 +98,7 @@ export const api = {
   portal: () => req<{ url: string }>('POST', '/api/billing/portal', {}),
   orders: async (): Promise<Order[]> => (await get<W.Orders>('/api/billing/orders')).orders.map((o) => ({
     id: o.id, item: `Albena Hub (${o.plan === 'hub_nvidia' ? 'NVIDIA' : 'Mac'})`, placedAt: iso(o.createdAt),
-    status: o.refunded ? 'canceled' : (ORDER_STATUS[o.shippingStatus] ?? 'processing'), total: o.amountTotal, currency: o.currency,
+    status: o.refunded ? 'canceled' : (ORDER_STATUS[o.shippingStatus] ?? 'processing'), total: o.amountTotal, currency: o.currency, carrier: o.carrier ?? null, tracking: o.tracking ?? null,
   })),
   hubs: async (): Promise<Hub[]> => (await get<{ hubs: W.WireHub[] }>('/api/hubs')).hubs.map(hub),
   pairStart: async (): Promise<PairStart> => { const r = await req<{ code: string; expiresAt: number }>('POST', '/api/hubs/pair/start', {}); return { code: r.code, expiresAt: iso(r.expiresAt) }; },
@@ -108,7 +108,11 @@ export const api = {
     const r = await get<W.Release>(`/api/releases/latest?edition=${encodeURIComponent(edition)}`);
     return { edition: r.edition, version: r.version, releasedAt: iso(r.releasedAt), manifestUrl: r.manifestUrl, signatureUrl: r.signatureUrl, sha256: r.sha256 };
   },
-  account: async (): Promise<Account> => { const r = await get<W.Account>('/api/account'); return { id: r.account.id, members: r.members, connectors: r.connectors }; },
+  account: async (): Promise<Account> => { const r = await get<W.Account>('/api/account'); return { id: r.account.id, members: r.members, invites: (r.invites ?? []).map((i) => ({ id: i.id, email: i.email, expiresAt: iso(i.expiresAt) })), connectors: r.connectors }; },
+  inviteMember: (email: string) => req<unknown>('POST', '/api/account/members/invite', { email }),
+  revokeMemberInvite: (id: string) => req<unknown>('DELETE', `/api/account/members/invites/${encodeURIComponent(id)}`),
+  removeMember: (id: string) => req<unknown>('DELETE', `/api/account/members/${encodeURIComponent(id)}`),
+  inviteAccept: (token: string, email: string, turnstileToken: string) => req<unknown>('POST', '/api/invite/accept', { token, email, turnstileToken }, { noRedirect: true }),
   exportData: () => get<unknown>('/api/account/export'),
   deleteAccount: (confirm: string, cancelBilling = false) => req<unknown>('POST', '/api/account/delete', cancelBilling ? { confirm, cancelBilling: true } : { confirm }),
 };

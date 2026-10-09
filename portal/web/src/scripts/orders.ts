@@ -7,9 +7,10 @@ const tone = (s: string) => (s === 'delivered' ? 'green' : s === 'shipped' ? 'in
 api.orders().then((list) => {
   root.setAttribute('aria-busy', 'false');
   if (!list.length) { root.replaceChildren(panel('Hardware orders', empty('No hardware orders yet.'))); return; }
-  const p = panel('Hardware orders', table('Hardware orders', ['Order', 'Item', 'Placed', 'Total', 'Status'], list.map((o) => [
+  const p = panel('Hardware orders', table('Hardware orders', ['Order', 'Item', 'Placed', 'Total', 'Status', 'Tracking'], list.map((o) => [
     h('span', { class: 'mono' }, o.id), document.createTextNode(o.item), document.createTextNode(fmtDate(o.placedAt)),
     h('span', { class: 'num' }, o.total !== null ? money(o.total, o.currency ?? 'usd') : ''), chip(o.status, tone(o.status)),
+    document.createTextNode(o.carrier && o.tracking ? `${o.carrier} ${o.tracking}` : ''),
   ])));
   p.querySelector('.panel-body')?.classList.add('flush');
   root.replaceChildren(p);

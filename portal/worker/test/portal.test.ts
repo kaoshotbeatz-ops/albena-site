@@ -53,10 +53,6 @@ describe("account", () => {
     expect(Object.keys(await r.json() as object).sort()).toEqual(["account", "entitlement", "exportedAt", "hubs", "members", "orders", "passkeys"]);
     expect((await auditSince(mark)).map(a => a.action)).toContain("account.export");
   });
-  it("invites are explicitly not implemented", async () => {
-    const o = await seedOwner("io");
-    expect((await client(await login(o), env).request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "x@example.com" }) })).status).toBe(501);
-  });
   it("delete requires owner, exact confirmation and no live subscription", async () => {
     const o = await seedOwner("do", "dacct"), m = await seedMember("dm", "dacct");
     const oc = await login(o);

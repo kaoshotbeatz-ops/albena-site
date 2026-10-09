@@ -1,26 +1,16 @@
 ---
-import Logo from '../../components/Logo.astro';
-import '../../styles/portal.css';
+import Staff from '../../layouts/Staff.astro';
 ---
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Customers (staff) | Albena account</title>
-  <meta name="robots" content="noindex, nofollow, noarchive" />
-  <meta name="theme-color" content="#08090a" />
-  <meta name="color-scheme" content="dark" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-</head>
-<body class="auth">
-  <main id="main" class="auth-card" style="max-width: 960px; width: 100%">
-    <a class="brand" href="https://albena.ai/admin" aria-label="Back to admin"><Logo size={26} id="sc" /><span>Albena staff</span></a>
-    <h1>Customers</h1>
-    <p class="mut">Open the customer portal exactly as a customer sees it. Read only, 30 minutes, every view is logged.</p>
-    <p><label class="sr" for="q">Search customers</label><input id="q" type="search" placeholder="Search by email, id or plan" autocomplete="off" style="width:100%;min-height:36px;padding:0 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line-2)" /></p>
-    <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
-  </main>
+<Staff title="Customers" lead="Create customers, set plans by hand and open the portal exactly as a customer sees it (read only, 30 minutes, every view is logged)." section="customers">
+  <a slot="actions" class="btn" href="/support/invite">Invite people</a>
+  <details class="panel" id="new">
+    <summary>New customer without an invite</summary>
+    <div class="panel-body" id="new-body"></div>
+  </details>
+  <div class="toolbar" role="search">
+    <div class="grow"><label class="sr" for="q">Search customers</label><input class="input" id="q" type="search" placeholder="Search by email, id or plan" autocomplete="off" /></div>
+    <p class="mut" id="count" role="status" aria-live="polite"></p>
+  </div>
+  <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
   <script>import '../../scripts/support-customers';</script>
-</body>
-</html>
+</Staff>

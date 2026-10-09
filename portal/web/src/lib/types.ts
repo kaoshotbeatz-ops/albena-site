@@ -4,10 +4,14 @@ export interface Passkey { id: string; createdAt: string }
 export interface Session { id: string; current: boolean; createdAt: string; lastSeenAt: string }
 export interface SignIn { at: string; method: 'passkey' | 'magic_link' }
 export type PlanId = 'byo' | 'hub_mac' | 'hub_nvidia' | 'estate';
+/** Plans an account can hold: the four paid plans, plus a time-boxed pilot that staff can grant. */
+export type HeldPlan = PlanId | 'pilot';
 export type Interval = 'monthly' | 'annual';
 export interface BillingSummary {
-  plan: PlanId | 'none'; planName: string; status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'none';
+  plan: HeldPlan | 'none'; planName: string; status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'none' | 'suspended' | 'expired';
   interval: Interval | null; renewsAt: string | null; cancelAtPeriodEnd: boolean; maxHubs: number;
+  /** 'manual' = set up by the Albena team (no Stripe subscription behind it). */
+  source: 'stripe' | 'manual'; endsAt: string | null; comp: boolean;
 }
 export interface Invoice { id: string; number: string; date: string; amount: number; currency: string; status: 'paid' | 'open' | 'void' | 'uncollectible' | 'draft'; url: string | null }
 export interface Hub {
@@ -16,8 +20,9 @@ export interface Hub {
 }
 export interface PairStart { code: string; expiresAt: string }
 export interface Release { edition: string; version: string; releasedAt: string; manifestUrl: string; signatureUrl: string; sha256: string }
-export interface Order { id: string; item: string; placedAt: string; status: 'processing' | 'shipped' | 'delivered' | 'canceled'; total: number | null; currency: string | null }
+export interface Order { id: string; item: string; placedAt: string; status: 'processing' | 'shipped' | 'delivered' | 'canceled'; total: number | null; currency: string | null; carrier: string | null; tracking: string | null }
 export interface Member { id: string; email: string; role: 'owner' | 'member'; status: 'active' }
 /** Connectors live on the Hub, so the portal always reports an empty list. */
 export interface Connector { id: string; name: string; status: 'connected' | 'needs_attention' }
-export interface Account { id: string; members: Member[]; connectors: Connector[] }
+export interface PendingInvite { id: string; email: string; expiresAt: string }
+export interface Account { id: string; members: Member[]; invites: PendingInvite[]; connectors: Connector[] }

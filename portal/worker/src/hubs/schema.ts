@@ -42,17 +42,23 @@ export function parseHeartbeat(v: unknown): { ok: true; value: Heartbeat } | { o
   return { ok: true, value: { version: v.version, profile: v.profile, updateChannel: v.updateChannel, health: { ok: h.ok, services } } };
 }
 
-export type PairComplete = { code: string; hubPublicKey: string; edition: "mac" | "nvidia"; profile: string; version: string };
+/** Exactly one credential: a pairing `code` (from the portal), a reserved `serial` (staff pre-provisioned) or a BYO `licenseKey`. */
+export type PairComplete = { code?: string; serial?: string; licenseKey?: string; hubPublicKey: string; edition: "mac" | "nvidia"; profile: string; version: string };
+export const SERIAL = /^[A-Z0-9][A-Z0-9._-]{3,63}$/;
 export function parsePairComplete(v: unknown): { ok: true; value: PairComplete } | { ok: false; error: string } {
   if (!isObj(v)) return { ok: false, error: "body must be an object" };
-  const e = onlyKeys(v, ["code", "hubPublicKey", "edition", "profile", "version"]);
+  const e = onlyKeys(v, ["code", "serial", "licenseKey", "hubPublicKey", "edition", "profile", "version"]);
   if (e) return { ok: false, error: e };
-  if (typeof v.code !== "string" || v.code.length > 16) return { ok: false, error: "bad code" };
+  const given = (["code", "serial", "licenseKey"] as const).filter((k) => k in v);
+  if (given.length !== 1) return { ok: false, error: "exactly one of code, serial, licenseKey" };
+  if ("code" in v && (typeof v.code !== "string" || v.code.length > 16)) return { ok: false, error: "bad code" };
+  if ("serial" in v && (typeof v.serial !== "string" || v.serial.length > 64)) return { ok: false, error: "bad serial" };
+  if ("licenseKey" in v && (typeof v.licenseKey !== "string" || v.licenseKey.length > 48)) return { ok: false, error: "bad licenseKey" };
   if (typeof v.hubPublicKey !== "string" || v.hubPublicKey.length > 64) return { ok: false, error: "bad hubPublicKey" };
   if (!oneOf(EDITIONS, v.edition)) return { ok: false, error: "bad edition" };
   if (!prof(v.profile)) return { ok: false, error: "bad profile" };
   if (!ver(v.version)) return { ok: false, error: "bad version" };
-  return { ok: true, value: { code: v.code, hubPublicKey: v.hubPublicKey, edition: v.edition, profile: v.profile, version: v.version } };
+  return { ok: true, value: { code: v.code as string | undefined, serial: v.serial as string | undefined, licenseKey: v.licenseKey as string | undefined, hubPublicKey: v.hubPublicKey, edition: v.edition, profile: v.profile, version: v.version } };
 }
 
 export type HubPatch = { name?: string; updateChannel?: "stable" | "beta"; remoteAccess?: boolean };

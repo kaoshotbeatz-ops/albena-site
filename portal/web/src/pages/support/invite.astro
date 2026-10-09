@@ -1,0 +1,21 @@
+---
+import Staff from '../../layouts/Staff.astro';
+---
+<Staff title="Invites" lead="Invite people by email. They confirm their address and get the normal sign-in email; a plan can be attached." section="invites">
+  <a slot="actions" class="btn" href="https://albena.ai/admin/waitlist" rel="noopener">Open the waitlist</a>
+  <div class="grid-2">
+    <section class="panel">
+      <header><h2>Invite one person</h2></header>
+      <div class="panel-body" id="one"></div>
+    </section>
+    <section class="panel">
+      <header><h2>Paste several emails</h2></header>
+      <div class="panel-body" id="bulk"></div>
+    </section>
+  </div>
+  <section class="panel">
+    <header><h2>All invites</h2></header>
+    <div class="panel-body flush" id="root" aria-busy="true"><p class="loading">Loading…</p></div>
+  </section>
+  <script>import '../../scripts/support-invite';</script>
+</Staff>
