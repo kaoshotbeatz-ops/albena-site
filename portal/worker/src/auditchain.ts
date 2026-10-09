@@ -84,7 +84,7 @@ export async function audit(c: Context<AppEnv>, action: string, target: string, 
   const ipHash = await privacyHash(c.env.PORTAL_SECRETS, c.req.header("CF-Connecting-IP") ?? "unknown");
   await c.env.DB.prepare(
     "INSERT INTO audit_log (actor, action, target, request_id, ip_hash, meta) VALUES (?, ?, ?, ?, ?, ?)",
-  ).bind(c.get("user")?.id ?? "anonymous", action, target, c.get("requestId"), ipHash, meta ? JSON.stringify(meta) : null).run();
+  ).bind(c.get("supportActor") ? `support:${c.get("supportActor")}` : c.get("user")?.id ?? "anonymous", action, target, c.get("requestId"), ipHash, meta ? JSON.stringify(meta) : null).run();
   await sealAudit(c.env);
 }
 

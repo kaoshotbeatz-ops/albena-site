@@ -51,6 +51,10 @@ const groups = [
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body class="app">
+  <div class="viewas-banner" role="alert" data-viewas-banner hidden>
+    <span>Viewing as <strong data-viewas-email></strong> — read only (support).</span>
+    <button class="btn btn-sm" type="button" data-viewas-exit data-allow-viewas>Exit</button>
+  </div>
   <a class="skip" href="#main">Skip to content</a>
   <header class="topbar">
     <button class="icon-btn" type="button" aria-expanded="false" aria-controls="side" aria-label="Open menu" data-side-toggle>

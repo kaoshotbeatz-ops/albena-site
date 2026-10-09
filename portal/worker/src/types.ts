@@ -12,6 +12,10 @@ export interface Bindings {
   MAIL_FROM: string;
   MAIL_PROVIDER: "cloudflare" | "dev";
   EMAIL?: SendEmail;
+  // Support view-as (Cloudflare Access). TEAM_DOMAIN e.g. purple-firefly-9815.cloudflareaccess.com; ADMIN_AUD is the Access app AUD tag.
+  TEAM_DOMAIN?: string; ADMIN_AUD?: string;
+  // Comma-separated staff emails allowed to use /support (deny by default when empty).
+  SUPPORT_ADMIN_EMAILS?: string;
   // Billing (Stripe test mode until launch). Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
@@ -22,5 +26,5 @@ export interface Bindings {
 }
 export type AppEnv = {
   Bindings: Bindings;
-  Variables: { user: User; requestId: string; sessionId: string };
+  Variables: { user: User; requestId: string; sessionId: string; viewAs?: { actor: string; expiresAt: number }; supportActor?: string };
 };

@@ -16,6 +16,10 @@ The portal does **not** store:
 - Home automation data or device status
 - Any information processed by Albena on your Hub
 
+## Support access
+
+Authorized staff may view your account, Hub and billing status read-only to provide support. They cannot change anything while viewing, sessions end after 30 minutes, and every view is logged.
+
 ## What stays on your Hub
 
 All conversations, memory, and home data stay on your Hub. This data never leaves your device unless you explicitly export it.

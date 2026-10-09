@@ -226,3 +226,10 @@ body.auth { display: grid; place-items: center; padding: 24px 16px; }
 @media (min-width: 900px) { .scrim, .topbar { display: none !important; } }
 .mt-s { margin-top: 6px; } .small { font-size: 12.5px; }
 .btn[aria-pressed='true'] { background: rgba(113, 112, 255, 0.22); border-color: rgba(113, 112, 255, 0.55); color: #fff; }
+
+/* Support view-as */
+.viewas-banner { position: sticky; top: 0; z-index: 80; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; min-height: 40px; padding: 6px 12px; background: #b3261e; color: #fff; font-weight: 500; }
+.viewas-banner .btn { background: #fff; color: #7a1410; border-color: transparent; }
+html.viewas .side { top: 40px; height: calc(100vh - 40px); }
+html.viewas main button:disabled, html.viewas main input:disabled { cursor: not-allowed; opacity: 0.5; }
+.cust-me td { background: rgba(113, 112, 255, 0.08); }
