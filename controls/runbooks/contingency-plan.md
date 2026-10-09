@@ -5,7 +5,7 @@
 ## Targets
 | Metric | Target | How met |
 |---|---|---|
-| RPO (data loss) | 24 hours | Nightly D1 export to an R2 bucket (encrypted). **Status: planned; not yet implemented** (GAPS G-03). Until then, D1 Time Travel is the only recovery point. |
+| RPO (data loss) | 24 hours | Nightly D1 export to an R2 bucket (encrypted). **Status: implemented 2026-10-09** (bucket `albena-backups`, cron 03:17 UTC, weekly verification; see `worker/RUNBOOK-restore.md`). D1 Time Travel is a second recovery point. |
 | RTO (time to restore service) | 4 hours | Worker rollback or redeploy from git; DNS fallback to GitHub Pages |
 
 ## Recovery procedures
