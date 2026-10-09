@@ -120,6 +120,25 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
     </div>
   </section>
 
+  <section class="sec hwband" aria-labelledby="hw-h">
+    <div class="wrap hw-grid">
+      <div class="reveal">
+        <p class="eyebrow">Hardware</p>
+        <h2 id="hw-h" class="h-section">Runs on a Mac or an NVIDIA box in your home</h2>
+        <p class="sub">Albena Hub comes in two editions, or install Albena on hardware you already own. Early access pricing is announced soon.</p>
+        <p class="more"><a class="btn btn-primary" href="/hardware">See Albena Hub</a> <a class="btn btn-ghost" href="/pricing">Plans</a></p>
+      </div>
+      <div class="hw-art reveal" aria-hidden="true">
+        <svg viewBox="0 0 320 120" focusable="false">
+          <rect x="14" y="52" width="130" height="46" rx="10" fill="#1b1c1f" stroke="#fff" stroke-opacity="0.2" />
+          <circle cx="79" cy="82" r="3" fill="#7fd9a8" />
+          <rect x="176" y="14" width="118" height="92" rx="12" fill="#121316" stroke="#fff" stroke-opacity="0.2" />
+          <circle cx="212" cy="52" r="16" fill="none" stroke="#a5a8ff" stroke-width="1.6" /><circle cx="258" cy="52" r="16" fill="none" stroke="#a5a8ff" stroke-width="1.6" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
   <section class="sec how" id="how">
     <div class="wrap how-grid">
       <div class="head reveal">
@@ -266,6 +285,13 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
   .n1 { left: 6%; top: 14%; } .n2 { left: 24%; bottom: 12%; } .n3 { right: 8%; top: 12%; } .n4 { right: 22%; bottom: 14%; } .n5 { left: 42%; top: 6%; }
   @media (min-width: 760px) { .bento { grid-template-columns: repeat(3, 1fr); } .span2 { grid-column: span 2; } .span3 { grid-column: span 3; } }
   @media (max-width: 420px) { .ill-lock { flex-direction: column; gap: 10px; } .ill-lock svg { height: 34px; } }
+
+  /* hardware band */
+  .hw-grid { display: grid; gap: 32px; align-items: center; }
+  .hw-art { padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: radial-gradient(ellipse at 50% 100%, rgba(113, 112, 255, 0.2), transparent 70%), var(--panel); }
+  .hw-art svg { width: 100%; height: auto; }
+  .hwband .more { display: flex; gap: 10px; flex-wrap: wrap; }
+  @media (min-width: 900px) { .hw-grid { grid-template-columns: 1.1fr 0.9fr; gap: 64px; } }
 
   /* how */
   .how-grid { display: grid; gap: 40px; }

@@ -105,7 +105,7 @@ h3 { font-weight: 550; letter-spacing: -0.01em; }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; min-height: 44px; }
 .nav-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; width: 100%; padding-bottom: 12px; }
 .links { display: flex; flex-wrap: wrap; gap: 2px; }
-.links a { display: block; padding: 6px 12px; border-radius: 8px; color: var(--mut); font-size: 14px; font-weight: 500; min-height: 32px; transition: color 0.15s, background 0.15s; }
+.links a { display: block; padding: 6px 10px; border-radius: 8px; color: var(--mut); font-size: 14px; font-weight: 500; min-height: 32px; transition: color 0.15s, background 0.15s; }
 .links a:hover, .links a[aria-current='page'] { color: var(--fg); background: rgba(255, 255, 255, 0.06); }
 .nav-toggle { display: none; width: 44px; height: 44px; border: 0; background: transparent; cursor: pointer; border-radius: 10px; }
 .nav-toggle svg { margin: auto; width: 20px; height: 20px; stroke: var(--fg); stroke-width: 1.6; stroke-linecap: round; fill: none; }

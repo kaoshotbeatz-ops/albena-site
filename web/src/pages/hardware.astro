@@ -1,0 +1,232 @@
+---
+import Base from '../layouts/Base.astro';
+const specs = [
+  ['Memory', 'Unified memory, shared by CPU and GPU. Tiers set at order.', 'Dedicated GPU memory (VRAM) tiers, plus system RAM.'],
+  ['Model size class', 'Small to mid-size local models, comfortable for a home.', 'Mid to large local models. Higher VRAM tiers run bigger ones.'],
+  ['Rooms and voices', 'A household and its rooms.', 'Multi-user households, estates and small businesses.'],
+  ['Camera and vision AI', 'Light, on-demand image understanding.', 'Always-on, multi-camera vision workloads.'],
+  ['Apple on-device intelligence', 'Yes, alongside local models.', 'Not applicable. Local models only.'],
+  ['Power and noise', 'Low power draw, very quiet.', 'Higher power draw. Fans can be audible under load.'],
+  ['Form factor', 'Compact desktop.', 'Workstation or server class. Compact AI-box options planned.'],
+  ['Pricing', 'Early access pricing, announced soon.', 'Early access pricing, announced soon.'],
+];
+const steps = [
+  ['Plug in', 'Connect power and your network. Albena Hub starts on its own.'],
+  ['Open the setup page', 'From any phone or laptop on your network, follow the guided setup. Pick your connectors and set your approval rules.'],
+  ['Say “Hey Albena”', 'Your assistant is live. Ask her something, and approve what she proposes.'],
+];
+const box = ['Albena Hub, preinstalled and ready', 'Power cable', 'Quick-start card with your setup address', 'Recovery and factory-reset instructions'];
+const safety = [
+  ['Remote access is off by default', 'Nothing reaches your Hub from outside your home unless you turn it on, and then only the paths you choose.'],
+  ['Signed updates, automatic rollback', 'Updates are verified before they install. If one fails a health check, the Hub returns to the last good version by itself.'],
+  ['Factory reset, always', 'One documented reset wipes the device back to a clean state, so you can hand it on or start again.'],
+  ['Your data stays on the device', 'Memory, conversations and settings live on hardware you own. Cloud models are used only if you allow it.'],
+];
+---
+<Base title="Hardware: Albena Hub" description="Albena Hub is personal AI that lives in your home, on hardware you own. Choose a Hub for Mac (Apple silicon) or a Hub for NVIDIA RTX, or bring your own hardware.">
+  <section class="hero">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="wrap hero-in">
+      <p class="eyebrow">Hardware</p>
+      <h1 class="h-display">Albena Hub</h1>
+      <p class="lead">Personal AI that lives in your home, on hardware you own. Two editions, one assistant. Early access, with pricing announced soon.</p>
+      <p class="cta"><a class="btn btn-primary" href="/pricing">See plans</a><a class="btn btn-ghost" href="#editions">Compare editions</a></p>
+    </div>
+  </section>
+
+  <section class="wrap eds" id="editions" aria-labelledby="eds-h">
+    <h2 id="eds-h" class="sr">Editions</h2>
+    <article class="ed ed-mac">
+      <div class="render" role="img" aria-label="Illustration of a compact, silver-gray Mac mini sized box with a small status light, seen from the front.">
+        <svg viewBox="0 0 360 220" focusable="false" aria-hidden="true">
+          <defs>
+            <linearGradient id="hm-top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ebf2" /><stop offset="1" stop-color="#b9bdc9" /></linearGradient>
+            <linearGradient id="hm-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3a8b6" /><stop offset="1" stop-color="#6c7080" /></linearGradient>
+            <radialGradient id="hm-shadow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#7170ff" stop-opacity="0.45" /><stop offset="1" stop-color="#7170ff" stop-opacity="0" /></radialGradient>
+          </defs>
+          <ellipse cx="180" cy="184" rx="150" ry="20" fill="url(#hm-shadow)" />
+          <path d="M52 100 L88 62 H272 L308 100 Z" fill="url(#hm-top)" />
+          <rect x="52" y="100" width="256" height="62" rx="12" fill="url(#hm-front)" />
+          <path d="M52 100 H308" stroke="#fff" stroke-opacity="0.5" />
+          <circle cx="180" cy="148" r="3" fill="#7fd9a8" />
+          <g stroke="#4b4f5c" stroke-width="2" stroke-linecap="round"><path d="M72 118h14M92 118h14" /></g>
+          <circle cx="288" cy="118" r="4" fill="#4b4f5c" />
+        </svg>
+      </div>
+      <div class="ed-body">
+        <p class="kicker">For Mac (Apple silicon)</p>
+        <h3>Albena Hub for Mac</h3>
+        <p>A quiet, efficient Apple silicon Mac mini running Albena. On-device Apple intelligence plus local models, and ideal for homes.</p>
+        <ul class="ticks"><li>Low power, near silent, always on</li><li>Apple on-device intelligence and local models together</li><li>Comfortable for a household</li></ul>
+        <p class="actions"><a class="btn btn-primary" href="/waitlist?edition=mac">Reserve for Mac</a></p>
+      </div>
+    </article>
+
+    <article class="ed ed-nv">
+      <div class="render" role="img" aria-label="Illustration of a dark tower workstation with a glass side window showing two large GPU fans and a row of vent slots.">
+        <svg viewBox="0 0 360 220" focusable="false" aria-hidden="true">
+          <defs>
+            <linearGradient id="hn-body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26282e" /><stop offset="1" stop-color="#121316" /></linearGradient>
+            <radialGradient id="hn-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#4cb782" stop-opacity="0.4" /><stop offset="1" stop-color="#4cb782" stop-opacity="0" /></radialGradient>
+          </defs>
+          <ellipse cx="180" cy="196" rx="140" ry="14" fill="url(#hn-glow)" />
+          <rect x="96" y="22" width="168" height="168" rx="14" fill="url(#hn-body)" stroke="#fff" stroke-opacity="0.18" />
+          <rect x="108" y="34" width="106" height="110" rx="8" fill="#0a0b0c" stroke="#fff" stroke-opacity="0.12" />
+          <g fill="none" stroke="#a5a8ff" stroke-opacity="0.9" stroke-width="1.6">
+            <circle cx="136" cy="89" r="22" /><circle cx="186" cy="89" r="22" />
+            <path d="M136 67v44M114 89h44M120 73l32 32M152 73l-32 32" />
+            <path d="M186 67v44M164 89h44M170 73l32 32M202 73l-32 32" />
+          </g>
+          <circle cx="136" cy="89" r="5" fill="#7170ff" /><circle cx="186" cy="89" r="5" fill="#7170ff" />
+          <rect x="108" y="130" width="106" height="4" rx="2" fill="#4cb782" fill-opacity="0.8" />
+          <g stroke="#fff" stroke-opacity="0.22" stroke-width="3" stroke-linecap="round"><path d="M232 44v96M242 44v96M252 44v96" /></g>
+          <rect x="108" y="156" width="148" height="22" rx="6" fill="#0a0b0c" stroke="#fff" stroke-opacity="0.1" />
+          <circle cx="240" cy="167" r="3" fill="#7fd9a8" />
+        </svg>
+      </div>
+      <div class="ed-body">
+        <p class="kicker">For NVIDIA RTX</p>
+        <h3>Albena Hub for NVIDIA</h3>
+        <p>An RTX GPU workstation or server-class machine, with compact AI-box options planned. Bigger local models, vision and camera AI, multi-user households, estates and small businesses.</p>
+        <ul class="ticks"><li>Larger local models, tiered by GPU memory</li><li>Camera and vision AI across the property</li><li>Built for many people and many rooms</li></ul>
+        <p class="actions"><a class="btn btn-primary" href="/waitlist?edition=nvidia">Reserve for NVIDIA</a></p>
+      </div>
+    </article>
+  </section>
+
+  <section class="sec" aria-labelledby="cmp-h">
+    <div class="wrap">
+      <div class="head"><p class="eyebrow">Compare</p><h2 id="cmp-h" class="h-section">Which Hub fits your home</h2><p class="sub">Qualitative by design. We will publish tested figures at launch, not before.</p></div>
+      <div class="tbl">
+        <table>
+          <caption class="sr">Albena Hub for Mac compared with Albena Hub for NVIDIA</caption>
+          <thead><tr><th scope="col"><span class="sr">Feature</span></th><th scope="col">Hub for Mac</th><th scope="col">Hub for NVIDIA</th></tr></thead>
+          <tbody>
+            {specs.map(([k, a, b]) => <tr><th scope="row">{k}</th><td>{a}</td><td>{b}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="byo-h">
+    <div class="wrap duo">
+      <div class="tile">
+        <p class="eyebrow">Already have a machine</p>
+        <h2 id="byo-h" class="h-sec">Bring your own hardware</h2>
+        <p>Install Albena on your own Mac or NVIDIA Linux box. Same assistant, same approvals, same controls. You supply the hardware, we supply the software.</p>
+        <p class="actions"><a class="btn" href="/waitlist?edition=byo">Reserve a license</a></p>
+      </div>
+      <div class="tile">
+        <p class="eyebrow">Coming later</p>
+        <h2 class="h-sec">Albena Voice</h2>
+        <p>Small room satellites so you can say &ldquo;Hey Albena&rdquo; from the kitchen, the garage or the guest room, and be heard by your Hub. No dates yet. We will announce when they are ready.</p>
+        <div class="sat" role="img" aria-label="Illustration of a small round room speaker with a glowing ring.">
+          <svg viewBox="0 0 120 60" focusable="false" aria-hidden="true"><ellipse cx="60" cy="46" rx="34" ry="6" fill="#7170ff" fill-opacity="0.25" /><rect x="40" y="12" width="40" height="32" rx="14" fill="#1b1c1f" stroke="#fff" stroke-opacity="0.2" /><ellipse cx="60" cy="16" rx="15" ry="4" fill="none" stroke="#a5a8ff" stroke-width="2" /></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="set-h">
+    <div class="wrap">
+      <div class="head"><p class="eyebrow">Setup</p><h2 id="set-h" class="h-section">Set up in about 10 minutes</h2></div>
+      <ol class="flow">
+        {steps.map(([t, d], i) => <li><span class="n" aria-hidden="true">{i + 1}</span><div><h3>{t}</h3><p>{d}</p></div></li>)}
+      </ol>
+      <div class="box">
+        <h3>What is in the box</h3>
+        <ul class="ticks">{box.map((b) => <li>{b}</li>)}</ul>
+        <p class="note">Final contents are confirmed at launch.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="sec-h">
+    <div class="wrap">
+      <div class="head"><p class="eyebrow">Security</p><h2 id="sec-h" class="h-section">Safe by default</h2><p class="sub">Read more in the <a class="ul" href="/trust">Trust center</a>.</p></div>
+      <ul class="safe">
+        {safety.map(([t, d]) => <li><h3>{t}</h3><p>{d}</p></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec fin">
+    <div class="wrap center">
+      <h2 class="h-section">Reserve your Hub</h2>
+      <p class="sub">Early access pricing is announced soon. Tell us which edition you want and we will write first.</p>
+      <p class="cta"><a class="btn btn-primary" href="/pricing">See plans</a><a class="btn btn-ghost" href="/waitlist">Join the waitlist</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { position: relative; overflow: hidden; padding: 72px 0 24px; text-align: center; }
+  .glow { position: absolute; left: 50%; top: 0; width: 900px; max-width: 150%; height: 380px; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 0, rgba(113, 112, 255, 0.26), transparent 65%); pointer-events: none; }
+  .hero-in { position: relative; }
+  .hero h1 { font-size: clamp(46px, 10vw, 88px); }
+  .hero .lead { max-width: 620px; margin: 22px auto 0; }
+  .cta { margin-top: 28px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  .eds { display: grid; gap: 20px; padding-top: 40px; padding-bottom: 72px; }
+  .ed { display: grid; border: 1px solid var(--line-2); border-radius: 22px; overflow: hidden; background: linear-gradient(180deg, #131417, #0d0e10); }
+  .render { padding: 20px; background: radial-gradient(ellipse at 50% 100%, rgba(113, 112, 255, 0.22), transparent 70%), var(--bg-2); border-bottom: 1px solid var(--line); }
+  .ed-nv .render { background: radial-gradient(ellipse at 50% 100%, rgba(76, 183, 130, 0.18), transparent 70%), var(--bg-2); }
+  .render svg { width: 100%; height: auto; max-height: 260px; }
+  .ed-body { padding: 24px 22px 28px; }
+  .kicker { font-size: 12.5px; font-weight: 500; color: var(--acc-hi); }
+  .ed h3 { font-size: 26px; letter-spacing: -0.03em; margin: 6px 0 10px; }
+  .ed-body > p:not(.kicker):not(.actions) { color: var(--mut); }
+  .ticks { display: grid; gap: 8px; margin-top: 16px; }
+  .ticks li { position: relative; padding-left: 24px; color: var(--fg-2); font-size: 14.5px; }
+  .ticks li::before { content: ''; position: absolute; left: 3px; top: 6px; width: 5px; height: 9px; border: solid var(--green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .actions { margin-top: 22px; }
+
+  .sec { padding: 88px 0; border-top: 1px solid var(--line); }
+  .head { margin-bottom: 36px; }
+  .ul { text-decoration: underline; text-underline-offset: 3px; color: var(--fg-2); }
+
+  .tbl table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; }
+  .tbl th, .tbl td { text-align: left; vertical-align: top; padding: 14px 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .tbl thead th { color: var(--fg); font-weight: 550; font-size: 14px; border-bottom-color: var(--line-2); }
+  .tbl tbody th { width: 28%; color: var(--fg); font-weight: 550; }
+  .tbl td { color: var(--fg-2); }
+
+  .duo { display: grid; gap: 16px; }
+  .tile { padding: 28px 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+  .h-sec { font-size: 26px; letter-spacing: -0.03em; font-weight: 560; margin-bottom: 12px; }
+  .tile p:not(.eyebrow):not(.actions) { color: var(--mut); }
+  .sat { margin-top: 18px; width: 120px; }
+
+  .flow { display: grid; gap: 14px; counter-reset: s; }
+  .flow li { display: grid; grid-template-columns: 36px 1fr; gap: 16px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, 0.02); }
+  .n { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #8b8af7, #5e6ad2); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 14px; }
+  .flow h3 { font-size: 18px; }
+  .flow p { margin-top: 4px; color: var(--mut); }
+  .box { margin-top: 28px; padding: 24px; border: 1px dashed var(--line-2); border-radius: 16px; }
+  .box h3 { font-size: 17px; }
+  .note { margin-top: 14px; font-size: 13px; color: var(--mut); }
+
+  .safe { display: grid; gap: 14px; }
+  .safe li { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+  .safe h3 { font-size: 16.5px; }
+  .safe p { margin-top: 6px; color: var(--mut); font-size: 14.5px; }
+
+  .fin { text-align: center; }
+  .fin .sub { margin-left: auto; margin-right: auto; }
+  .fin .cta { margin-top: 28px; }
+
+  @media (min-width: 760px) {
+    .ed { grid-template-columns: 1fr; }
+    .tbl table { font-size: 15px; }
+    .tbl th, .tbl td { padding: 16px 14px; }
+    .duo { grid-template-columns: 1fr 1fr; }
+    .flow { grid-template-columns: repeat(3, 1fr); }
+    .flow li { grid-template-columns: 1fr; }
+    .safe { grid-template-columns: 1fr 1fr; }
+  }
+  @media (min-width: 1000px) {
+    .eds { grid-template-columns: 1fr 1fr; align-items: stretch; }
+    .ed { grid-template-rows: auto 1fr; }
+  }
+</style>

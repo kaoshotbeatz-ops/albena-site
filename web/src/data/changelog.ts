@@ -1,8 +1,22 @@
-export interface Entry { date: string; iso: string; version: string; title: string; summary: string; groups: { tag: 'New' | 'Improved' | 'Fixed'; items: string[] }[] }
+export interface Entry { date: string; iso: string; slug?: string; version: string; title: string; summary: string; groups: { tag: 'New' | 'Improved' | 'Fixed'; items: string[] }[] }
 
 // Newest first.
 export const entries: Entry[] = [
   {
+    date: 'October 9, 2026',
+    iso: '2026-10-09',
+    slug: 'hardware-editions',
+    version: 'Announcement',
+    title: 'Albena Hub editions announced (Mac, NVIDIA)',
+    summary: 'Albena will be available with hardware: a Hub for Mac and a Hub for NVIDIA, plus bring-your-own and estate installs.',
+    groups: [
+      { tag: 'New', items: [
+        'Albena Hub for Mac (Apple silicon) and Albena Hub for NVIDIA RTX, announced for early access. Pricing and availability will follow.',
+        'New Hardware and Pricing pages, with a waitlist that can record which edition you want.',
+        'Albena Voice room satellites are planned for later.',
+      ] },
+    ],
+  },  {
     date: 'October 9, 2026',
     iso: '2026-10-09',
     version: 'Early access',

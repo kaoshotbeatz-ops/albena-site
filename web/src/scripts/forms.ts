@@ -30,6 +30,9 @@ function initForm(form: HTMLFormElement) {
   const widget = form.querySelector<HTMLElement>('[data-turnstile]');
   const submit = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
   const done = form.parentElement?.querySelector<HTMLElement>('[data-done]');
+  const interest = form.querySelector<HTMLSelectElement>('[data-interest]');
+  const wanted = new URLSearchParams(location.search).get('edition');
+  if (interest && wanted && [...interest.options].some((o) => o.value === wanted)) interest.value = wanted;
   let token = '';
   let widgetId: string | undefined;
   let widgetFailed = false;
@@ -94,6 +97,7 @@ function initForm(form: HTMLFormElement) {
     // Honeypot: bots fill it. Pretend success, send nothing.
     if (data.website) { showDone(); return; }
     delete data.website;
+    if (!data.interest) delete data.interest;
     delete data['cf-turnstile-response'];
 
     if (!token) {

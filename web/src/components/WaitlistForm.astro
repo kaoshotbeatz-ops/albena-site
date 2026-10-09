@@ -10,6 +10,16 @@ const { id = 'wl' } = Astro.props;
       <input id={`${id}-email`} name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required data-validate aria-describedby={`${id}-email-err`} />
       <p class="err" id={`${id}-email-err`}></p>
     </div>
+    <div class="field">
+      <label for={`${id}-interest`}>Interested in <span class="opt">(optional)</span></label>
+      <select id={`${id}-interest`} name="interest" data-interest>
+        <option value="">Not sure yet</option>
+        <option value="mac">Albena Hub for Mac</option>
+        <option value="nvidia">Albena Hub for NVIDIA</option>
+        <option value="byo">Bring your own hardware</option>
+        <option value="estate">Pro / Estate install</option>
+      </select>
+    </div>
     <div class="field hp" aria-hidden="true">
       <label for={`${id}-web`}>Website</label>
       <input id={`${id}-web`} name="website" type="text" tabindex="-1" autocomplete="off" />

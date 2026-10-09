@@ -13,10 +13,10 @@ import { entries } from '../data/changelog';
     <ol class="log">
       {entries.map((e) => (
         <li>
-          <article class="entry" aria-labelledby={`e-${e.iso}`}>
+          <article class="entry" aria-labelledby={`e-${e.slug ?? e.iso}`}>
             <div class="when"><time datetime={e.iso}>{e.date}</time><span class="chip indigo">{e.version}</span></div>
             <div class="body">
-              <h2 id={`e-${e.iso}`}>{e.title}</h2>
+              <h2 id={`e-${e.slug ?? e.iso}`}>{e.title}</h2>
               <p class="sum">{e.summary}</p>
               {e.groups.map((g) => (
                 <section>
