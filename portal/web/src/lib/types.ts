@@ -1,5 +1,5 @@
 // UI view-models. The wire shapes live in api.ts (W namespace) and match portal/CONTRACT.md exactly.
-export interface Me { id: string; email: string; role: 'owner' | 'member'; accountId: string }
+export interface Me { id: string; email: string; role: 'owner' | 'member'; accountId: string; viewAs?: { actor: string; expiresAt: number } }
 export interface Passkey { id: string; createdAt: string }
 export interface Session { id: string; current: boolean; createdAt: string; lastSeenAt: string }
 export interface SignIn { at: string; method: 'passkey' | 'magic_link' }

@@ -40,7 +40,7 @@ const get = <T>(p: string) => req<T>('GET', p);
 
 /** Wire shapes: exactly what the worker returns (portal/CONTRACT.md). Times are unix seconds unless noted. */
 namespace W {
-  export interface Me { user: { id: string; email: string; role: 'owner' | 'member'; accountId: string } }
+  export interface Me { user: { id: string; email: string; role: 'owner' | 'member'; accountId: string }; viewAs?: { actor: string; expiresAt: number } }
   export interface Sessions { sessions: { id: string; createdAt: number; lastSeen: number; expiresAt: number; current: boolean }[] }
   export interface History { events: { at: string; method: 'passkey' | 'magic_link' }[] } // at: ISO-8601 from the audit chain
   export interface Passkeys { passkeys: { id: string; createdAt: number }[] }
@@ -71,7 +71,9 @@ const hub = (h: W.WireHub): Hub => ({
 });
 
 export const api = {
-  me: async (): Promise<Me> => (await get<W.Me>('/api/me')).user,
+  me: async (): Promise<Me> => { const r = await get<W.Me>('/api/me'); return r.viewAs ? { ...r.user, viewAs: r.viewAs } : r.user; },
+  endViewAs: () => req<{ redirect: string }>('POST', '/api/support/view-as/end', {}, { noRedirect: true }),
+  supportAccounts: () => req<{ me: string; accounts: { id: string; email: string; plan: string; status: string; hubs: number; created: number }[] }>('GET', '/api/support/accounts', undefined, { noRedirect: true }),
   logout: () => req<unknown>('POST', '/api/auth/logout', {}),
   magicStart: (email: string, turnstileToken: string) => req<unknown>('POST', '/api/auth/magic/start', { email, turnstileToken }, { noRedirect: true }),
   magicCode: (code: string) => req<unknown>('POST', '/api/auth/magic/code', { code }, { noRedirect: true }),

@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@simplewebauthn/server": "13.3.3",
-    "hono": "4.13.13"
+    "hono": "4.13.13",
+    "jose": "^6.2.12"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.4.0",

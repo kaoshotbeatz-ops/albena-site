@@ -29,5 +29,7 @@
     "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": ""
   }
   // EMAIL is Cloudflare Email Sending: onboard the MAIL_FROM domain first (wrangler email sending enable albena.ai).
+  // Support view-as (Cloudflare Access): secrets TEAM_DOMAIN (purple-firefly-9815.cloudflareaccess.com), ADMIN_AUD (the existing admin Access app AUD tag),
+  // SUPPORT_ADMIN_EMAILS (comma-separated allowlist). Access destinations: account.albena.ai/support/* and account.albena.ai/api/support/accounts.
   // Secrets: TURNSTILE_SECRET_KEY, PORTAL_SECRETS (random HMAC privacy key), STRIPE_SECRET_KEY (sk_test_), STRIPE_WEBHOOK_SECRET.
 }

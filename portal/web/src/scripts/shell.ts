@@ -82,6 +82,30 @@ export const meP = api.me().then((me) => {
   document.querySelectorAll('[data-ws-name],[data-ws-name2]').forEach((n) => { n.textContent = name; });
   const ico = $('.ws-ico'); if (ico) ico.textContent = name.slice(0, 1).toUpperCase();
   const who = $('[data-who]'); if (who) who.textContent = me.email;
+  if (me.viewAs) enterViewAs(me.email);
   return me;
 });
 meP.catch(() => undefined);
+
+// Support view-as: persistent banner, Exit, and every action control disabled. The server rejects writes regardless.
+function enterViewAs(email: string) {
+  document.documentElement.classList.add('viewas');
+  const banner = $('[data-viewas-banner]'); if (!banner) return;
+  banner.hidden = false;
+  $('[data-viewas-email]')!.textContent = email;
+  $<HTMLButtonElement>('[data-viewas-exit]')!.addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget as HTMLButtonElement; btn.disabled = true;
+    let to = 'https://albena.ai/admin';
+    try { const r = await api.endViewAs(); if (r.redirect === to) to = r.redirect; } catch { /* the session still expires on its own */ }
+    location.assign(to);
+  });
+  $('[data-logout]')?.setAttribute('hidden', '');
+  const lock = () => document.querySelectorAll<HTMLElement>('main button, main input, main select, main textarea').forEach((el) => {
+    if (el.closest('[data-allow-viewas]') || el.dataset.viewasLocked) return;
+    el.dataset.viewasLocked = '1';
+    el.setAttribute('aria-disabled', 'true'); el.setAttribute('title', 'Read-only support view');
+    (el as HTMLButtonElement).disabled = true;
+  });
+  lock();
+  new MutationObserver(lock).observe($('main')!, { childList: true, subtree: true });
+}

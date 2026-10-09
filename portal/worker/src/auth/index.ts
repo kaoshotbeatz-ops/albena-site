@@ -12,7 +12,7 @@ export const migrations = ["0100_auth_core.sql", "0101_auth_audit_actor.sql"];
 export function mount(app: Hono<AppEnv>): void {
   mountMagic(app);
   mountPasskeys(app);
-  app.get("/api/me", requireUser, c => c.json({ user: c.get("user") }));
+  app.get("/api/me", requireUser, c => c.json({ user: c.get("user"), ...(c.get("viewAs") ? { viewAs: c.get("viewAs") } : {}) }));
   app.post("/api/auth/logout", requireUser, async c => {
     await c.env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(c.get("sessionId")).run();
     clearSession(c);
@@ -21,7 +21,7 @@ export function mount(app: Hono<AppEnv>): void {
   });
   app.get("/api/security/sessions", requireUser, async c => {
     const ts = now();
-    const { results } = await c.env.DB.prepare("SELECT id, created_at AS createdAt, last_seen AS lastSeen, expires_at AS expiresAt FROM sessions WHERE user_id = ? AND last_seen > ? AND expires_at > ? ORDER BY created_at DESC")
+    const { results } = await c.env.DB.prepare("SELECT id, created_at AS createdAt, last_seen AS lastSeen, expires_at AS expiresAt FROM sessions WHERE user_id = ? AND view_as = 0 AND last_seen > ? AND expires_at > ? ORDER BY created_at DESC")
       .bind(c.get("user").id, ts - IDLE_SECONDS, ts).all<{ id: string }>();
     return c.json({ sessions: results.map(s => ({ ...s, current: s.id === c.get("sessionId") })) });
   });
