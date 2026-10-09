@@ -49,7 +49,7 @@ async function magic(email = `${crypto.randomUUID()}@example.com`) {
   const result = await request("/api/auth/magic/start", "POST", { email, turnstileToken: "test-response" });
   expect(result.status).toBe(202);
   const mail = vi.mocked(sendMail).mock.calls.at(-1)![1];
-  return { path: new URL(mail.url).pathname + new URL(mail.url).search, cookie: cookie(result, "__Host-albena_magic"), email };
+  return { path: new URL(mail.url).pathname + new URL(mail.url).search, code: mail.code, cookie: cookie(result, "__Host-albena_magic"), email };
 }
 async function loginChallenge() {
   const result = await request("/api/auth/passkey/login/options", "POST");
@@ -143,6 +143,69 @@ describe("magic links", () => {
     expect(equalHash("a".repeat(64),"a".repeat(64))).toBe(true);
     expect(equalHash("a".repeat(64),"b".repeat(64))).toBe(false);
     expect(equalHash("a","a")).toBe(false);
+  });
+});
+
+describe("magic email code", () => {
+  const post = (code: string, cookieHeader?: string) => request("/api/auth/magic/code", "POST", { code }, cookieHeader);
+  const wrong = (c: string) => (c === "000000" ? "111111" : "000000");
+  it("signs in with the correct code, then rejects reuse", async () => {
+    const m = await magic(), row0 = await e.DB.prepare("SELECT code_hash FROM magic_tokens WHERE email=?").bind(m.email).first<{ code_hash: string }>();
+    expect(row0?.code_hash).toMatch(/^[a-f0-9]{64}$/); expect(row0?.code_hash).not.toContain(m.code);
+    expect(m.code).toMatch(/^\d{6}$/);
+    const r = await post(m.code, m.cookie);
+    expect(r.status).toBe(200);
+    const me = await request("/api/me", "GET", undefined, cookie(r, SESSION_COOKIE));
+    expect(me.status).toBe(200);
+    expect(await e.DB.prepare("SELECT id FROM magic_tokens WHERE email=?").bind(m.email).first()).toBeNull();
+    expect((await post(m.code, m.cookie)).status).toBe(400);
+    expect((await request(m.path, "GET", undefined, m.cookie)).status).toBe(400);
+    const hist = await request("/api/security/history", "GET", undefined, cookie(r, SESSION_COOKIE));
+    expect(((await hist.json()) as { events: { method: string }[] }).events[0].method).toBe("magic_link");
+  });
+  it("accepts spaced input as pasted from the email", async () => {
+    const m = await magic();
+    expect((await post(`${m.code.slice(0, 3)} ${m.code.slice(3)}`, m.cookie)).status).toBe(200);
+  });
+  it("counts wrong attempts, locks on the 5th and rejects the right code afterwards", async () => {
+    const m = await magic(), bad = wrong(m.code);
+    for (let i = 1; i <= 4; i++) {
+      const r = await post(bad, m.cookie);
+      expect(r.status).toBe(400); expect(await r.json()).toMatchObject({ error: "wrong_code", attemptsLeft: 5 - i });
+    }
+    const row = await e.DB.prepare("SELECT attempts FROM magic_tokens WHERE email=?").bind(m.email).first<{ attempts: number }>();
+    expect(row?.attempts).toBe(4);
+    expect(await (await post(bad, m.cookie)).json()).toMatchObject({ error: "too_many_attempts" });
+    const sixth = await post(m.code, m.cookie);
+    expect(sixth.status).toBe(400); expect(sixth.headers.getSetCookie().join(" ")).not.toContain(SESSION_COOKIE);
+    expect((await request(m.path, "GET", undefined, m.cookie)).status).toBe(400);
+  });
+  it("is useless without the browser-binding cookie", async () => {
+    const m = await magic();
+    expect((await post(m.code)).status).toBe(400);
+    expect((await post(m.code, `__Host-albena_magic=${"a".repeat(64)}`)).status).toBe(400);
+    expect((await post(m.code, m.cookie)).status).toBe(200);
+  });
+  it("rejects an expired code and malformed input", async () => {
+    const m = await magic();
+    expect((await post("12345", m.cookie)).status).toBe(400);
+    expect(await e.DB.prepare("SELECT attempts FROM magic_tokens WHERE email=?").bind(m.email).first<{ attempts: number }>()).toEqual({ attempts: 0 });
+    await e.DB.prepare("UPDATE magic_tokens SET expires_at=? WHERE email=?").bind(now(), m.email).run();
+    expect(await (await post(m.code, m.cookie)).json()).toMatchObject({ error: "invalid_or_expired_code" });
+  });
+  it("is rate limited", async () => {
+    vi.mocked(bindings.AUTH_IP_LIMITER.limit).mockResolvedValue({ success: false });
+    expect((await post("123456", "")).status).toBe(429);
+  });
+  it("never puts the code in the subject and keeps start responses enumeration-safe", async () => {
+    const u = await seedUser(), a = await request("/api/auth/magic/start", "POST", { email: u.email, turnstileToken: "t" }),
+      b = await request("/api/auth/magic/start", "POST", { email: `${crypto.randomUUID()}@example.com`, turnstileToken: "t" });
+    expect(await a.json()).toEqual(await b.json());
+    const { cloudflareMailer } = await vi.importActual<typeof import("../src/auth/mail")>("../src/auth/mail");
+    const send = vi.fn(); await cloudflareMailer({ ...e, EMAIL: { send } as never }).send({ to: "a@example.com", url: "https://x/y", code: "123456" });
+    const msg = send.mock.calls[0][0];
+    expect(msg.subject).not.toMatch(/\d{3}/); expect(msg.text).toContain("Your code: 123 456"); expect(msg.text).toContain("https://x/y");
+    expect(msg.text).toContain("enter the code on the page where you requested it");
   });
 });
 

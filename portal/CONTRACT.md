@@ -20,6 +20,7 @@ JSON, same-origin, cookie session `__Host-albena_session` (HttpOnly Secure SameS
 
 Auth
 - POST /api/auth/magic/start `{email, turnstileToken}` (Turnstile action `magic_login`) -> 202 `{ok, message}` always (enumeration-safe)
+- POST /api/auth/magic/code `{id?, code}` -> 200 `{ok}` + session cookie. The sign-in email also carries a 6-digit code. The requesting browser (the `__Host-albena_magic` cookie is required; a code alone is useless) submits it from `/check-email`. Errors (400, `{error}`): `invalid_code` (format), `wrong_code` (`attemptsLeft`), `too_many_attempts` (5th wrong attempt invalidates the token, link included), `invalid_or_expired_code` (no/used/expired token or missing cookie). 429 `rate_limited`. Same 15 min expiry, single-use, same session path and `auth.login.magic` audit event as the link. Code stored only as SHA-256 of `id:code` (migration 0102); never logged; not in the subject.
 - GET /api/auth/magic/verify?token=... -> 303 to `/`. Single-use, 15 min, stored hashed, and bound to the browser that asked (HttpOnly cookie). Opening it on another device fails by design (see HANDOFF.md).
 - POST /api/auth/passkey/register/options -> bare WebAuthn options; POST .../register/verify (raw browser response) -> `{ok}`
 - POST /api/auth/passkey/login/options -> bare WebAuthn options (discoverable); POST .../login/verify (raw browser response) -> `{ok}`. The challenge lives server-side, bound to a cookie, single use.

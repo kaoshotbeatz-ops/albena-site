@@ -56,6 +56,6 @@ export function handle(method: string, path: string, body: unknown): unknown {
   if (p === '/api/security/passkeys') return { passkeys };
   const pm = /^\/api\/security\/passkeys\/([^/]+)$/.exec(p);
   if (pm) { passkeys = passkeys.filter((k) => k.id !== pm[1]); return { ok: true }; }
-  if (p === '/api/auth/logout') return { ok: true };
+  if (p === '/api/auth/logout' || p === '/api/auth/magic/code') return { ok: true };
   throw new ApiError(404, 'not_found');
 }

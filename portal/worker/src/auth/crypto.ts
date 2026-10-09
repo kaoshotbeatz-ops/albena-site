@@ -13,3 +13,9 @@ export async function privacyHash(secret: string, value: string): Promise<string
   const bytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
 }
+/** Uniform 6-digit code (rejection sampling avoids modulo bias). */
+export function randomCode(): string {
+  const buf = new Uint32Array(1), limit = 4294967296 - (4294967296 % 1000000);
+  do crypto.getRandomValues(buf); while (buf[0] >= limit);
+  return String(buf[0] % 1000000).padStart(6, "0");
+}

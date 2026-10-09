@@ -55,6 +55,7 @@ h3 { font-size: 14px; font-weight: 550; }
 .input:focus-visible, .select:focus-visible { outline: 0; border-color: var(--acc-hi); box-shadow: 0 0 0 3px rgba(113, 112, 255, 0.25); }
 .input::placeholder { color: #7b808a; }
 .input[aria-invalid='true'] { border-color: var(--red); }
+.code-input { letter-spacing: 0.25em; text-align: center; font-variant-numeric: tabular-nums; }
 .err { font-size: 13px; color: var(--red); }
 .err:empty { display: none; }
 .form-status { font-size: 13.5px; color: var(--fg-2); min-height: 20px; }
