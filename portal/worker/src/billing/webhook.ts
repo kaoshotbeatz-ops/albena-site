@@ -1,6 +1,6 @@
 import type { Context } from "hono";
-import type { AppEnv } from "../_stubs";
-import { audit } from "../_stubs";
+import type { AppEnv } from "../types";
+import { audit } from "../auth";
 import { applyEntitlement } from "./entitlements";
 import { verifyStripeSignature } from "./signature";
 

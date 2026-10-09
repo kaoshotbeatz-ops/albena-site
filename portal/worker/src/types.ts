@@ -1,6 +1,7 @@
 export interface User { id: string; email: string; role: "owner" | "member"; accountId: string }
 export interface Bindings {
   DB: D1Database;
+  ASSETS: Fetcher;
   PORTAL_SECRETS: string;
   TURNSTILE_SECRET_KEY: string;
   AUTH_IP_LIMITER: RateLimit;
@@ -9,9 +10,15 @@ export interface Bindings {
   PORTAL_ORIGIN: string;
   RP_ID: string;
   MAIL_FROM: string;
-  MAIL_PROVIDER: "cloudflare" | "mailchannels" | "dev";
+  MAIL_PROVIDER: "cloudflare" | "dev";
   EMAIL?: SendEmail;
-  MAILCHANNELS_API_KEY?: string;
+  // Billing (Stripe test mode until launch). Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET.
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  // Stripe Price IDs (vars). Empty = plan not configured (checkout answers 503).
+  PRICE_BYO_MONTHLY?: string; PRICE_BYO_ANNUAL?: string;
+  PRICE_HUB_MAC_MONTHLY?: string; PRICE_HUB_MAC_ANNUAL?: string; PRICE_HUB_MAC_HARDWARE?: string;
+  PRICE_HUB_NVIDIA_MONTHLY?: string; PRICE_HUB_NVIDIA_ANNUAL?: string; PRICE_HUB_NVIDIA_HARDWARE?: string;
 }
 export type AppEnv = {
   Bindings: Bindings;

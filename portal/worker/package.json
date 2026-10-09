@@ -9,8 +9,8 @@
     "migrate:local": "wrangler d1 migrations apply albena_portal --local"
   },
   "dependencies": {
-    "hono": "4.13.13",
-    "@simplewebauthn/server": "13.2.2"
+    "@simplewebauthn/server": "13.3.3",
+    "hono": "4.13.13"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.4.0",

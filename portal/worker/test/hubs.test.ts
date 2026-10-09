@@ -1,38 +1,40 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { Hono } from "hono";
-import { mount, PAIR_RATE, PAIR_TTL_S } from "../src/hubs/index";
-import { setStubMaxHubs, auditLog, type AppEnv } from "../src/hubs/_stubs";
+import { PAIR_RATE, PAIR_TTL_S } from "../src/hubs/index";
+import { applyEntitlement } from "../src/billing/entitlements";
 import { b64encode, sha256Hex, CODE_ALPHABET } from "../src/hubs/crypto";
-import { newD1 } from "../hubs-dev/d1shim";
+import { app } from "../src/index";
+import { ORIGIN, auditSince, clearPortalTables, client, e, lastAuditId, login, seedMember, seedOwner, testBindings } from "./helpers";
 
-let db: ReturnType<typeof newD1>;
-let app: Hono<AppEnv>;
-const OWNER = "u1|a@x.io|owner|acc1";
-const OTHER = "u2|b@x.io|owner|acc2";
-const MEMBER = "u3|c@x.io|member|acc1";
+let db: D1Database;
+let OWNER: string, OTHER: string, MEMBER: string; // session cookies
+let env: ReturnType<typeof testBindings>;
 let ip = 0;
+let auditMark = 0;
 
-beforeEach(() => {
-  db = newD1();
-  app = new Hono<AppEnv>();
-  mount(app);
-  setStubMaxHubs(2);
-  auditLog.length = 0;
+const setMaxHubs = (n: number) => applyEntitlement(db, "acc1", { plan: n > 1 ? "estate" : "byo", status: "active" }, 1);
+const auditActions = async () => (await auditSince(auditMark)).map((a) => a.action);
+
+beforeEach(async () => {
+  db = e.DB; env = testBindings();
+  await clearPortalTables();
+  OWNER = await login(await seedOwner("u1", "acc1"));
+  OTHER = await login(await seedOwner("u2", "acc2"));
+  MEMBER = await login(await seedMember("u3", "acc1"));
+  await setMaxHubs(2);
+  auditMark = await lastAuditId();
   ip++;
 });
 
 const call = (path: string, init: RequestInit & { user?: string; ip?: string } = {}) => {
   const h = new Headers(init.headers);
-  if (init.user) h.set("x-test-user", init.user);
-  if (init.method && init.method !== "GET") h.set("x-requested-with", "albena-portal");
   h.set("cf-connecting-ip", init.ip ?? `10.0.0.${ip}`);
-  return app.request(`http://t${path}`, { ...init, headers: h }, { DB: db });
+  return client(init.user, env).request(path, { ...init, headers: Object.fromEntries(h) });
 };
 const js = (o: unknown) => JSON.stringify(o);
 
 async function keypair() {
   const kp = (await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"])) as CryptoKeyPair;
-  const pub = b64encode(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)));
+  const pub = b64encode(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey) as ArrayBuffer));
   return { kp, pub };
 }
 async function startCode(user = OWNER) {
@@ -65,18 +67,24 @@ describe("pairing", () => {
     for (const ch of code) expect(CODE_ALPHABET).toContain(ch);
     expect("01OIL").not.toMatch(new RegExp(`[${code}]`));
     expect(expiresAt - Math.floor(Date.now() / 1000)).toBeLessThanOrEqual(PAIR_TTL_S);
-    const rows = db.raw.prepare("SELECT code_hash FROM hub_pair_codes").all() as any[];
+    const rows = (await db.prepare("SELECT code_hash FROM hub_pair_codes").all()).results as any[];
     expect(rows[0].code_hash).not.toContain(code);
   });
   it("requires a user, owner role and csrf header", async () => {
     expect((await call("/api/hubs/pair/start", { method: "POST" })).status).toBe(401);
     expect((await call("/api/hubs/pair/start", { method: "POST", user: MEMBER })).status).toBe(403);
-    const r = await app.request("http://t/api/hubs/pair/start", { method: "POST", headers: { "x-test-user": OWNER } }, { DB: db });
+    const r = await app.request(ORIGIN + "/api/hubs/pair/start", { method: "POST", headers: { Cookie: OWNER } }, env);
     expect(r.status).toBe(403);
   });
   it("enforces entitlement", async () => {
-    setStubMaxHubs(1);
+    await setMaxHubs(1);
     await pairHub();
+    expect((await call("/api/hubs/pair/start", { method: "POST", user: OWNER })).status).toBe(402);
+  });
+  it("refuses pairing without an active entitlement", async () => {
+    await db.prepare("DELETE FROM entitlements").run();
+    expect((await call("/api/hubs/pair/start", { method: "POST", user: OWNER })).status).toBe(402);
+    await applyEntitlement(db, "acc1", { plan: "hub_mac", status: "past_due" }, 2);
     expect((await call("/api/hubs/pair/start", { method: "POST", user: OWNER })).status).toBe(402);
   });
   it("completes once, binds to the account, returns no token", async () => {
@@ -95,7 +103,7 @@ describe("pairing", () => {
   });
   it("rejects expired codes", async () => {
     const { code } = await startCode();
-    db.raw.prepare("UPDATE hub_pair_codes SET expires_at = expires_at - 1000").run();
+    await db.prepare("UPDATE hub_pair_codes SET expires_at = expires_at - 1000").run();
     const { pub } = await keypair();
     const r = await call("/api/hubs/pair/complete", { method: "POST", body: js({ code, hubPublicKey: pub, edition: "mac", profile: "home", version: "1.0.0" }) });
     expect(r.status).toBe(400);
@@ -159,7 +167,7 @@ describe("signed requests", () => {
     const hub = await pairHub();
     expect((await call(`/api/hubs/${hub.hubId}`, { method: "DELETE", user: OWNER })).status).toBe(200);
     expect((await call(P, await signed(hub, P, js(hb)))).status).toBe(401);
-    expect(auditLog.map((a) => a.action)).toContain("hub.unpair");
+    expect(await auditActions()).toContain("hub.unpair");
   });
 });
 
@@ -209,7 +217,7 @@ describe("hub management", () => {
     expect((await call(`/api/hubs/${hub.hubId}`, { method: "PATCH", user: OWNER, body: js({ updateChannel: "x" }) })).status).toBe(400);
     expect((await call(`/api/hubs/${hub.hubId}`, { method: "PATCH", user: OWNER, body: js({ remoteAccess: "yes" }) })).status).toBe(400);
     expect((await call(`/api/hubs/${hub.hubId}`, { method: "PATCH", user: OWNER, body: js({ owner: "x" }) })).status).toBe(400);
-    expect(auditLog.some((a) => a.action === "hub.update")).toBe(true);
+    expect(await auditActions()).toContain("hub.update");
   });
   it("cannot PATCH or DELETE another account's hub; members cannot mutate", async () => {
     const hub = await pairHub();
@@ -230,10 +238,10 @@ describe("hub management", () => {
 
 describe("releases", () => {
   const add = (edition: string, channel: string, version: string, at: number) =>
-    db.raw.prepare("INSERT INTO releases(edition,channel,version,manifest_url,signature_url,signature,sha256,released_at) VALUES(?,?,?,?,?,?,?,?)")
-      .run(edition, channel, version, `https://d/${version}/manifest.json`, `https://d/${version}/manifest.json.sig`, "SIG", "a".repeat(64), at);
+    db.prepare("INSERT INTO releases(edition,channel,version,manifest_url,signature_url,signature,sha256,released_at) VALUES(?,?,?,?,?,?,?,?)")
+      .bind(edition, channel, version, `https://d/${version}/manifest.json`, `https://d/${version}/manifest.json.sig`, "SIG", "a".repeat(64), at).run();
   it("returns latest per edition/channel; stable never sees beta", async () => {
-    add("mac", "stable", "1.0.0", 100); add("mac", "beta", "1.1.0-b1", 200); add("nvidia", "stable", "0.9.0", 50);
+    await add("mac", "stable", "1.0.0", 100); await add("mac", "beta", "1.1.0-b1", 200); await add("nvidia", "stable", "0.9.0", 50);
     const s = (await (await call("/api/releases/latest?edition=mac")).json()) as any;
     expect(s).toMatchObject({ version: "1.0.0", manifestUrl: "https://d/1.0.0/manifest.json", signature: "SIG", sha256: "a".repeat(64) });
     const b = (await (await call("/api/releases/latest?edition=mac&channel=beta")).json()) as any;

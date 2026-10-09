@@ -1,5 +1,7 @@
 import type { Context, Hono } from "hono";
-import { audit, getEntitlement, requireUser, type AppEnv } from "./_stubs";
+import type { AppEnv } from "../types";
+import { audit, requireUser } from "../auth";
+import { getEntitlement } from "../billing/entitlements";
 import { MAX_BODY, CHANNELS, EDITIONS, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
 import { b64decode, newPairCode, normalizeCode, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
@@ -15,13 +17,13 @@ type C = Context<AppEnv>;
 const CSRF = (c: C) => c.req.header("x-requested-with") === "albena-portal";
 
 async function pepper(c: C, code: string) {
-  return sha256Hex(`${c.env.HUB_CODE_PEPPER ?? ""}|paircode|${code}`);
+  return sha256Hex(`${c.env.PORTAL_SECRETS}|paircode|${code}`);
 }
 
 /** Fixed-window counter in D1. Returns true if the call is allowed. */
 async function rateOk(c: C, bucket: string, rule: { limit: number; windowS: number }, consume = true): Promise<boolean> {
   const t = now();
-  const row = await c.env.DB.prepare("SELECT window_start, count FROM hub_rate WHERE bucket=?").bind(bucket).first();
+  const row = await c.env.DB.prepare("SELECT window_start, count FROM hub_rate WHERE bucket=?").bind(bucket).first<{ window_start: number; count: number }>();
   if (!row || t - row.window_start >= rule.windowS) {
     if (consume) await c.env.DB.prepare("INSERT OR REPLACE INTO hub_rate(bucket,window_start,count) VALUES(?,?,1)").bind(bucket, t).run();
     return true;
@@ -49,7 +51,7 @@ async function verifyHub(c: C, raw: Uint8Array): Promise<any | Response> {
   const fail = () => c.json({ error: "invalid signature" }, 401);
   if (!id || !/^\d{9,12}$/.test(ts) || !sig || sig.length > 128) return fail();
   if (Math.abs(now() - Number(ts)) > SKEW_S) return c.json({ error: "timestamp out of range" }, 401);
-  const hub = await c.env.DB.prepare("SELECT * FROM hubs WHERE id=?").bind(id).first();
+  const hub = await c.env.DB.prepare("SELECT * FROM hubs WHERE id=?").bind(id).first<any>();
   if (!hub) return fail();
   const url = new URL(c.req.url);
   const msg = await signingString(c.req.method, url.pathname + url.search, ts, raw);
@@ -75,8 +77,8 @@ export function mount(app: Hono<AppEnv>): void {
     const u = c.get("user");
     if (!CSRF(c)) return c.json({ error: "csrf" }, 403);
     if (u.role !== "owner") return c.json({ error: "forbidden" }, 403);
-    const { maxHubs } = await getEntitlement(c, u.accountId);
-    const n = (await c.env.DB.prepare("SELECT COUNT(*) AS n FROM hubs WHERE account_id=?").bind(u.accountId).first()).n as number;
+    const { maxHubs } = await getEntitlement(c.env.DB, u.accountId);
+    const n = (await c.env.DB.prepare("SELECT COUNT(*) AS n FROM hubs WHERE account_id=?").bind(u.accountId).first<{ n: number }>())!.n;
     if (n >= maxHubs) return c.json({ error: "plan does not allow another hub" }, 402);
     const code = newPairCode();
     const t = now();
@@ -106,7 +108,7 @@ export function mount(app: Hono<AppEnv>): void {
     // atomic single-use claim
     const claim = await c.env.DB.prepare("UPDATE hub_pair_codes SET used_at=? WHERE code_hash=? AND used_at IS NULL AND expires_at>=?").bind(t, hash, t).run();
     if (!claim.meta?.changes) return bad();
-    const row = await c.env.DB.prepare("SELECT account_id FROM hub_pair_codes WHERE code_hash=?").bind(hash).first();
+    const row = (await c.env.DB.prepare("SELECT account_id FROM hub_pair_codes WHERE code_hash=?").bind(hash).first<{ account_id: string }>())!;
     const hubId = crypto.randomUUID();
     try {
       await c.env.DB.prepare("INSERT INTO hubs(id,account_id,public_key,edition,profile,version,created_at) VALUES(?,?,?,?,?,?,?)")

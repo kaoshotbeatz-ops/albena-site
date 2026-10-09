@@ -1,4 +1,4 @@
-import type { Bindings } from "../_stubs";
+import type { Bindings } from "../types";
 
 export class StripeError extends Error {
   constructor(public status: number, public body: unknown) { super(`stripe_${status}`); }

@@ -1,11 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { auditEntries } from "../src/_stubs";
 import { getEntitlement } from "../src/billing";
 import { verifyStripeSignature, hmacHex } from "../src/billing/signature";
-import { ENV, SECRET, makeApp, makeD1, postEvent, sign } from "./billing-helpers";
+import { applyEntitlement } from "../src/billing/entitlements";
+import { WEBHOOK_SECRET as SECRET, auditSince, clearPortalTables, client, e, lastAuditId, login, seedMember, seedOwner, testBindings } from "./helpers";
 
-let db: D1Database, env: ReturnType<typeof ENV>, app: ReturnType<typeof makeApp>;
-beforeEach(() => { db = makeD1(); env = ENV(db); app = makeApp(); auditEntries.length = 0; });
+let db: D1Database, env: ReturnType<typeof testBindings>, app: ReturnType<typeof client>, ownerCookie: string, auditMark: number;
+const auditEntries = { get: async () => auditSince(auditMark) };
+const makeApp = (cookie?: string) => client(cookie, env);
+async function sign(body: string, ts = Math.floor(Date.now() / 1000), secret = SECRET) {
+  return `t=${ts},v1=${await hmacHex(secret, `${ts}.${body}`)}`;
+}
+async function postEvent(a: ReturnType<typeof client>, b: typeof env, ev: object, header?: string) {
+  const body = JSON.stringify(ev);
+  return a.request("/api/stripe/webhook", { method: "POST", body, headers: { "Stripe-Signature": header ?? (await sign(body)) } }, b);
+}
+beforeEach(async () => {
+  db = e.DB; env = testBindings();
+  await clearPortalTables();
+  const owner = await seedOwner("u1", "acct_1");
+  ownerCookie = await login(owner);
+  app = makeApp(ownerCookie);
+  auditMark = await lastAuditId();
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe("signature", () => {
@@ -55,13 +71,11 @@ describe("webhook processing", () => {
     const r2 = await (await postEvent(app, env, sess())).json() as any;
     expect(r2.duplicate).toBe(true);
     expect((await db.prepare("SELECT COUNT(*) AS n FROM hardware_orders").first<any>()).n).toBe(1);
-    expect(auditEntries.filter((a) => a.action === "billing.checkout_completed")).toHaveLength(1);
+    expect((await auditEntries.get()).filter((a) => a.action === "billing.checkout_completed")).toHaveLength(1);
   });
   it("failed handler returns 500 and is retried", async () => {
-    const broken = ENV(db); const real = db.prepare.bind(db);
-    (db as any).prepare = (q: string) => { if (q.includes("hardware_orders")) throw new Error("boom"); return real(q); };
+    const broken = testBindings({ DB: { prepare: (q: string) => { if (q.includes("hardware_orders")) throw new Error("boom"); return db.prepare(q); }, batch: (s: D1PreparedStatement[]) => db.batch(s) } as unknown as D1Database });
     expect((await postEvent(app, broken, sess())).status).toBe(500);
-    (db as any).prepare = real;
     expect((await postEvent(app, env, sess())).status).toBe(200);
     expect((await db.prepare("SELECT status FROM stripe_events WHERE id='evt_co'").first<any>()).status).toBe("processed");
   });
@@ -108,7 +122,7 @@ describe("checkout", () => {
     }));
     return calls;
   };
-  const post = (a: any, body: any) => a.request("/api/billing/checkout", { method: "POST", body: JSON.stringify(body) }, env);
+  const post = (a: any, body: any) => a.request("/api/billing/checkout", { method: "POST", body: JSON.stringify(body) });
 
   it("byo monthly: subscription, tax, customer created, idempotency", async () => {
     const calls = mockStripe();
@@ -144,10 +158,10 @@ describe("checkout", () => {
     expect(r.status).toBe(400); expect((await r.json() as any).error).toBe("contact_sales");
     expect((await post(app, { plan: "zzz" })).status).toBe(400);
     expect((await post(app, { plan: "byo" }) ).status).toBe(200);
-    const bare = { ...env, PRICE_BYO_MONTHLY: undefined } as any;
+    const bare = { ...env, PRICE_BYO_MONTHLY: "" } as any;
     expect((await app.request("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan: "byo" }) }, bare)).status).toBe(503);
-    expect((await post(makeApp({ id: "u2", email: "m@x.com", role: "member", accountId: "acct_1" }), { plan: "byo" })).status).toBe(403);
-    expect((await post(makeApp(null), { plan: "byo" })).status).toBe(401);
+    expect((await post(makeApp(await login(await seedMember("u2", "acct_1"))), { plan: "byo" })).status).toBe(403);
+    expect((await post(makeApp(), { plan: "byo" })).status).toBe(401);
     expect(calls.every((c) => !c.init.body?.includes("estate"))).toBe(true);
   });
   it("already-active account is told to use the portal", async () => {
@@ -157,7 +171,7 @@ describe("checkout", () => {
   });
   it("portal, summary, invoices", async () => {
     const calls = mockStripe();
-    expect((await app.request("/api/billing/portal", { method: "POST" }, env)).status).toBe(404);
+    expect((await app.request("/api/billing/portal", { method: "POST" })).status).toBe(404);
     await db.prepare("INSERT INTO billing_customers VALUES ('acct_1','cus_1',1)").run();
     expect(await (await app.request("/api/billing/portal", { method: "POST" }, env)).json()).toEqual({ url: "https://billing.stripe.com/p/x" });
     expect(new URLSearchParams(calls.at(-1)!.init.body).get("customer")).toBe("cus_1");
@@ -165,5 +179,36 @@ describe("checkout", () => {
     expect(inv.invoices[0]).toEqual({ id: "in_1", number: "A-1", status: "paid", amountPaid: 100, amountDue: 0, currency: "usd", created: 1, hostedInvoiceUrl: "h", pdf: "p" });
     const s = await (await app.request("/api/billing/summary", {}, env)).json() as any;
     expect(s.entitlement.plan).toBe("none"); expect(s.hasBillingAccount).toBe(true);
+  });
+});
+
+describe("entitlement maxHubs", () => {
+  it.each([["byo", 1], ["hub_mac", 1], ["hub_nvidia", 1], ["estate", 5]])("%s allows %i hub(s) while active", async (plan, n) => {
+    await applyEntitlement(db, "acct_1", { plan, status: "active" }, 1);
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan, status: "active", active: true, maxHubs: n });
+  });
+  it("is 0 with no entitlement and when not active", async () => {
+    expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "none", status: "none", active: false, maxHubs: 0 });
+    await applyEntitlement(db, "acct_1", { plan: "estate", status: "past_due" }, 1);
+    expect((await getEntitlement(db, "acct_1")).maxHubs).toBe(0);
+  });
+});
+
+describe("orders", () => {
+  it("lists only this account's hardware orders in camelCase", async () => {
+    await postEvent(app, env, sess());
+    await db.prepare("INSERT INTO hardware_orders (id,account_id,plan,checkout_session_id,created_at) VALUES ('hw_other','acct_other','hub_mac','cs_o',1)").run();
+    const r = await app.request("/api/billing/orders");
+    expect(r.status).toBe(200);
+    const { orders } = await r.json() as any;
+    expect(orders).toHaveLength(1);
+    expect(orders[0]).toMatchObject({ id: "hw_cs_1", plan: "hub_mac", shippingStatus: "pending_fulfillment", refunded: false, amountTotal: 99900, currency: "usd" });
+    expect(orders[0].shipping_json).toBeUndefined();
+    expect((await makeApp().request("/api/billing/orders")).status).toBe(401);
+  });
+  it("summary no longer embeds orders", async () => {
+    const s = await (await app.request("/api/billing/summary")).json() as any;
+    expect(Object.keys(s).sort()).toEqual(["entitlement", "hasBillingAccount"]);
+    expect(s.entitlement.maxHubs).toBe(0);
   });
 });

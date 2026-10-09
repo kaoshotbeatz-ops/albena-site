@@ -1,6 +1,6 @@
 import type { Hono } from "hono";
-import type { AppEnv, Bindings } from "../_stubs";
-import { audit, requireUser } from "../_stubs";
+import type { AppEnv, Bindings } from "../types";
+import { audit, requireUser } from "../auth";
 import { getEntitlement } from "./entitlements";
 import { PLANS, isHardware, priceId, type Interval, type Plan } from "./plans";
 import { stripe, StripeError } from "./stripe";
@@ -9,7 +9,7 @@ import { stripeWebhook } from "./webhook";
 export { getEntitlement } from "./entitlements";
 export const migrations = ["0200_billing_init.sql"];
 
-const base = (env: Bindings) => (env.PORTAL_BASE_URL ?? "https://account.albena.ai").replace(/\/$/, "");
+const base = (env: Bindings) => (env.PORTAL_ORIGIN).replace(/\/$/, "");
 
 async function ensureCustomer(env: Bindings, accountId: string, email: string): Promise<string> {
   const row = await env.DB.prepare("SELECT stripe_customer_id FROM billing_customers WHERE account_id = ?").bind(accountId).first<{ stripe_customer_id: string }>();
@@ -85,11 +85,16 @@ export function mount(app: Hono<AppEnv>): void {
   app.get("/api/billing/summary", requireUser, async (c) => {
     const { accountId } = c.get("user");
     const entitlement = await getEntitlement(c.env.DB, accountId);
-    const orders = await c.env.DB.prepare(
-      "SELECT id, plan, shipping_status, refunded, amount_total, currency, created_at FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
-    ).bind(accountId).all();
     const cust = await c.env.DB.prepare("SELECT 1 AS x FROM billing_customers WHERE account_id = ?").bind(accountId).first();
-    return c.json({ entitlement, hasBillingAccount: !!cust, hardwareOrders: orders.results ?? [] });
+    return c.json({ entitlement, hasBillingAccount: !!cust });
+  });
+
+  app.get("/api/billing/orders", requireUser, async (c) => {
+    const { accountId } = c.get("user");
+    const { results } = await c.env.DB.prepare(
+      "SELECT id, plan, shipping_status AS shippingStatus, refunded, amount_total AS amountTotal, currency, created_at AS createdAt FROM hardware_orders WHERE account_id = ? ORDER BY created_at DESC",
+    ).bind(accountId).all<{ refunded: number }>();
+    return c.json({ orders: results.map((o) => ({ ...o, refunded: !!o.refunded })) });
   });
 
   app.get("/api/billing/invoices", requireUser, async (c) => {
