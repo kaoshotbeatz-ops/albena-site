@@ -52,10 +52,10 @@ Remove or leave the `routes` custom domains as needed; the zone for albena.ai mu
 ## Development
 
 ```sh
-npm test            # vitest + @cloudflare/vitest-pool-workers (needs ../web/dist/index.html to exist)
+npm test            # vitest + @cloudflare/vitest-plugin (needs ../web/dist/index.html to exist)
 npm run typecheck
 npm run migrate:local && npm run dev   # wrangler dev --local
 ```
 
 Local use of Node 24: `export PATH=$(brew --prefix node@24)/bin:$PATH`.
-Tests set `compatibilityDate` to the newest date the bundled local workerd supports (the production date is `2026-10-01` in `wrangler.jsonc`); `wrangler dev --local` may need the same temporary override if its workerd is older. `@cloudflare/vitest-pool-workers` is deprecated in favour of `@cloudflare/vitest-plugin`; migrate with `npx @cloudflare/codemods vitest:pool-workers-to-vitest-plugin` when convenient.
+Tests set `compatibilityDate` to the newest date the bundled local workerd supports (the production date is `2026-10-01` in `wrangler.jsonc`); `wrangler dev --local` may need the same temporary override if its workerd is older.
