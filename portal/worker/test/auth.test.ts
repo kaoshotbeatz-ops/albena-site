@@ -1,12 +1,17 @@
 import { env } from "cloudflare:workers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { app } from "../src/index";
 import type { Bindings } from "../src/types";
 import { randomToken, sha256, equalHash } from "../src/auth/crypto";
 import { SESSION_COOKIE, now, IDLE_SECONDS, ABSOLUTE_SECONDS } from "../src/auth/sessions";
 import { verifyChain, sealAudit } from "../src/auditchain";
-import { sendMail } from "../src/auth/mail";
-import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
+// The Cloudflare pool pre-loads the worker entry, so static imports would bypass vi.mock.
+// Re-import the app (and the mocked modules) after resetModules so the mocks apply.
+let app: typeof import("../src/index")["app"];
+let sendMail: typeof import("../src/auth/mail")["sendMail"];
+let generateAuthenticationOptions: typeof import("@simplewebauthn/server")["generateAuthenticationOptions"];
+let generateRegistrationOptions: typeof import("@simplewebauthn/server")["generateRegistrationOptions"];
+let verifyAuthenticationResponse: typeof import("@simplewebauthn/server")["verifyAuthenticationResponse"];
+let verifyRegistrationResponse: typeof import("@simplewebauthn/server")["verifyRegistrationResponse"];
 
 vi.mock("../src/auth/mail", () => ({ sendMail: vi.fn() }));
 vi.mock("@simplewebauthn/server", () => ({
@@ -51,7 +56,11 @@ async function loginChallenge() {
   expect(result.status).toBe(200);
   return cookie(result, "__Host-albena_passkey");
 }
-beforeEach(() => {
+beforeEach(async () => {
+  vi.resetModules();
+  ({ app } = await import("../src/index"));
+  ({ sendMail } = await import("../src/auth/mail"));
+  ({ generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } = await import("@simplewebauthn/server"));
   vi.resetAllMocks();
   bindings = { ...e, AUTH_IP_LIMITER: limiter(), AUTH_EMAIL_LIMITER: limiter() };
   vi.stubGlobal("fetch", vi.fn(async () => Response.json({ success: true, hostname: "account.albena.ai", action: "magic_login" })));

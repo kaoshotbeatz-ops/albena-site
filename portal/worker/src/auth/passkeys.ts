@@ -38,7 +38,7 @@ export function mountPasskeys(app: Hono<AppEnv>): void {
     const user = c.get("user");
     const { results } = await c.env.DB.prepare("SELECT id FROM passkeys WHERE user_id = ?").bind(user.id).all<{ id: string }>();
     const options = await generateRegistrationOptions({ rpName: "Albena", rpID: c.env.RP_ID,
-      userID: new TextEncoder().encode(user.id), userName: user.email, attestationType: "none",
+      userID: new Uint8Array(new TextEncoder().encode(user.id)), userName: user.email, attestationType: "none",
       excludeCredentials: results.map(p => ({ id: p.id })),
       authenticatorSelection: { residentKey: "required", userVerification: "required" },
     });
