@@ -196,10 +196,19 @@ jobs:
         if: hashFiles('worker/package.json') != ''
         working-directory: worker
         run: npm ci
+      - name: Require CLOUDFLARE_API_TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error title=Missing secret::Repository secret CLOUDFLARE_API_TOKEN is not set. Create an 'Edit Cloudflare Workers' API token (scoped to this account and zone albena.ai, plus D1 Edit if migrations run in CI) and add it under GitHub repo > Settings > Secrets and variables > Actions."
+            exit 1
+          fi
       - name: wrangler deploy
         if: hashFiles('worker/package.json') != ''
         working-directory: worker
-        run: npx wrangler deploy
+        # --env "" targets the top-level (production) config, not the staging env
+        run: npx wrangler deploy --env ""
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: No worker yet
