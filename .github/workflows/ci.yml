@@ -7,6 +7,8 @@ on:
   schedule:
     - cron: "17 6 * * 1" # weekly scan (NIST CA-7)
   workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -139,6 +141,35 @@ jobs:
       - name: Lighthouse CI on locally served site
         run: |
           npx --yes @lhci/cli@0.14.0 autorun --collect.staticDistDir=artifact --config=./lighthouserc.json
+
+  sbom:
+    name: SBOM (CycloneDX)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # only used to attach SBOMs to a published release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Generate SBOMs (SR-4 / CM-8)
+        run: |
+          mkdir -p sbom
+          for dir in web worker; do
+            (cd "$dir" && npm ci --ignore-scripts && npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --ignore-npm-errors --output-format JSON --output-file "../sbom/sbom-$dir.cdx.json")
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sbom
+          path: sbom
+          if-no-files-found: error
+      - name: Attach SBOMs to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" sbom/*.cdx.json --clobber --repo "${{ github.repository }}"
 
   deploy:
     name: Deploy (production)

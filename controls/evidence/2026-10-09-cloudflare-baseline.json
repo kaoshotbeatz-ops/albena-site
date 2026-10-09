@@ -1,0 +1,42 @@
+{
+  "zone": "albena.ai",
+  "checked_at": "2026-10-09T14:07:22Z",
+  "status": "pass",
+  "checks": [
+    {
+      "name": "always_use_https",
+      "required": true,
+      "status": "pass",
+      "expected": "on",
+      "actual": "on"
+    },
+    {
+      "name": "min_tls_version",
+      "required": true,
+      "status": "pass",
+      "expected": ">=1.2",
+      "actual": "1.2"
+    },
+    {
+      "name": "ssl_mode",
+      "required": true,
+      "status": "pass",
+      "expected": "strict",
+      "actual": "strict"
+    },
+    {
+      "name": "hsts",
+      "required": true,
+      "status": "pass",
+      "expected": "max-age>=31536000 (edge setting or response header)",
+      "actual": "edge: false max_age=0; header: max-age=63072000; includeSubDomains; preload"
+    },
+    {
+      "name": "dnssec",
+      "required": false,
+      "status": "report",
+      "expected": "active",
+      "actual": "disabled"
+    }
+  ]
+}
