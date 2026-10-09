@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "./types";
 import { json } from "./security";
+import { statusSummary } from "./maintenance";
+import { sealAudit } from "./auditchain";
 import { audit, clean, clientIp, hashIp, normalizeEmail, notify, verifyTurnstile } from "./util";
 
 const MAX_BODY = 16 * 1024;
@@ -124,6 +126,7 @@ publicApi.post("/waitlist", async (c) => {
         CASE WHEN changes() > 0 THEN 'waitlist:' || last_insert_rowid() END, ?, ?)`,
     ).bind(c.get("requestId"), c.get("ipHash")),
   ]);
+  await sealAudit(c.env);
   const created = r.meta.changes > 0;
   if (created) c.executionCtx.waitUntil(notify(c.env, "New Albena waitlist signup", "A new waitlist signup was recorded."));
   return json({ ok: true }, created ? 201 : 200);
@@ -144,7 +147,14 @@ publicApi.post("/support", async (c) => {
        VALUES ('public', 'support.create', 'ticket:' || (SELECT ticket_id FROM tickets WHERE id = last_insert_rowid()), ?, ?)`,
     ).bind(c.get("requestId"), c.get("ipHash")),
   ]);
+  await sealAudit(c.env);
   const id = (sel.results[0] as { ticket_id: string }).ticket_id;
   c.executionCtx.waitUntil(notify(c.env, `New Albena support ticket ${id}`, `Ticket ${id} (${d.topic}) was opened.`));
   return json({ ok: true, id }, 201);
+});
+
+/** AU-6/SI-4: public, PII-free health of backups. No counts. */
+publicApi.get("/status", async (c) => {
+  const s = await statusSummary(c.env);
+  return json({ ok: true, lastBackupOk: s.lastBackupOk, lastVerifiedAt: s.lastVerifiedAt });
 });

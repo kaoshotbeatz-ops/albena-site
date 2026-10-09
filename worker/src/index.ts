@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv, Env } from "./types";
 import { json, withSecurityHeaders } from "./security";
 import { publicApi } from "./public";
+import { runScheduled } from "./maintenance";
 import { adminApi, requireAccess } from "./admin";
 
 const app = new Hono<AppEnv>();
@@ -48,5 +49,8 @@ export default {
       res = json({ error: "internal_error" }, 500);
     }
     return withSecurityHeaders(req, res);
+  },
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(runScheduled(env));
   },
 } satisfies ExportedHandler<Env>;

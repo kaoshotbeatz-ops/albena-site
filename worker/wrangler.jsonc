@@ -31,6 +31,12 @@
     }
   ],
 
+  // CP-9 backups (daily NDJSON.gz + manifest). Staging uses the same bucket under "staging/".
+  "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "albena-backups" }],
+
+  // Daily 03:17 UTC: backup, retention purge; Sundays also restore-verification.
+  "triggers": { "crons": ["17 3 * * *"] },
+
   // ~5 requests / 60 s per key (we key on client IP + route) for POST endpoints.
   "ratelimits": [
     { "name": "POST_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }
@@ -42,7 +48,8 @@
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
     "NOTIFY_FROM": "notifications@albena.ai",
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    "BACKUP_PREFIX": ""
   },
 
   // Secrets (set with `wrangler secret put`, never in this file):
@@ -58,6 +65,10 @@
       "d1_databases": [
         { "binding": "DB", "database_name": "albena", "database_id": "70026d77-8cec-40a4-9340-e7f5113a0404", "migrations_dir": "migrations" }
       ],
+      "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "albena-backups" }],
+      // Staging shares the production D1, so no cron here (production cron already covers it).
+      // Test the scheduled handler with `wrangler dev --test-scheduled`.
+      "triggers": { "crons": [] },
       "ratelimits": [
         { "name": "POST_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } }
       ],
@@ -65,6 +76,7 @@
         "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
         "NOTIFY_FROM": "notifications@albena.ai",
         "ENVIRONMENT": "staging",
+        "BACKUP_PREFIX": "staging/",
         "EXTRA_TURNSTILE_HOSTS": "albena-site-staging.albena-site.workers.dev"
       }
     }

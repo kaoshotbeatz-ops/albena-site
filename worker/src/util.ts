@@ -61,16 +61,7 @@ export async function verifyTurnstile(
   }
 }
 
-export async function audit(
-  env: Env,
-  e: { actor: string; action: string; target?: string; requestId: string; ipHash?: string },
-): Promise<void> {
-  await env.DB.prepare(
-    "INSERT INTO audit_log (actor, action, target, request_id, ip_hash) VALUES (?, ?, ?, ?, ?)",
-  )
-    .bind(e.actor, e.action, e.target ?? null, e.requestId, e.ipHash ?? null)
-    .run();
-}
+export { audit } from "./auditchain";
 
 /** Best-effort notification; contains no user-provided content. Never throws. */
 export async function notify(env: Env, subject: string, text: string): Promise<void> {

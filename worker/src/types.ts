@@ -1,6 +1,9 @@
 export interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  BACKUPS: R2Bucket;
+  /** R2 key prefix; "" in production, "staging/" in staging. */
+  BACKUP_PREFIX?: string;
   POST_LIMITER: RateLimit;
   MAIL?: SendEmail;
   TURNSTILE_SITE_KEY: string;

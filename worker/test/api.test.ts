@@ -247,7 +247,7 @@ describe("POST /api/support", () => {
 });
 
 describe("admin", () => {
-  const paths = ["/api/admin/waitlist", "/api/admin/tickets", "/api/admin/export/waitlist.csv", "/api/admin/export/tickets.csv", "/admin/", "/admin/index.html"];
+  const paths = ["/api/admin/integrity", "/api/admin/waitlist", "/api/admin/tickets", "/api/admin/export/waitlist.csv", "/api/admin/export/tickets.csv", "/admin/", "/admin/index.html"];
 
   it("denies without JWT (deny by default)", async () => {
     for (const p of paths) {
@@ -299,6 +299,13 @@ describe("admin", () => {
       method: "PATCH", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify({ status: "resolved" }),
     });
     expect(patch.status).toBe(200);
+
+    const integ = await call("/api/admin/integrity", { headers: h });
+    expect(integ.status).toBe(200);
+    const ib = (await integ.json()) as any;
+    expect(ib.chain.ok).toBe(true);
+    expect(ib.chain.unsealed).toBe(0);
+    expect(ib.lastBackupOk).toBe(false);
 
     const csv = await call("/api/admin/export/tickets.csv", { headers: h });
     expect(csv.headers.get("Content-Type")).toContain("text/csv");

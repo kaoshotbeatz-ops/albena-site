@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv, Env } from "./types";
 import { audit } from "./util";
+import { verifyChain } from "./auditchain";
+import { statusSummary } from "./maintenance";
 import { json } from "./security";
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
@@ -134,5 +136,12 @@ for (const [name, table, cols, order] of [
     });
   });
 }
+
+adminApi.get("/integrity", async (c) => {
+  const chain = await verifyChain(c.env);
+  const s = await statusSummary(c.env);
+  await audit(c.env, { actor: c.get("actor"), action: "admin.integrity", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
+  return json({ chain, lastBackupOk: s.lastBackupOk, lastBackupAt: s.lastBackupAt, lastVerifiedAt: s.lastVerifiedAt });
+});
 
 adminApi.all("*", () => json({ error: "not_found" }, 404));
