@@ -1,1 +1,5 @@
 .DS_Store
+dist-out/
+site-dist/
+node_modules/
+.lighthouseci/

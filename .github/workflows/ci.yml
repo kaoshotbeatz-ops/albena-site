@@ -1,0 +1,194 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1" # weekly scan (NIST CA-7)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  SITE_URL: https://albena.ai
+
+jobs:
+  controls:
+    name: Controls data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: controls.json is current
+        run: node scripts/build-controls.mjs --check
+      - name: Header check script self-test
+        run: |
+          printf 'HTTP/2 200\nstrict-transport-security: max-age=31536000\ncontent-security-policy: default-src self; frame-ancestors none\nx-frame-options: DENY\nx-content-type-options: nosniff\nreferrer-policy: no-referrer\npermissions-policy: camera=()\n' > good.txt
+          bash scripts/check-headers.sh --file good.txt
+          if bash scripts/check-headers.sh --file /dev/null; then echo "script should fail on empty headers"; exit 1; fi
+
+  build-web:
+    name: Build web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install and build (web/ if present, else static root)
+        run: |
+          if [ -f web/package.json ]; then
+            cd web
+            npm ci
+            npm run build
+            cd ..
+            rsync -a web/dist/ dist-out/
+          else
+            mkdir -p dist-out
+            rsync -a --exclude '.git' --exclude '.github' --exclude 'controls' --exclude 'scripts' --exclude 'worker' --exclude 'BRIEF.md' --exclude 'site-dist' --exclude 'dist-out' --exclude 'web' --exclude 'lighthouserc.json' --exclude 'SECURITY.md' --exclude 'README.md' ./ dist-out/
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: dist-out
+          if-no-files-found: error
+
+  worker-tests:
+    name: Worker tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: hashFiles('worker/package.json') != ''
+        with:
+          node-version: 24
+      - name: Install and test
+        if: hashFiles('worker/package.json') != ''
+        working-directory: worker
+        run: |
+          npm ci
+          npm test --if-present
+      - name: Skipped (no worker/)
+        if: hashFiles('worker/package.json') == ''
+        run: echo "No worker/ directory; skipping."
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            detect --source /repo --redact --verbose --exit-code 1
+
+  audit:
+    name: npm audit (high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit each package with a lockfile
+        run: |
+          status=0
+          found=0
+          for dir in . web worker; do
+            if [ -f "$dir/package-lock.json" ]; then
+              found=1
+              echo "== npm audit in $dir"
+              (cd "$dir" && npm audit --audit-level=high) || status=1
+            fi
+          done
+          [ "$found" = 1 ] || echo "No lockfiles found; nothing to audit."
+          exit $status
+
+  sast:
+    name: Semgrep (p/default)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep scan
+        run: semgrep scan --config p/default --error --metrics=off --exclude controls --exclude node_modules
+
+  a11y:
+    name: Accessibility (Lighthouse >= 95)
+    needs: build-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: artifact
+      - name: Lighthouse CI on locally served site
+        run: |
+          npx --yes @lhci/cli@0.14.0 autorun --collect.staticDistDir=artifact --config=./lighthouserc.json
+
+  deploy:
+    name: Deploy (production)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [controls, build-web, worker-tests, secrets, audit, sast, a11y]
+    runs-on: ubuntu-latest
+    environment: production # configure required reviewers in repo settings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: site-dist
+          path: artifact
+      - name: Restore built web into place
+        run: |
+          if [ -f web/package.json ]; then mkdir -p web/dist && cp -R artifact/. web/dist/; fi
+      - name: Install worker dependencies
+        if: hashFiles('worker/package.json') != ''
+        working-directory: worker
+        run: npm ci
+      - name: wrangler deploy
+        if: hashFiles('worker/package.json') != ''
+        working-directory: worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: No worker yet
+        if: hashFiles('worker/package.json') == ''
+        run: echo "worker/ not present; nothing to deploy with wrangler."
+      - name: Post-deploy header check
+        run: bash scripts/check-headers.sh "$SITE_URL"
+
+  zap:
+    name: OWASP ZAP baseline (non-blocking)
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ env.SITE_URL }}
+          fail_action: false
+          allow_issue_writing: false
+          artifact_name: zap-baseline-report

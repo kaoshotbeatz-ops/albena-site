@@ -1,0 +1,1767 @@
+[
+  {
+    "id": "AC-1",
+    "family": "Access Control",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/access-control.md (DRAFT)"
+  },
+  {
+    "id": "AC-2",
+    "family": "Access Control",
+    "title": "Account Management",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare Access policy; GitHub org members; access review record (planned)"
+  },
+  {
+    "id": "AC-3",
+    "family": "Access Control",
+    "title": "Access Enforcement",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch); Access policy export"
+  },
+  {
+    "id": "AC-4",
+    "family": "Access Control",
+    "title": "Information Flow Enforcement",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "scripts/check-headers.sh; worker/ CSP config"
+  },
+  {
+    "id": "AC-5",
+    "family": "Access Control",
+    "title": "Separation of Duties",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "GitHub environment 'production' protection rule"
+  },
+  {
+    "id": "AC-6",
+    "family": "Access Control",
+    "title": "Least Privilege",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml (permissions block)"
+  },
+  {
+    "id": "AC-7",
+    "family": "Access Control",
+    "title": "Unsuccessful Logon Attempts",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch) rate limiter; IdP policy"
+  },
+  {
+    "id": "AC-8",
+    "family": "Access Control",
+    "title": "System Use Notification",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "Admin page banner (planned)"
+  },
+  {
+    "id": "AC-11",
+    "family": "Access Control",
+    "title": "Device Lock",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "AC-12",
+    "family": "Access Control",
+    "title": "Session Termination",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Access application session duration setting"
+  },
+  {
+    "id": "AC-14",
+    "family": "Access Control",
+    "title": "Permitted Actions Without Identification or Authentication",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "controls/nist-800-53-moderate.csv; site map"
+  },
+  {
+    "id": "AC-17",
+    "family": "Access Control",
+    "title": "Remote Access",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Access policy; GitHub org 2FA setting"
+  },
+  {
+    "id": "AC-20",
+    "family": "Access Control",
+    "title": "Use of External Systems",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "AC-21",
+    "family": "Access Control",
+    "title": "Information Sharing",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "privacy.html; controls/policies/data-retention-privacy.md (DRAFT)"
+  },
+  {
+    "id": "AC-22",
+    "family": "Access Control",
+    "title": "Publicly Accessible Content",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "CODEOWNERS; .github/workflows/ci.yml"
+  },
+  {
+    "id": "AT-1",
+    "family": "Awareness and Training",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "AT-2",
+    "family": "Awareness and Training",
+    "title": "Literacy Training and Awareness",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Training record (planned)"
+  },
+  {
+    "id": "AT-3",
+    "family": "Awareness and Training",
+    "title": "Role-Based Training",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Training record (planned)"
+  },
+  {
+    "id": "AT-4",
+    "family": "Awareness and Training",
+    "title": "Training Records",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "Training record (planned)"
+  },
+  {
+    "id": "AU-1",
+    "family": "Audit and Accountability",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "AU-2",
+    "family": "Audit and Accountability",
+    "title": "Event Logging",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch) audit_log table"
+  },
+  {
+    "id": "AU-3",
+    "family": "Audit and Accountability",
+    "title": "Content of Audit Records",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch) audit_log schema"
+  },
+  {
+    "id": "AU-4",
+    "family": "Audit and Accountability",
+    "title": "Audit Log Storage Capacity",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "D1 usage dashboard"
+  },
+  {
+    "id": "AU-5",
+    "family": "Audit and Accountability",
+    "title": "Response to Audit Logging Process Failures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "Alert rule (planned)"
+  },
+  {
+    "id": "AU-6",
+    "family": "Audit and Accountability",
+    "title": "Audit Record Review, Analysis, and Reporting",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Audit review record (planned)"
+  },
+  {
+    "id": "AU-7",
+    "family": "Audit and Accountability",
+    "title": "Audit Record Reduction and Report Generation",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "Saved D1 queries (planned)"
+  },
+  {
+    "id": "AU-8",
+    "family": "Audit and Accountability",
+    "title": "Time Stamps",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "AU-9",
+    "family": "Audit and Accountability",
+    "title": "Protection of Audit Information",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "D1 access policy; export job (planned)"
+  },
+  {
+    "id": "AU-11",
+    "family": "Audit and Accountability",
+    "title": "Audit Record Retention",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+  },
+  {
+    "id": "AU-12",
+    "family": "Audit and Accountability",
+    "title": "Audit Record Generation",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch)"
+  },
+  {
+    "id": "CA-1",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "CA-2",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Control Assessments",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "CA-3",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Information Exchange",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Vendor register (planned)"
+  },
+  {
+    "id": "CA-5",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Plan of Action and Milestones",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/GAPS.md"
+  },
+  {
+    "id": "CA-6",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Authorization",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Authorization memo (planned)"
+  },
+  {
+    "id": "CA-7",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Continuous Monitoring",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml (schedule)"
+  },
+  {
+    "id": "CA-9",
+    "family": "Assessment, Authorization, and Monitoring",
+    "title": "Internal System Connections",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "CM-1",
+    "family": "Configuration Management",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/change-management.md (DRAFT)"
+  },
+  {
+    "id": "CM-2",
+    "family": "Configuration Management",
+    "title": "Baseline Configuration",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "wrangler config; .github/workflows/ci.yml"
+  },
+  {
+    "id": "CM-3",
+    "family": "Configuration Management",
+    "title": "Configuration Change Control",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "pull_request_template.md; .github/workflows/ci.yml deploy job; Obvera Change records"
+  },
+  {
+    "id": "CM-4",
+    "family": "Configuration Management",
+    "title": "Impact Analyses",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/pull_request_template.md"
+  },
+  {
+    "id": "CM-5",
+    "family": "Configuration Management",
+    "title": "Access Restrictions for Change",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "CODEOWNERS; GitHub branch protection (pending)"
+  },
+  {
+    "id": "CM-6",
+    "family": "Configuration Management",
+    "title": "Configuration Settings",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "scripts/check-headers.sh; controls/stig-cis-web.md"
+  },
+  {
+    "id": "CM-7",
+    "family": "Configuration Management",
+    "title": "Least Functionality",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch)"
+  },
+  {
+    "id": "CM-8",
+    "family": "Configuration Management",
+    "title": "System Component Inventory",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "package-lock.json; Obvera CMDB (planned)"
+  },
+  {
+    "id": "CM-9",
+    "family": "Configuration Management",
+    "title": "Configuration Management Plan",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/change-management.md (DRAFT)"
+  },
+  {
+    "id": "CM-10",
+    "family": "Configuration Management",
+    "title": "Software Usage Restrictions",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "License check (planned)"
+  },
+  {
+    "id": "CP-1",
+    "family": "Contingency Planning",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "CP-2",
+    "family": "Contingency Planning",
+    "title": "Contingency Plan",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "CP-3",
+    "family": "Contingency Planning",
+    "title": "Contingency Training",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "Training record (planned)"
+  },
+  {
+    "id": "CP-4",
+    "family": "Contingency Planning",
+    "title": "Contingency Plan Testing",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Restore test record (planned)"
+  },
+  {
+    "id": "CP-6",
+    "family": "Contingency Planning",
+    "title": "Alternate Storage Site",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "CP-7",
+    "family": "Contingency Planning",
+    "title": "Alternate Processing Site",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "CP-8",
+    "family": "Contingency Planning",
+    "title": "Telecommunications Services",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "CP-9",
+    "family": "Contingency Planning",
+    "title": "System Backup",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "D1 Time Travel; backup export (planned)"
+  },
+  {
+    "id": "CP-10",
+    "family": "Contingency Planning",
+    "title": "System Recovery and Reconstitution",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Recovery runbook (planned)"
+  },
+  {
+    "id": "IA-1",
+    "family": "Identification and Authentication",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/access-control.md (DRAFT)"
+  },
+  {
+    "id": "IA-2",
+    "family": "Identification and Authentication",
+    "title": "Identification and Authentication (Organizational Users)",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Access policy; GitHub org 2FA setting"
+  },
+  {
+    "id": "IA-4",
+    "family": "Identification and Authentication",
+    "title": "Identifier Management",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/policies/access-control.md (DRAFT)"
+  },
+  {
+    "id": "IA-5",
+    "family": "Identification and Authentication",
+    "title": "Authenticator Management",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "GitHub Actions secrets; rotation record (planned)"
+  },
+  {
+    "id": "IA-6",
+    "family": "Identification and Authentication",
+    "title": "Authentication Feedback",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "IA-7",
+    "family": "Identification and Authentication",
+    "title": "Cryptographic Module Authentication",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "IA-11",
+    "family": "Identification and Authentication",
+    "title": "Re-authentication",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Access session setting"
+  },
+  {
+    "id": "IR-1",
+    "family": "Incident Response",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "IR-2",
+    "family": "Incident Response",
+    "title": "Incident Response Training",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "IR-3",
+    "family": "Incident Response",
+    "title": "Incident Response Testing",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "IR-4",
+    "family": "Incident Response",
+    "title": "Incident Handling",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "IR-5",
+    "family": "Incident Response",
+    "title": "Incident Monitoring",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "Obvera incident records (planned)"
+  },
+  {
+    "id": "IR-6",
+    "family": "Incident Response",
+    "title": "Incident Reporting",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "SECURITY.md"
+  },
+  {
+    "id": "IR-7",
+    "family": "Incident Response",
+    "title": "Incident Response Assistance",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "IR-8",
+    "family": "Incident Response",
+    "title": "Incident Response Plan",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/incident-response.md (DRAFT)"
+  },
+  {
+    "id": "MA-1",
+    "family": "Maintenance",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "MA-2",
+    "family": "Maintenance",
+    "title": "Controlled Maintenance",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MA-3",
+    "family": "Maintenance",
+    "title": "Maintenance Tools",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MA-4",
+    "family": "Maintenance",
+    "title": "Nonlocal Maintenance",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "MA-5",
+    "family": "Maintenance",
+    "title": "Maintenance Personnel",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MA-6",
+    "family": "Maintenance",
+    "title": "Timely Maintenance",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-1",
+    "family": "Media Protection",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+  },
+  {
+    "id": "MP-2",
+    "family": "Media Protection",
+    "title": "Media Access",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-3",
+    "family": "Media Protection",
+    "title": "Media Marking",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-4",
+    "family": "Media Protection",
+    "title": "Media Storage",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-5",
+    "family": "Media Protection",
+    "title": "Media Transport",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-6",
+    "family": "Media Protection",
+    "title": "Media Sanitization",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "MP-7",
+    "family": "Media Protection",
+    "title": "Media Use",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PE-1",
+    "family": "Physical and Environmental Protection",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "PE-2",
+    "family": "Physical and Environmental Protection",
+    "title": "Physical Access Authorizations",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-3",
+    "family": "Physical and Environmental Protection",
+    "title": "Physical Access Control",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-4",
+    "family": "Physical and Environmental Protection",
+    "title": "Access Control for Transmission",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-5",
+    "family": "Physical and Environmental Protection",
+    "title": "Access Control for Output Devices",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-6",
+    "family": "Physical and Environmental Protection",
+    "title": "Monitoring Physical Access",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-8",
+    "family": "Physical and Environmental Protection",
+    "title": "Visitor Access Records",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-9",
+    "family": "Physical and Environmental Protection",
+    "title": "Power Equipment and Cabling",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-10",
+    "family": "Physical and Environmental Protection",
+    "title": "Emergency Shutoff",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-11",
+    "family": "Physical and Environmental Protection",
+    "title": "Emergency Power",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-12",
+    "family": "Physical and Environmental Protection",
+    "title": "Emergency Lighting",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-13",
+    "family": "Physical and Environmental Protection",
+    "title": "Fire Protection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-14",
+    "family": "Physical and Environmental Protection",
+    "title": "Environmental Controls",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-15",
+    "family": "Physical and Environmental Protection",
+    "title": "Water Damage Protection",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-16",
+    "family": "Physical and Environmental Protection",
+    "title": "Delivery and Removal",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "PE-17",
+    "family": "Physical and Environmental Protection",
+    "title": "Alternate Work Site",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PL-1",
+    "family": "Planning",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "PL-2",
+    "family": "Planning",
+    "title": "System Security and Privacy Plans",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/"
+  },
+  {
+    "id": "PL-4",
+    "family": "Planning",
+    "title": "Rules of Behavior",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PL-8",
+    "family": "Planning",
+    "title": "Security and Privacy Architectures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "BRIEF.md"
+  },
+  {
+    "id": "PL-10",
+    "family": "Planning",
+    "title": "Baseline Selection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "controls/nist-800-53-moderate.csv"
+  },
+  {
+    "id": "PL-11",
+    "family": "Planning",
+    "title": "Baseline Tailoring",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "controls/nist-800-53-moderate.csv"
+  },
+  {
+    "id": "PS-1",
+    "family": "Personnel Security",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-2",
+    "family": "Personnel Security",
+    "title": "Position Risk Designation",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-3",
+    "family": "Personnel Security",
+    "title": "Personnel Screening",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-4",
+    "family": "Personnel Security",
+    "title": "Personnel Termination",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-5",
+    "family": "Personnel Security",
+    "title": "Personnel Transfer",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-6",
+    "family": "Personnel Security",
+    "title": "Access Agreements",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-7",
+    "family": "Personnel Security",
+    "title": "External Personnel Security",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-8",
+    "family": "Personnel Security",
+    "title": "Personnel Sanctions",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "PS-9",
+    "family": "Personnel Security",
+    "title": "Position Descriptions",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/acceptable-use.md (DRAFT)"
+  },
+  {
+    "id": "RA-1",
+    "family": "Risk Assessment",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vulnerability-management.md (DRAFT)"
+  },
+  {
+    "id": "RA-2",
+    "family": "Risk Assessment",
+    "title": "Security Categorization",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+  },
+  {
+    "id": "RA-3",
+    "family": "Risk Assessment",
+    "title": "Risk Assessment",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/GAPS.md"
+  },
+  {
+    "id": "RA-5",
+    "family": "Risk Assessment",
+    "title": "Vulnerability Monitoring and Scanning",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": ".github/workflows/ci.yml; .github/dependabot.yml"
+  },
+  {
+    "id": "RA-7",
+    "family": "Risk Assessment",
+    "title": "Risk Response",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/GAPS.md"
+  },
+  {
+    "id": "RA-9",
+    "family": "Risk Assessment",
+    "title": "Criticality Analysis",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/GAPS.md"
+  },
+  {
+    "id": "SA-1",
+    "family": "System and Services Acquisition",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/change-management.md (DRAFT)"
+  },
+  {
+    "id": "SA-2",
+    "family": "System and Services Acquisition",
+    "title": "Allocation of Resources",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "controls/GAPS.md"
+  },
+  {
+    "id": "SA-3",
+    "family": "System and Services Acquisition",
+    "title": "System Development Life Cycle",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/policies/change-management.md (DRAFT); .github/workflows/ci.yml"
+  },
+  {
+    "id": "SA-4",
+    "family": "System and Services Acquisition",
+    "title": "Acquisition Process",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SA-5",
+    "family": "System and Services Acquisition",
+    "title": "System Documentation",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "README.md; BRIEF.md; controls/"
+  },
+  {
+    "id": "SA-8",
+    "family": "System and Services Acquisition",
+    "title": "Security and Privacy Engineering Principles",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "controls/stig-cis-web.md"
+  },
+  {
+    "id": "SA-9",
+    "family": "System and Services Acquisition",
+    "title": "External System Services",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SA-10",
+    "family": "System and Services Acquisition",
+    "title": "Developer Configuration Management",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "CODEOWNERS; .github/workflows/ci.yml"
+  },
+  {
+    "id": "SA-11",
+    "family": "System and Services Acquisition",
+    "title": "Developer Testing and Evaluation",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "SA-15",
+    "family": "System and Services Acquisition",
+    "title": "Development Process, Standards, and Tools",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "SA-22",
+    "family": "System and Services Acquisition",
+    "title": "Unsupported System Components",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/dependabot.yml; .github/workflows/ci.yml"
+  },
+  {
+    "id": "SC-1",
+    "family": "System and Communications Protection",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/information-security.md (DRAFT)"
+  },
+  {
+    "id": "SC-2",
+    "family": "System and Communications Protection",
+    "title": "Separation of System and User Functionality",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "worker/ (not in this branch)"
+  },
+  {
+    "id": "SC-4",
+    "family": "System and Communications Protection",
+    "title": "Information in Shared System Resources",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-5",
+    "family": "System and Communications Protection",
+    "title": "Denial-of-Service Protection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04); worker/ (not in this branch)"
+  },
+  {
+    "id": "SC-7",
+    "family": "System and Communications Protection",
+    "title": "Boundary Protection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-8",
+    "family": "System and Communications Protection",
+    "title": "Transmission Confidentiality and Integrity",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "scripts/check-headers.sh; .github/workflows/ci.yml"
+  },
+  {
+    "id": "SC-10",
+    "family": "System and Communications Protection",
+    "title": "Network Disconnect",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-12",
+    "family": "System and Communications Protection",
+    "title": "Cryptographic Key Establishment and Management",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-13",
+    "family": "System and Communications Protection",
+    "title": "Cryptographic Protection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-17",
+    "family": "System and Communications Protection",
+    "title": "Public Key Infrastructure Certificates",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-18",
+    "family": "System and Communications Protection",
+    "title": "Mobile Code",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "scripts/check-headers.sh"
+  },
+  {
+    "id": "SC-20",
+    "family": "System and Communications Protection",
+    "title": "Secure Name/Address Resolution Service (Authoritative Source)",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare DNS settings"
+  },
+  {
+    "id": "SC-21",
+    "family": "System and Communications Protection",
+    "title": "Secure Name/Address Resolution Service (Recursive or Caching Resolver)",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-22",
+    "family": "System and Communications Protection",
+    "title": "Architecture and Provisioning for Name/Address Resolution Service",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Domain inventory pipeline"
+  },
+  {
+    "id": "SC-23",
+    "family": "System and Communications Protection",
+    "title": "Session Authenticity",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "worker/ tests (not in this branch)"
+  },
+  {
+    "id": "SC-28",
+    "family": "System and Communications Protection",
+    "title": "Protection of Information at Rest",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SC-39",
+    "family": "System and Communications Protection",
+    "title": "Process Isolation",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SI-1",
+    "family": "System and Information Integrity",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vulnerability-management.md (DRAFT)"
+  },
+  {
+    "id": "SI-2",
+    "family": "System and Information Integrity",
+    "title": "Flaw Remediation",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "implemented",
+    "evidence": ".github/dependabot.yml; .github/workflows/ci.yml"
+  },
+  {
+    "id": "SI-3",
+    "family": "System and Information Integrity",
+    "title": "Malicious Code Protection",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "SI-4",
+    "family": "System and Information Integrity",
+    "title": "System Monitoring",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare dashboards; audit_log"
+  },
+  {
+    "id": "SI-5",
+    "family": "System and Information Integrity",
+    "title": "Security Alerts, Advisories, and Directives",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/dependabot.yml"
+  },
+  {
+    "id": "SI-7",
+    "family": "System and Information Integrity",
+    "title": "Software, Firmware, and Information Integrity",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "SI-8",
+    "family": "System and Information Integrity",
+    "title": "Spam Protection",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "Turnstile config; worker/ (not in this branch)"
+  },
+  {
+    "id": "SI-10",
+    "family": "System and Information Integrity",
+    "title": "Information Input Validation",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "worker/ tests (not in this branch)"
+  },
+  {
+    "id": "SI-11",
+    "family": "System and Information Integrity",
+    "title": "Error Handling",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml (zap job)"
+  },
+  {
+    "id": "SI-12",
+    "family": "System and Information Integrity",
+    "title": "Information Management and Retention",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/data-retention-privacy.md (DRAFT)"
+  },
+  {
+    "id": "SI-16",
+    "family": "System and Information Integrity",
+    "title": "Memory Protection",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "implemented",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  },
+  {
+    "id": "SR-1",
+    "family": "Supply Chain Risk Management",
+    "title": "Policy and Procedures",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-2",
+    "family": "Supply Chain Risk Management",
+    "title": "Supply Chain Risk Management Plan",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-3",
+    "family": "Supply Chain Risk Management",
+    "title": "Supply Chain Controls and Processes",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": ".github/workflows/ci.yml"
+  },
+  {
+    "id": "SR-5",
+    "family": "Supply Chain Risk Management",
+    "title": "Acquisition Strategies, Tools, and Methods",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-6",
+    "family": "Supply Chain Risk Management",
+    "title": "Supplier Assessments and Reviews",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-8",
+    "family": "Supply Chain Risk Management",
+    "title": "Notification Agreements",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-10",
+    "family": "Supply Chain Risk Management",
+    "title": "Inspection of Systems or Components",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "planned",
+    "evidence": "controls/policies/vendor-management.md (DRAFT)"
+  },
+  {
+    "id": "SR-11",
+    "family": "Supply Chain Risk Management",
+    "title": "Component Authenticity",
+    "framework": [
+      "NIST 800-53"
+    ],
+    "status": "partial",
+    "evidence": "package-lock.json"
+  },
+  {
+    "id": "SR-12",
+    "family": "Supply Chain Risk Management",
+    "title": "Component Disposal",
+    "framework": [
+      "NIST 800-53",
+      "SOC 2"
+    ],
+    "status": "partial",
+    "evidence": "Cloudflare SOC 2 Type II report (obtain, GAPS G-04)"
+  }
+]
