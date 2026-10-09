@@ -18,7 +18,7 @@ export const waitlistSchema = z.object({
   turnstileToken: token,
 });
 
-export const TOPICS = ["general", "bug", "privacy", "security", "partnership", "other"] as const;
+export const TOPICS = ["waitlist", "connectors", "privacy", "bug", "accessibility", "security", "other"] as const;
 
 export const supportSchema = z.object({
   name: z.string().max(100).transform((s) => clean(s)).pipe(z.string().min(1)),

@@ -70,7 +70,7 @@ const cats = [...new Set(faqs.map((f) => f.cat))];
             <input id="s-email" name="email" type="email" inputmode="email" autocomplete="email" required data-validate aria-describedby="s-email-err" /><p class="err" id="s-email-err"></p></div>
           <div class="field"><label for="s-topic">Topic</label>
             <select id="s-topic" name="topic" required data-validate aria-describedby="s-topic-err">
-              <option value="">Choose one</option><option>Waitlist or early access</option><option>Connectors</option><option>Privacy or data request</option><option>Bug or feedback</option><option>Accessibility</option><option>Other</option>
+              <option value="">Choose one</option><option value="waitlist">Waitlist or early access</option><option value="connectors">Connectors</option><option value="privacy">Privacy or data request</option><option value="bug">Bug or feedback</option><option value="accessibility">Accessibility</option><option value="other">Other</option>
             </select><p class="err" id="s-topic-err"></p></div>
           <div class="field"><label for="s-msg">How can we help?</label>
             <textarea id="s-msg" name="message" required data-validate data-min="10" aria-describedby="s-msg-err"></textarea><p class="err" id="s-msg-err"></p></div>
