@@ -1,0 +1,9 @@
+---
+import App from '../layouts/App.astro';
+---
+<App title="Hubs" section="hubs" lead="Pair, rename and manage the Hubs on your account.">
+  <button slot="actions" class="btn btn-primary" id="pair-btn" type="button">Pair a new Hub</button>
+  <div id="pair" aria-live="polite" class="mb"></div>
+  <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
+  <script>import '../scripts/hubs';</script>
+</App>
