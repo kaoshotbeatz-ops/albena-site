@@ -1,14 +1,15 @@
-import type { Hono } from "hono";
+import type { Context, Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import type { AppEnv } from "../types";
 import { audit } from "../auditchain";
-import { randomToken, sha256, equalHash } from "./crypto";
+import { randomToken, sha256, equalHash, randomCode } from "./crypto";
 import { allowed, turnstile } from "./limits";
 import { sendMail } from "./mail";
 import { createSession, now, userById } from "./sessions";
 
 const COOKIE = "__Host-albena_magic";
 const cookieOptions = { httpOnly: true, secure: true, sameSite: "Lax" as const, path: "/", maxAge: 900 };
+const MAX_ATTEMPTS = 5;
 const accepted = { ok: true, message: "If this address can receive mail, a sign-in link will arrive shortly." };
 export function mountMagic(app: Hono<AppEnv>): void {
   app.post("/api/auth/magic/start", async c => {
@@ -19,12 +20,12 @@ export function mountMagic(app: Hono<AppEnv>): void {
       typeof body.turnstileToken !== "string" || body.turnstileToken.length > 2048) return c.json({ error: "invalid_request" }, 400);
     if (!(await allowed(c, email))) return c.json(accepted, 202);
     if (!(await turnstile(c, body.turnstileToken))) return c.json({ error: "challenge_failed" }, 400);
-    const secret = randomToken(), id = crypto.randomUUID(), browser = randomToken();
-    await c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at) VALUES (?, ?, ?, ?, ?)")
-      .bind(id, await sha256(secret), await sha256(browser), email, now() + 900).run();
+    const secret = randomToken(), id = crypto.randomUUID(), browser = randomToken(), code = randomCode();
+    await c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at, code_hash) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(id, await sha256(secret), await sha256(browser), email, now() + 900, await sha256(`${id}:${code}`)).run();
     setCookie(c, COOKIE, browser, cookieOptions);
     try {
-      await sendMail(c.env, { to: email, url: `${c.env.PORTAL_ORIGIN}/api/auth/magic/verify?token=${id}.${secret}` });
+      await sendMail(c.env, { to: email, url: `${c.env.PORTAL_ORIGIN}/api/auth/magic/verify?token=${id}.${secret}`, code });
     } catch {
       await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ?").bind(id).run();
       await audit(c, "auth.magic.delivery_failed", id);
@@ -48,18 +49,52 @@ export function mountMagic(app: Hono<AppEnv>): void {
     const consumed = await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ? AND token_hash = ? AND browser_hash = ? AND expires_at > ? RETURNING email")
       .bind(id, hash, browserHash, now()).first<{ email: string }>();
     if (!consumed) return bad();
+    await finishLogin(c, consumed.email);
+    return c.redirect("/", 303);
+  });
+  app.post("/api/auth/magic/code", async c => {
+    if (!(await allowed(c))) return c.json({ error: "rate_limited" }, 429);
+    const body = await c.req.json<{ id?: unknown; code?: unknown }>().catch(() => null);
+    const code = typeof body?.code === "string" ? body.code.replace(/[\s-]/g, "") : "";
+    if (!/^\d{6}$/.test(code) || (body?.id !== undefined && typeof body.id !== "string")) return c.json({ error: "invalid_code" }, 400);
+    const bad = () => c.json({ error: "invalid_or_expired_code" }, 400);
+    const browser = getCookie(c, COOKIE) ?? "";
+    if (!/^[a-f0-9]{64}$/.test(browser)) return bad();
+    const browserHash = await sha256(browser), ts = now();
+    // Cookie-bound lookup: the code alone is useless. Attempts are counted atomically before comparing.
+    const row = await c.env.DB.prepare(
+      "UPDATE magic_tokens SET attempts = attempts + 1 WHERE id = (SELECT id FROM magic_tokens WHERE browser_hash = ? AND code_hash IS NOT NULL AND expires_at > ? AND attempts < ? ORDER BY created_at DESC LIMIT 1) AND attempts < ? RETURNING id, code_hash, attempts")
+      .bind(browserHash, ts, MAX_ATTEMPTS, MAX_ATTEMPTS).first<{ id: string; code_hash: string; attempts: number }>();
+    if (!row || (typeof body?.id === "string" && body.id !== row.id)) return bad();
+    const hash = await sha256(`${row.id}:${code}`);
+    if (!equalHash(hash, row.code_hash)) {
+      if (row.attempts >= MAX_ATTEMPTS) {
+        await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ?").bind(row.id).run();
+        await audit(c, "auth.magic.code_locked", row.id);
+        return c.json({ error: "too_many_attempts" }, 400);
+      }
+      return c.json({ error: "wrong_code", attemptsLeft: MAX_ATTEMPTS - row.attempts }, 400);
+    }
+    const consumed = await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ? AND code_hash = ? AND browser_hash = ? AND expires_at > ? RETURNING email")
+      .bind(row.id, hash, browserHash, now()).first<{ email: string }>();
+    if (!consumed) return bad();
+    await finishLogin(c, consumed.email);
+    return c.json({ ok: true });
+  });
+}
+
+/** Shared by link verify and code entry: create the user/account on first login, then the session. */
+async function finishLogin(c: Context<AppEnv>, email: string): Promise<void> {
     const userId = crypto.randomUUID();
     await c.env.DB.batch([
-      c.env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").bind(userId, consumed.email),
-      c.env.DB.prepare("INSERT OR IGNORE INTO accounts (id, owner) SELECT id, id FROM users WHERE email = ?").bind(consumed.email),
-      c.env.DB.prepare("INSERT OR IGNORE INTO members (account_id, user_id, role) SELECT a.id, u.id, 'owner' FROM users u JOIN accounts a ON a.owner = u.id WHERE u.email = ?").bind(consumed.email),
+      c.env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").bind(userId, email),
+      c.env.DB.prepare("INSERT OR IGNORE INTO accounts (id, owner) SELECT id, id FROM users WHERE email = ?").bind(email),
+      c.env.DB.prepare("INSERT OR IGNORE INTO members (account_id, user_id, role) SELECT a.id, u.id, 'owner' FROM users u JOIN accounts a ON a.owner = u.id WHERE u.email = ?").bind(email),
     ]);
-    const u = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(consumed.email).first<{ id: string }>();
+    const u = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<{ id: string }>();
     const user = u && await userById(c, u.id);
     if (!user) throw new Error("user_creation_failed");
     await createSession(c, user);
     deleteCookie(c, COOKIE, cookieOptions);
     await audit(c, "auth.login.magic", user.id);
-    return c.redirect("/", 303);
-  });
 }

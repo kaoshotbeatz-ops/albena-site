@@ -74,6 +74,7 @@ export const api = {
   me: async (): Promise<Me> => (await get<W.Me>('/api/me')).user,
   logout: () => req<unknown>('POST', '/api/auth/logout', {}),
   magicStart: (email: string, turnstileToken: string) => req<unknown>('POST', '/api/auth/magic/start', { email, turnstileToken }, { noRedirect: true }),
+  magicCode: (code: string) => req<unknown>('POST', '/api/auth/magic/code', { code }, { noRedirect: true }),
   // Options come back as the bare WebAuthn options; the server keeps the challenge. Verify takes the raw browser response.
   passkeyLoginOptions: () => req<Record<string, unknown>>('POST', '/api/auth/passkey/login/options', {}, { noRedirect: true }),
   passkeyLoginVerify: (response: unknown) => req<unknown>('POST', '/api/auth/passkey/login/verify', response, { noRedirect: true }),

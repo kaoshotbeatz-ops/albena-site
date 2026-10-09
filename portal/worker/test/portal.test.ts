@@ -185,7 +185,7 @@ describe("scheduled prune", () => {
 });
 
 describe("mail providers", () => {
-  const mail = { to: "user@example.com", url: "https://account.albena.ai/api/auth/magic/verify?token=SECRETTOKEN" };
+  const mail = { to: "user@example.com", url: "https://account.albena.ai/api/auth/magic/verify?token=SECRETTOKEN", code: "654321" };
   it("cloudflare provider sends text through the EMAIL binding", async () => {
     const send = vi.fn(async () => ({}));
     await cloudflareMailer({ ...env, MAIL_PROVIDER: "cloudflare", EMAIL: { send } as unknown as SendEmail }).send(mail);
@@ -197,7 +197,7 @@ describe("mail providers", () => {
   it("dev provider redacts in test, prints only in development, refuses production", async () => {
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
     await devMailer({ ...env, ENVIRONMENT: "test" }).send(mail);
-    expect(log.mock.calls.flat().join(" ")).not.toContain("SECRETTOKEN");
+    expect(log.mock.calls.flat().join(" ")).not.toMatch(/SECRETTOKEN|654321/);
     await devMailer({ ...env, ENVIRONMENT: "development" }).send(mail);
     expect(log.mock.calls.flat().join(" ")).toContain("SECRETTOKEN");
     await expect(devMailer({ ...env, ENVIRONMENT: "production" }).send(mail)).rejects.toThrow("mail_not_configured");

@@ -4,12 +4,22 @@ import Auth from '../layouts/Auth.astro';
 <Auth title="Check your email">
   <div>
     <h1>Check your email</h1>
-    <p class="mut mt-s">If that address has an account, a sign-in link is on its way.</p>
+    <p class="mut mt-s">If that address has an account, a sign-in link and a 6-digit code are on their way.</p>
   </div>
   <p id="sent-line" hidden>Sent to <strong id="sent-to"></strong></p>
+  <form id="code-form" class="stack lg" novalidate>
+    <div class="field">
+      <label for="code">Enter the 6-digit code from the email</label>
+      <input class="input lg code-input" id="code" name="code" type="text" inputmode="numeric" pattern="[0-9 ]*" autocomplete="one-time-code" maxlength="8" required aria-describedby="code-hint code-err" placeholder="123 456" />
+      <p class="hint" id="code-hint">Opened the email on another device or in a mail app? Use the code here.</p>
+      <p class="err" id="code-err" role="alert"></p>
+    </div>
+    <button class="btn btn-primary btn-lg" id="code-send" type="submit">Sign in</button>
+    <p class="form-status" id="code-status" role="status" aria-live="polite"></p>
+  </form>
   <ul class="notes">
-    <li>The link works once and expires in 15 minutes.</li>
-    <li>Open it on this device for the smoothest sign-in.</li>
+    <li>The link and code work once and expire in 15 minutes.</li>
+    <li>If the link does not open here, enter the code instead.</li>
     <li>Nothing arrived? Check spam, then try again.</li>
   </ul>
   <a class="btn btn-lg" href="/login">Back to sign in</a>

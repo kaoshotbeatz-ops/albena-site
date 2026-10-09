@@ -5,6 +5,14 @@
 **Pairing code expired**  
 If your pairing code expired (more than 10 minutes), restart your Hub's setup to generate a new code, then try pairing again.
 
+**Sign-in link says it is invalid or expired**
+The link only works in the same browser where you requested it, and mail apps often open links in a different in-app browser. Use the 6-digit code from the same email instead: return to the "Check your email" page in the browser where you asked for the link, enter the code and click **Sign in**.
+
+- **Wrong code:** check the digits in the email. You have 5 attempts per email.
+- **Too many attempts:** the email's link and code are now void. Go to the sign-in page and request a new link.
+- **Expired or already used:** codes expire after 15 minutes and work once. Request a new link.
+- **No "Check your email" page open:** the code only works in the browser that requested it. Request a new link from that browser.
+
 **Passkey not working**  
 Try signing in from a different device, or add a new passkey:
 

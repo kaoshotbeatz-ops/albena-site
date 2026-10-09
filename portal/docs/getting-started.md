@@ -7,6 +7,8 @@
 3. Check your email for a link to verify your address
 4. Click the link in the email — this creates your account and logs you in
 
+**Opened the email on your phone or in a mail app?** Mail apps often open links in their own built-in browser, where the link cannot finish signing you in. The email also contains a 6-digit code. Go back to the page where you asked for the link (the "Check your email" page), enter the code, and click **Sign in**. The code works once and expires after 15 minutes.
+
 ## Add a passkey
 
 A passkey is a secure, password-free way to sign in. After you verify your email, you'll be prompted to add one.
