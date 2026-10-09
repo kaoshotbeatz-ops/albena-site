@@ -78,7 +78,7 @@ pal.addEventListener('click', (e) => { if (e.target === pal) pal.close(); });
 
 // Who am I (401 redirects to /login inside api.ts)
 export const meP = api.me().then((me) => {
-  const name = me.accountName || 'My home';
+  const name = 'My home';
   document.querySelectorAll('[data-ws-name],[data-ws-name2]').forEach((n) => { n.textContent = name; });
   const ico = $('.ws-ico'); if (ico) ico.textContent = name.slice(0, 1).toUpperCase();
   const who = $('[data-who]'); if (who) who.textContent = me.email;

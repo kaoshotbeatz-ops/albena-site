@@ -1,6 +1,6 @@
 import './shell';
 import { api } from '../lib/api';
-import { h, must, panel, chip, dot, fmtDate, ago, money, failInto, empty } from '../lib/ui';
+import { h, must, panel, chip, dot, fmtDate, ago, failInto, empty } from '../lib/ui';
 import type { BillingSummary, Hub } from '../lib/types';
 
 const root = must('#root');
@@ -11,7 +11,7 @@ function planCard(b: BillingSummary) {
   return panel('Plan', [
     h('p', { class: 'big' }, none ? 'No plan yet' : b.planName),
     h('div', { class: 'row' }, chip(none ? 'Not subscribed' : b.status.replace('_', ' '), none ? 'grey' : statusTone(b.status)),
-      b.amount !== undefined && h('span', { class: 'mut num' }, `${money(b.amount, b.currency)} / ${b.interval === 'year' ? 'year' : 'month'}`)),
+      !none && h('span', { class: 'mut' }, b.interval === 'annual' ? 'Billed yearly' : 'Billed monthly')),
     h('a', { class: 'btn btn-sm', href: '/billing' }, none ? 'Choose a plan' : 'Manage plan'),
   ]);
 }
@@ -33,9 +33,9 @@ function hubsCard(hubs: Hub[]) {
   return panel('Hubs', body, h('a', { class: 'tlink', href: '/hubs' }, 'View all'));
 }
 function alertsCard(b: BillingSummary | undefined, hubs: Hub[]) {
-  const msgs: string[] = [...(b?.alerts ?? [])];
+  const msgs: string[] = [];
   if (b?.status === 'past_due') msgs.unshift('Your last payment failed. Update your payment method in Billing.');
-  for (const x of hubs) if (!x.online && !(b?.alerts ?? []).some((a) => a.includes(x.name))) msgs.push(`${x.name} is offline (last seen ${ago(x.lastSeenAt)}).`);
+  for (const x of hubs) if (!x.online && true) msgs.push(`${x.name} is offline (last seen ${ago(x.lastSeenAt)}).`);
   return panel('Alerts', msgs.length ? h('ul', { class: 'stack' }, ...msgs.map((m) => h('li', { class: 'banner is-warn' }, m))) : empty('All clear. Nothing needs your attention.'));
 }
 function quick() {

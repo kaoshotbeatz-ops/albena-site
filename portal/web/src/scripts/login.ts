@@ -59,9 +59,8 @@ pk.addEventListener('click', async () => {
   pk.disabled = true; say('Waiting for your passkey…');
   try {
     const o = await api.passkeyLoginOptions();
-    const optionsJSON = (o.options ?? o) as Parameters<typeof startAuthentication>[0]['optionsJSON'];
-    const response = await startAuthentication({ optionsJSON });
-    await api.passkeyLoginVerify({ response, challengeId: (o as { challengeId?: string }).challengeId });
+    const response = await startAuthentication({ optionsJSON: o as unknown as Parameters<typeof startAuthentication>[0]['optionsJSON'] });
+    await api.passkeyLoginVerify(response);
     location.assign('/');
   } catch (err) {
     say(err instanceof Error && err.name === 'NotAllowedError' ? 'Passkey sign-in was canceled.' : errMsg(err), 'is-error');

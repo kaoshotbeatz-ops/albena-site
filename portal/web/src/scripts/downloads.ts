@@ -1,6 +1,6 @@
 import './shell';
 import { api } from '../lib/api';
-import { h, must, panel, chip, fmtDate, bytes, failInto } from '../lib/ui';
+import { h, must, panel, chip, fmtDate, failInto } from '../lib/ui';
 import type { Release } from '../lib/types';
 
 const root = must('#root');
@@ -12,15 +12,14 @@ const EDITIONS = [
 function card(ed: (typeof EDITIONS)[number], r: Release | undefined) {
   if (!r) return panel(ed.name, h('p', { class: 'mut' }, 'No release is available yet.'));
   let href: string | undefined;
-  try { const u = new URL(r.url, location.origin); if (u.protocol === 'https:' || u.origin === location.origin) href = u.href; } catch { /* ignore */ }
-  const dl = href ? h('a', { class: 'btn btn-primary', href, download: '' }, `Download v${r.version}`, h('span', { class: 'sr' }, ` for ${ed.name}`)) : h('span', { class: 'mut' }, 'Download unavailable');
+  try { const u = new URL(r.manifestUrl, location.origin); if (u.protocol === 'https:' || u.origin === location.origin) href = u.href; } catch { /* ignore */ }
+  const dl = href ? h('a', { class: 'btn btn-primary', href }, `Release manifest v${r.version}`, h('span', { class: 'sr' }, ` for ${ed.name}`)) : h('span', { class: 'mut' }, 'Manifest unavailable');
   return panel(ed.name, [
-    h('div', { class: 'row' }, chip(`v${r.version}`, 'indigo'), h('span', { class: 'mut' }, `Released ${fmtDate(r.releasedAt)}`), r.sizeBytes && h('span', { class: 'mut' }, bytes(r.sizeBytes))),
+    h('div', { class: 'row' }, chip(`v${r.version}`, 'indigo'), h('span', { class: 'mut' }, `Released ${fmtDate(r.releasedAt)}`),),
     h('p', { class: 'mut' }, ed.req),
     h('div', { class: 'row' }, dl),
-    r.sha256 && h('p', { class: 'mut' }, 'SHA-256 ', h('span', { class: 'mono' }, r.sha256)),
-    h('h3', {}, 'Release notes'),
-    r.notes?.length ? h('ul', { class: 'notes' }, ...r.notes.map((n) => h('li', {}, n))) : h('p', { class: 'mut' }, 'No notes for this release.'),
+    h('p', { class: 'mut' }, 'SHA-256 ', h('span', { class: 'mono' }, r.sha256)),
+    h('p', { class: 'mut' }, 'Your Hub downloads and verifies this signed manifest itself when an update is available. Updates install from your Hub settings.'),
   ]);
 }
 
