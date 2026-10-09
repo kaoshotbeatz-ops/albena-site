@@ -265,6 +265,10 @@ describe("admin", () => {
       expect(res.headers.get("X-Frame-Options")).toBe("DENY");
     }
     expect((await call("/api/admin/tickets/ALB-000001", { method: "PATCH", body: "{}" })).status).toBe(403);
+    for (const p of ["/api/admin/backup/run", "/api/admin/backup/verify", "/api/admin/audit/repair"]) {
+      expect((await call(p, { method: "POST" })).status, p).toBe(403);
+      expect((await call(p, { method: "POST", headers: { "X-Requested-With": "albena-admin" } })).status, p).toBe(403);
+    }
   });
 
   it("denies a garbage JWT", async () => {

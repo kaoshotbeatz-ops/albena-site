@@ -27,5 +27,16 @@ async function load() {
     for (const id of ['#chain-kv', '#backup-kv']) must(id).replaceChildren(...row('Status', 'Could not load.'));
   } finally { refresh.removeAttribute('disabled'); }
 }
-refresh.addEventListener('click', () => void load());
+const runBtn = must<HTMLButtonElement>('#run-backup');
+const msg = must('#sys-msg');
+async function act(btn: HTMLButtonElement, path: string, ok: (r: any) => string) {
+  btn.setAttribute('disabled', '');
+  msg.textContent = 'Working…';
+  try {
+    msg.textContent = ok(await api<unknown>(path, { method: 'POST' }));
+  } catch (e) { msg.textContent = 'Failed.'; handleError(e); }
+  finally { btn.removeAttribute('disabled'); await load(); }
+}
+refresh.addEventListener('click', () => void act(refresh, '/api/admin/backup/verify', (r) => (r.ok ? 'Verified: backup and audit chain are intact.' : `Verification problems: ${r.problems.join(', ')}`)));
+runBtn.addEventListener('click', () => void act(runBtn, '/api/admin/backup/run', (r) => `Backup written for ${r.date}.`));
 void load();
