@@ -3,7 +3,7 @@ import type { Env } from "../src/types";
 import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import worker from "../src/index";
-import { audit, sealAudit, verifyChain, GENESIS } from "../src/auditchain";
+import { audit, sealAudit, verifyChain, repairChain, rowHash, GENESIS } from "../src/auditchain";
 import { KEEP_BACKUPS, runBackup, runRetention, runScheduled, runVerify } from "../src/maintenance";
 
 const env = rawEnv as unknown as Env;
@@ -32,6 +32,83 @@ beforeEach(async () => {
     env.DB.prepare("DELETE FROM audit_log"),
   ]);
   await wipeBucket();
+});
+
+describe("audit chain fork prevention and repair", () => {
+  const raw = (n: number) => env.DB.batch(Array.from({ length: n }, (_, i) => env.DB.prepare("INSERT INTO audit_log (actor, action, request_id) VALUES ('x', ?, 'r')").bind(`e${i}`)));
+  const ids = async () => ((await env.DB.prepare("SELECT id FROM audit_log ORDER BY id").all()).results as any[]).map((r) => r.id as number);
+  const FULL = "SELECT id, ts, actor, action, target, request_id, ip_hash, hash FROM audit_log ORDER BY id";
+  const GUARDED =
+    "UPDATE audit_log SET prev_hash = ?1, hash = ?2 WHERE id = ?3 AND hash IS NULL AND ((SELECT hash FROM audit_log WHERE id < ?3 ORDER BY id DESC LIMIT 1) = ?1 OR (NOT EXISTS (SELECT 1 FROM audit_log WHERE id < ?3) AND ?1 = ?4))";
+
+  it("a sealer with a stale view cannot fork the chain", async () => {
+    await raw(2); await sealAudit(env);
+    await raw(3);
+    // Stale sealer plans #3..#5 off head #2, but the winner seals first and then more rows land.
+    const rows = (await env.DB.prepare(FULL).all()).results as any[];
+    const staleBatch: D1PreparedStatement[] = [];
+    let p = rows[1].hash as string;
+    for (const r of rows.slice(2)) { const h = await rowHash(p, r); staleBatch.push(env.DB.prepare(GUARDED).bind(p, h, r.id, GENESIS)); p = h; }
+    expect(await sealAudit(env)).toBe(3);
+    await raw(1);
+    const res = await env.DB.batch(staleBatch);
+    expect(res.every((r) => r.meta.changes === 0)).toBe(true);
+    await sealAudit(env);
+    expect(await verifyChain(env)).toMatchObject({ ok: true, rows: 6, sealed: 6, unsealed: 0 });
+  });
+
+  it("sealing a later row off a stale predecessor is rejected (the #18 fork)", async () => {
+    await raw(4); await sealAudit(env);
+    await raw(1);
+    const all = await ids();
+    const r5 = (await env.DB.prepare("SELECT id, ts, actor, action, target, request_id, ip_hash FROM audit_log WHERE id = ?").bind(all[4]).first()) as any;
+    const stale = (await env.DB.prepare("SELECT hash FROM audit_log WHERE id = ?").bind(all[1]).first<{ hash: string }>())!.hash;
+    const r = await env.DB.prepare(GUARDED).bind(stale, await rowHash(stale, r5), all[4], GENESIS).run();
+    expect(r.meta.changes).toBe(0);
+    await sealAudit(env);
+    expect((await verifyChain(env)).ok).toBe(true);
+  });
+
+  it("concurrent sealers with interleaved inserts never fork", async () => {
+    for (let i = 0; i < 10; i++) {
+      await Promise.all([audit(env, { actor: "t", action: `p${i}`, requestId: rid() }), sealAudit(env), audit(env, { actor: "t", action: `q${i}`, requestId: rid() }), sealAudit(env)]);
+    }
+    await sealAudit(env);
+    expect(await verifyChain(env)).toMatchObject({ ok: true, rows: 20, unsealed: 0 });
+  });
+
+  it("repairs an existing fork, records old hashes, and verifies ok", async () => {
+    await raw(6); await sealAudit(env);
+    const all = await ids();
+    const rows = (await env.DB.prepare(FULL).all()).results as any[];
+    const oldFourth = rows[3].hash as string;
+    // Recreate the incident: 4th row sealed off the 1st instead of the 3rd; the rest chain off the bad one.
+    let prev = rows[0].hash as string;
+    const fix: D1PreparedStatement[] = [];
+    for (const r of rows.slice(3)) { const h = await rowHash(prev, r); fix.push(env.DB.prepare("UPDATE audit_log SET prev_hash = ?, hash = ? WHERE id = ?").bind(prev, h, r.id)); prev = h; }
+    await env.DB.batch(fix);
+    expect(await verifyChain(env)).toMatchObject({ ok: false, reason: "prev_hash_mismatch", brokenAtId: all[3] });
+
+    const r = await repairChain(env, "omar@example.com", rid());
+    expect(r).toMatchObject({ repairedFrom: all[3], repairedTo: all[5] });
+    expect(await verifyChain(env)).toMatchObject({ ok: true, rows: 7, unsealed: 0 });
+    const rep = (await env.DB.prepare("SELECT * FROM audit_log WHERE action = 'audit.chain.repair'").first()) as any;
+    expect(rep.target).toContain(`re-sealed ids ${all[3]}..${all[5]} after concurrent-sealer fork`);
+    expect(rep.hash).toBeTruthy();
+    const rec = (await env.DB.prepare("SELECT * FROM audit_chain_repairs").first()) as any;
+    expect(JSON.parse(rec.old_hashes)[String(all[3])]).toBeTruthy();
+    expect(rec.repair_row_id).toBe(rep.id);
+    expect(oldFourth).toBeTruthy();
+    expect(await repairChain(env, "x", rid())).toEqual({ error: "chain_ok" });
+  });
+
+  it("refuses to 'repair' tampered content", async () => {
+    await raw(3); await sealAudit(env);
+    const all = await ids();
+    await env.DB.prepare("UPDATE audit_log SET actor = 'evil' WHERE id = ?").bind(all[1]).run();
+    const r = (await repairChain(env, "x", rid())) as any;
+    expect(r.error).toMatch(/^not_repairable:hash_mismatch/);
+  });
 });
 
 describe("AU-9/AU-10 audit hash chain", () => {

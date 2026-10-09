@@ -83,5 +83,7 @@ export function handle(path: string, init: RequestInit): unknown {
       lastBackupOk: true, lastBackupAt: iso(5 * 3600000), lastVerifiedAt: iso(3 * DAY),
     };
   }
+  if (p === '/api/admin/backup/run') return { ok: true, date: iso(0).slice(0, 10), tables: {} };
+  if (p === '/api/admin/backup/verify') return { ok: true, problems: [] };
   throw new Error(`mock: unhandled ${p}`);
 }

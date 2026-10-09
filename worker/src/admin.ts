@@ -3,8 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv, Env } from "./types";
 import { audit } from "./util";
-import { verifyChain } from "./auditchain";
-import { statusSummary } from "./maintenance";
+import { repairChain, verifyChain } from "./auditchain";
+import { runBackup, runVerify, statusSummary } from "./maintenance";
 import { json } from "./security";
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
@@ -177,6 +177,32 @@ adminApi.get("/audit", async (c) => {
   const next = hasMore ? items[items.length - 1].id : null;
   await audit(c.env, { actor: c.get("actor"), action: "admin.audit.list", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
   return json({ items, limit, next_before: next });
+});
+
+/** Runs the same function as the nightly cron, on demand. Behind Access + CSRF like every admin route. */
+adminApi.post("/backup/run", async (c) => {
+  const meta = { actor: c.get("actor"), requestId: c.get("requestId"), ipHash: c.get("ipHash") };
+  await audit(c.env, { ...meta, action: "admin.backup.run" });
+  try {
+    const m = await runBackup(c.env);
+    return json({ ok: true, date: m.date, tables: Object.fromEntries(Object.entries(m.tables).map(([k, v]) => [k, v.rows])) });
+  } catch (e) {
+    console.error("manual backup failed", e instanceof Error ? e.message : "unknown");
+    await audit(c.env, { actor: "system", action: "backup.failed", requestId: c.get("requestId") }).catch(() => {});
+    return json({ ok: false, error: "backup_failed" }, 500);
+  }
+});
+
+adminApi.post("/backup/verify", async (c) => {
+  await audit(c.env, { actor: c.get("actor"), action: "admin.backup.verify", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
+  return json(await runVerify(c.env));
+});
+
+/** One-shot repair of a concurrent-sealer fork; refuses unless the chain is broken by prev_hash linkage only. */
+adminApi.post("/audit/repair", async (c) => {
+  const r = await repairChain(c.env, c.get("actor"), c.get("requestId"));
+  if ("error" in r) return json(r, 409);
+  return json({ ok: true, ...r, chain: await verifyChain(c.env) });
 });
 
 adminApi.all("*", () => json({ error: "not_found" }, 404));
