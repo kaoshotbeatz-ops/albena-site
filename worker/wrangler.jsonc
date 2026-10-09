@@ -37,9 +37,7 @@
   ],
 
   // Optional notifications; code is a no-op if the binding is missing/unverified.
-  "send_email": [
-    { "name": "MAIL", "destination_address": "omar@dbaomarhuertasllc.com" }
-  ],
+  // Email notifications disabled for now (Omar 2026-10-09); re-add send_email binding after Email Routing is enabled.
 
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
