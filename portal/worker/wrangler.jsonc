@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "albena-portal",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  // Request URLs can contain magic tokens. Do not enable automatic request logs.
+  "observability": { "enabled": false },
+  "routes": [{ "pattern": "account.albena.ai", "custom_domain": true }],
+  "d1_databases": [{ "binding": "DB", "database_name": "albena_portal", "database_id": "TO_BE_CREATED", "migrations_dir": "migrations" }],
+  "ratelimits": [
+    { "name": "AUTH_IP_LIMITER", "namespace_id": "1101", "simple": { "limit": 20, "period": 60 } },
+    { "name": "AUTH_EMAIL_LIMITER", "namespace_id": "1102", "simple": { "limit": 5, "period": 60 } }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PORTAL_ORIGIN": "https://account.albena.ai",
+    "RP_ID": "albena.ai",
+    "MAIL_FROM": "accounts@albena.ai",
+    "MAIL_PROVIDER": "cloudflare"
+  }
+  // Configure EMAIL (send_email binding) after sender provisioning, or MailChannels.
+  // Secrets: TURNSTILE_SECRET_KEY, PORTAL_SECRETS (random HMAC privacy key),
+  // MAILCHANNELS_API_KEY (only if MAIL_PROVIDER=mailchannels).
+}
