@@ -1,0 +1,136 @@
+---
+import Base from '../../layouts/Base.astro';
+import { controls } from '../../data/controls';
+const count = (s: string) => controls.filter((c) => c.status === s).length;
+const frameworks = [
+  { name: 'NIST SP 800-53 Moderate', tag: 'Federal control catalog', status: 'In progress', tone: 'amber', pct: 'p35',
+    text: 'We are mapping our controls to the Moderate baseline and publishing the status of each one.' },
+  { name: 'SOC 2 Trust Services Criteria', tag: 'Security, availability, confidentiality, privacy', status: 'Aligned', tone: 'indigo', pct: 'p60', extra: 'Audit not yet completed',
+    text: 'Our practices are aligned with the criteria. A formal SOC 2 audit has not been completed and we hold no SOC 2 report.' },
+  { name: 'STIG / CIS hardening', tag: 'System configuration baselines', status: 'In progress', tone: 'amber', pct: 'p35',
+    text: 'We are applying hardening baselines to the systems Albena runs on and recording deviations.' },
+  { name: 'NIST CSF 2.0', tag: 'Cybersecurity framework', status: 'Aligned', tone: 'indigo', pct: 'p60',
+    text: 'Our security program is organized around Govern, Identify, Protect, Detect, Respond and Recover.' },
+];
+const principles = [
+  ['Local first', 'Everyday requests, audio and memory stay on hardware in your home wherever possible.'],
+  ['Approval before action', 'Reads are instant. Changes wait for you, and high-risk changes need a change record and PIN.'],
+  ['Least privilege', 'Albena gets only the access you connect, with per-user permission tiers.'],
+  ['Encrypted in transit', 'This site is HTTPS only, and traffic to any cloud service we call is encrypted.'],
+  ['Auditable', 'A full audit log of what was asked and done, with rollback information.'],
+  ['Honest status', 'We say what is done, what is in progress, and what has not been audited.'],
+];
+---
+<Base title="Trust center" description="Albena's security practices and where we stand on NIST 800-53, SOC 2, STIG/CIS and NIST CSF 2.0. No certifications are claimed; audits have not yet been completed.">
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Trust center</p>
+        <h1 class="h-display">Verify, do not just trust.</h1>
+        <p class="lead">Albena lives in your home, so security is part of the design. This page shows what we do, which frameworks we work toward, and what has not been independently audited.</p>
+      </div>
+      <aside class="banner" aria-labelledby="status-h">
+        <h2 id="status-h">Where we are today</h2>
+        <p><strong>We hold no third-party certification or attestation.</strong> No external audit of Albena has been completed. Statuses below describe our own work.</p>
+        <p class="legend"><span class="chip indigo">Aligned</span><span class="chip amber">In progress</span><span class="chip">Audit not yet completed</span></p>
+      </aside>
+    </div>
+  </header>
+
+  <section class="band" aria-labelledby="sec-h">
+    <div class="wrap">
+      <h2 id="sec-h" class="h-section">Security overview</h2>
+      <ul class="principles">
+        {principles.map(([t, d], i) => <li><span class="idx">{String(i + 1).padStart(2, '0')}</span><h3>{t}</h3><p>{d}</p></li>)}
+      </ul>
+      <p class="more">Read the full <a href="/security">security practices</a>, or report a vulnerability at <a href="/.well-known/security.txt">security.txt</a>.</p>
+    </div>
+  </section>
+
+  <section class="band alt" aria-labelledby="fw-h" id="frameworks">
+    <div class="wrap">
+      <h2 id="fw-h" class="h-section">Control frameworks</h2>
+      <p class="sub">We use these frameworks to organize and check our work. Working toward a framework is not certification against it.</p>
+      <ul class="fw">
+        {frameworks.map((f) => (
+          <li class="fcard">
+            <div class="ftop"><h3>{f.name}</h3><span class={`chip ${f.tone}`}>{f.status}</span></div>
+            <p class="ftag">{f.tag}</p>
+            <p>{f.text}</p>
+            <div class="meter" role="img" aria-label={`${f.status}. Progress indicator, not a score.`}><i class={f.pct}></i></div>
+            {f.extra && <p class="extra"><span class="chip">{f.extra}</span></p>}
+          </li>
+        ))}
+      </ul>
+      <div class="ctl">
+        <div>
+          <h3>Control mapping</h3>
+          <p>Every control, its frameworks, its status and its evidence, in one table.</p>
+        </div>
+        <ul class="counts" aria-label="Control status counts">
+          <li><b>{controls.length}</b> listed</li><li><b>{count('implemented')}</b> implemented</li><li><b>{count('partial')}</b> partial</li><li><b>{count('planned')}</b> planned</li>
+        </ul>
+        <a class="btn btn-primary" href="/trust/controls">View control mapping</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="more-h">
+    <div class="wrap docs">
+      <h2 id="more-h" class="sr">More</h2>
+      <a href="/privacy"><strong>Privacy Policy</strong><span>What we collect and your rights</span></a>
+      <a href="/security"><strong>Security practices</strong><span>Encryption, access, monitoring, disclosure</span></a>
+      <a href="/accessibility"><strong>Accessibility</strong><span>WCAG 2.2 AA target and known limits</span></a>
+      <a href="/support"><strong>Questions?</strong><span>Ask us anything about trust and data</span></a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { padding: 72px 0 56px; background: radial-gradient(ellipse 60% 90% at 90% 0, rgba(113, 112, 255, 0.15), transparent 70%); border-bottom: 1px solid var(--line); }
+  .hero-grid { display: grid; gap: 36px; align-items: end; }
+  h1 { font-size: clamp(42px, 8vw, 76px); max-width: 12ch; margin-bottom: 20px; }
+  .banner { border: 1px solid rgba(242, 201, 76, 0.35); background: rgba(242, 201, 76, 0.05); border-radius: 16px; padding: 22px; }
+  .banner h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: #f4d675; }
+  .banner p { color: var(--fg-2); font-size: 14.5px; }
+  .banner strong { color: var(--fg); font-weight: 600; }
+  .legend { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  @media (min-width: 900px) { .hero-grid { grid-template-columns: 1.3fr 1fr; } }
+
+  .band { padding: 80px 0; border-bottom: 1px solid var(--line); }
+  .band.alt { background: var(--bg-2); }
+  .band h2.h-section { margin-bottom: 8px; }
+  .principles { margin-top: 36px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .principles li { background: var(--bg); padding: 22px; }
+  .idx { font-size: 12px; color: var(--acc-hi); font-weight: 500; letter-spacing: 0.08em; }
+  .principles h3 { margin: 8px 0 6px; font-size: 17px; }
+  .principles p { color: var(--mut); font-size: 14.5px; }
+  @media (min-width: 640px) { .principles { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .principles { grid-template-columns: repeat(3, 1fr); } }
+  .more { margin-top: 24px; color: var(--mut); font-size: 14.5px; }
+  .more a, .ctl a:not(.btn) { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+
+  .fw { margin-top: 36px; display: grid; gap: 14px; }
+  .fcard { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
+  .ftop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .ftop h3 { font-size: 19px; letter-spacing: -0.02em; }
+  .ftag { color: var(--acc-hi); font-size: 13px; }
+  .fcard > p:not(.ftag):not(.extra) { color: var(--mut); font-size: 14.5px; }
+  .meter { height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin-top: auto; }
+  .meter i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--acc-2), var(--acc-hi)); }
+  .p35 { width: 35%; } .p60 { width: 60%; }
+  @media (min-width: 760px) { .fw { grid-template-columns: repeat(2, 1fr); } }
+
+  .ctl { margin-top: 24px; display: grid; gap: 18px; align-items: center; padding: 24px; border: 1px dashed var(--line-2); border-radius: 16px; }
+  .ctl h3 { font-size: 18px; margin-bottom: 4px; }
+  .ctl p { color: var(--mut); font-size: 14.5px; }
+  .counts { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--mut); font-size: 14px; }
+  .counts b { color: var(--fg); font-weight: 600; }
+  @media (min-width: 900px) { .ctl { grid-template-columns: 1.2fr 1.4fr auto; } }
+
+  .docs { display: grid; gap: 12px; }
+  .docs a { padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 4px; transition: background 0.15s, border-color 0.15s; }
+  .docs a:hover { background: rgba(255, 255, 255, 0.04); border-color: var(--line-2); }
+  .docs span { color: var(--mut); font-size: 14px; }
+  @media (min-width: 760px) { .docs { grid-template-columns: repeat(4, 1fr); } }
+</style>

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "AC-2",
+    "family": "Access Control",
+    "title": "Account management",
+    "framework": ["NIST 800-53 Moderate", "SOC 2 TSC"],
+    "status": "planned",
+    "evidence": "Placeholder entry. Evidence to be supplied by the controls team."
+  },
+  {
+    "id": "AU-2",
+    "family": "Audit and Accountability",
+    "title": "Event logging",
+    "framework": ["NIST 800-53 Moderate", "NIST CSF 2.0"],
+    "status": "planned",
+    "evidence": "Placeholder entry. Evidence to be supplied by the controls team."
+  },
+  {
+    "id": "CM-6",
+    "family": "Configuration Management",
+    "title": "Configuration settings and hardening baselines",
+    "framework": ["NIST 800-53 Moderate", "STIG/CIS hardening"],
+    "status": "planned",
+    "evidence": "Placeholder entry. Evidence to be supplied by the controls team."
+  },
+  {
+    "id": "SC-8",
+    "family": "System and Communications Protection",
+    "title": "Transmission confidentiality and integrity",
+    "framework": ["NIST 800-53 Moderate", "SOC 2 TSC"],
+    "status": "planned",
+    "evidence": "Placeholder entry. Evidence to be supplied by the controls team."
+  }
+]

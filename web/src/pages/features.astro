@@ -1,0 +1,221 @@
+---
+import Base from '../layouts/Base.astro';
+const nav = [
+  ['voice', 'Voice'], ['home', 'Home & devices'], ['daily', 'Briefings, mail & calendar'],
+  ['memory', 'Memory'], ['connectors', 'Connectors'], ['approvals', 'Approvals'], ['personal', 'Personal & customizable'],
+];
+---
+<Base title="Features" description="Deep dive into what Albena does: voice, home and devices, briefings, memory you control, connectors, and an approval model that keeps you in charge.">
+  <div class="wrap layout">
+    <aside class="rail" aria-label="On this page">
+      <p class="eyebrow">Features</p>
+      <h1 class="h-section">Everything she does, and how.</h1>
+      <nav aria-label="Page sections">
+        <ol>{nav.map(([id, l], i) => <li><a href={`#${id}`} data-spy={id}><span>{String(i + 1).padStart(2, '0')}</span>{l}</a></li>)}</ol>
+      </nav>
+    </aside>
+
+    <div class="stack">
+      <section id="voice" class="feat" aria-labelledby="voice-h">
+        <div class="copy">
+          <p class="num">01</p>
+          <h2 id="voice-h">Voice, naturally</h2>
+          <p>Say &ldquo;Hey Albena&rdquo; from across the room. She understands real sentences, follows up on what you just said, and answers out loud or on screen.</p>
+          <ul class="ticks"><li>Custom wake phrase, processed on your own devices</li><li>Pick a fast lane for quick answers or a deep lane for harder ones</li><li>Works with touch and keyboard too</li></ul>
+        </div>
+        <div class="mock chat" role="img" aria-label="Example conversation. You: Hey Albena, is the garage closed? Albena: Yes, closed since 9:42 last night. You: Good. Turn off the porch light at midnight. Albena: Proposed: porch light off at 12:00 daily. Approve?">
+          <div class="b me">Hey Albena, is the garage closed?</div>
+          <div class="b her">Yes, closed since 9:42 last night.</div>
+          <div class="b me">Good. Turn off the porch light at midnight.</div>
+          <div class="b her">Proposed: porch light off at 12:00 daily.<span class="act"><i>Approve</i><i class="ghost">Not now</i></span></div>
+          <div class="mic-row"><span class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>Listening</span></div>
+        </div>
+      </section>
+
+      <section id="home" class="feat flip" aria-labelledby="home-h">
+        <div class="copy">
+          <p class="num">02</p>
+          <h2 id="home-h">Home &amp; devices</h2>
+          <p>Lights, climate, locks, cameras and media in one conversation, by room or by scene. Ask what is on, what changed overnight, or what is open.</p>
+          <ul class="ticks"><li>Control by room, device or scene</li><li>Status questions answer instantly</li><li>Locks and security changes always ask first</li></ul>
+        </div>
+        <div class="mock devices" role="img" aria-label="Device panel: living room lights on, thermostat 68 degrees, front door locked, back door unlocked pending approval, garage camera no motion.">
+          <div class="dev on"><span>Living room</span><b>Lights 60%</b></div>
+          <div class="dev on"><span>Hallway</span><b>Thermostat 68&deg;</b></div>
+          <div class="dev on"><span>Front door</span><b>Locked</b></div>
+          <div class="dev ask"><span>Back door</span><b>Unlock? Needs approval</b></div>
+          <div class="dev"><span>Garage camera</span><b>No motion</b></div>
+          <div class="dev"><span>Kitchen TV</span><b>Off</b></div>
+        </div>
+      </section>
+
+      <section id="daily" class="feat" aria-labelledby="daily-h">
+        <div class="copy">
+          <p class="num">03</p>
+          <h2 id="daily-h">Briefings, mail &amp; calendar</h2>
+          <p>A calm morning briefing, drafted replies waiting for your review, and reminders with travel time before you need them.</p>
+          <ul class="ticks"><li>Drafts are never sent without approval</li><li>Only the accounts you connect, disconnect any time</li><li>Briefing length and timing are yours to set</li></ul>
+        </div>
+        <div class="mock brief" role="img" aria-label="Morning briefing with a calendar timeline and a drafted email reply awaiting approval.">
+          <div class="tl"><div><em>9:00</em><span class="bar">Standup</span></div><div><em>10:15</em><span class="bar b2">Dentist, leave 9:50</span></div><div><em>13:00</em><span class="bar b3">Lunch with Maya</span></div></div>
+          <div class="mail"><p class="mh">Draft reply to Sam &middot; Thursday?</p><p>&ldquo;Thursday at 2 works. I will send a link.&rdquo;</p><span class="act"><i>Send</i><i class="ghost">Edit</i></span></div>
+        </div>
+      </section>
+
+      <section id="memory" class="feat flip" aria-labelledby="memory-h">
+        <div class="copy">
+          <p class="num">04</p>
+          <h2 id="memory-h">Memory that learns you</h2>
+          <p>Albena remembers your people, routines and preferences so you do not repeat yourself. It is yours: every memory can be viewed, corrected or deleted.</p>
+          <ul class="ticks"><li>See exactly what she remembers</li><li>Delete one item or everything</li><li>Stored on your hardware first</li></ul>
+        </div>
+        <div class="mock mem" role="img" aria-label="Memory list: prefers 68 degrees at night; Maya is your sister; coffee order is oat latte. Each item has a forget button.">
+          <ul>
+            <li><span>Prefers 68&deg; at night</span><i>Forget</i></li>
+            <li><span>Maya is your sister</span><i>Forget</i></li>
+            <li><span>Oat latte, no sugar</span><i>Forget</i></li>
+            <li><span>Trash goes out Tuesday</span><i>Forget</i></li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="connectors" class="feat" aria-labelledby="connectors-h">
+        <div class="copy">
+          <p class="num">05</p>
+          <h2 id="connectors-h">Your AI, your systems</h2>
+          <p>Smart home, media, work tools, cloud and identity. Albena connects to what you already use, and you can add any REST API or MCP server yourself.</p>
+          <p><a class="link" href="/connectors">Browse connectors &rarr;</a></p>
+        </div>
+        <div class="mock cn" role="img" aria-label="Five categories of connectors: Home, Media, Work, Cloud and Identity.">
+          <span class="chip indigo">Smart home</span><span class="chip indigo">Media</span><span class="chip indigo">Work &amp; comms</span><span class="chip indigo">Cloud &amp; infrastructure</span><span class="chip indigo">Identity &amp; IT</span><span class="chip">Bring your own</span>
+        </div>
+      </section>
+
+      <section id="approvals" class="feat flip" aria-labelledby="approvals-h">
+        <div class="copy">
+          <p class="num">06</p>
+          <h2 id="approvals-h">You approve every change</h2>
+          <p>Reads are instant. Anything that changes something is proposed to you first. High-risk actions also need a change record and your PIN.</p>
+          <ul class="ticks"><li>Full audit log of what was asked and done</li><li>Rollback information with every change</li><li>Per-user permission tiers for the household</li></ul>
+        </div>
+        <div class="mock appr" role="img" aria-label="Approval sheet: Disable user account, high risk, requires change record and PIN. Buttons Approve and Decline.">
+          <p class="mh">Approval needed <span class="chip amber">High risk</span></p>
+          <p class="big">Disable guest network access for 3 devices</p>
+          <dl><div><dt>Change record</dt><dd>Created</dd></div><div><dt>PIN</dt><dd>Required</dd></div><div><dt>Rollback</dt><dd>Saved</dd></div></dl>
+          <span class="act"><i>Approve</i><i class="ghost">Decline</i></span>
+        </div>
+      </section>
+
+      <section id="personal" class="feat" aria-labelledby="personal-h">
+        <div class="copy">
+          <p class="num">07</p>
+          <h2 id="personal-h">Personal and customizable</h2>
+          <p>Albena adapts to each person, household or business. She learns from usage overnight and proposes improvements, which you review and approve. She never changes herself on her own.</p>
+        </div>
+        <div class="mock learn" role="img" aria-label="Nightly learning proposal: Suggest moving the evening briefing to 6:30. Approve or dismiss.">
+          <p class="mh">Proposed improvement <span class="chip indigo">From last night</span></p>
+          <p class="big">Move the evening briefing to 6:30, based on when you usually read it.</p>
+          <span class="act"><i>Approve</i><i class="ghost">Dismiss</i></span>
+        </div>
+      </section>
+
+      <p class="end"><a class="btn btn-primary" href="/waitlist">Join the waitlist</a></p>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .layout { display: grid; gap: 32px; padding-top: 56px; padding-bottom: 96px; }
+  .rail h1 { margin-bottom: 24px; font-size: clamp(30px, 5vw, 44px); }
+  .rail ol { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rail a { display: inline-flex; gap: 8px; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13.5px; color: var(--mut); font-weight: 500; }
+  .rail a span { font-size: 11px; opacity: 0.8; }
+  .rail a:hover, .rail a.on { color: var(--fg); background: rgba(255, 255, 255, 0.06); border-color: var(--line-2); }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: 260px 1fr; gap: 72px; }
+    .rail { position: sticky; top: 88px; align-self: start; }
+    .rail ol { flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+    .rail a { border-color: transparent; width: 100%; }
+    .rail a.on { box-shadow: inset 2px 0 0 var(--acc); border-radius: 0 8px 8px 0; }
+  }
+
+  .stack { display: grid; gap: 0; min-width: 0; }
+  .feat { display: grid; gap: 28px; padding: 56px 0; border-top: 1px solid var(--line); align-items: center; }
+  .feat:first-child { border-top: 0; padding-top: 8px; }
+  .num { font-size: 12px; color: var(--acc-hi); font-weight: 500; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .copy h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.035em; line-height: 1.1; font-weight: 560; margin-bottom: 14px; }
+  .copy > p { color: var(--mut); font-size: 16px; max-width: 46ch; }
+  .link { color: var(--acc-hi); font-weight: 500; text-decoration: underline; text-underline-offset: 4px; }
+  .ticks { margin-top: 18px; display: grid; gap: 8px; }
+  .ticks li { position: relative; padding-left: 24px; color: var(--fg-2); font-size: 14.5px; }
+  .ticks li::before { content: ''; position: absolute; left: 3px; top: 5px; width: 5px; height: 9px; border: solid var(--green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  @media (min-width: 760px) {
+    .feat { grid-template-columns: 1fr 1fr; gap: 48px; }
+    .feat.flip .copy { order: 2; }
+  }
+
+  .mock { border: 1px solid var(--line-2); border-radius: 16px; padding: 18px; background: linear-gradient(180deg, #131417, #0c0d0e); box-shadow: 0 30px 80px -30px rgba(113, 112, 255, 0.35); min-width: 0; }
+  .act { display: flex; gap: 8px; margin-top: 12px; }
+  .act i { font-style: normal; font-size: 12.5px; font-weight: 500; padding: 5px 14px; border-radius: 999px; background: var(--fg); color: #08090a; }
+  .act i.ghost { background: transparent; color: var(--fg-2); border: 1px solid var(--line-2); }
+  .mh { font-size: 12.5px; color: var(--mut); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .big { margin-top: 10px; font-size: 16px; font-weight: 520; letter-spacing: -0.01em; line-height: 1.35; }
+
+  .chat { display: grid; gap: 10px; }
+  .b { max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; }
+  .b.me { justify-self: end; background: rgba(113, 112, 255, 0.2); border: 1px solid rgba(113, 112, 255, 0.35); border-bottom-right-radius: 4px; }
+  .b.her { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .mic-row { display: flex; align-items: center; gap: 10px; color: var(--mut); font-size: 12.5px; margin-top: 4px; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 18px; }
+  .wave i { width: 3px; height: 100%; border-radius: 2px; background: var(--acc); animation: eq 1.2s ease-in-out infinite; }
+  .wave i:nth-child(2n) { animation-delay: -0.4s; }
+  .wave i:nth-child(3n) { animation-delay: -0.8s; }
+
+  .devices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .dev { padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.025); display: grid; gap: 4px; }
+  .dev span { font-size: 12px; color: var(--mut); }
+  .dev b { font-weight: 520; font-size: 13.5px; }
+  .dev.on { border-color: rgba(113, 112, 255, 0.35); background: rgba(113, 112, 255, 0.08); }
+  .dev.ask { border-color: rgba(242, 201, 76, 0.4); background: rgba(242, 201, 76, 0.07); }
+
+  .brief { display: grid; gap: 14px; }
+  .tl { display: grid; gap: 8px; }
+  .tl div { display: flex; gap: 10px; align-items: center; }
+  .tl em { font-style: normal; width: 40px; font-size: 11.5px; color: var(--mut); }
+  .bar { flex: 1; font-size: 12.5px; padding: 6px 10px; border-radius: 6px; border-left: 2px solid var(--acc); background: rgba(113, 112, 255, 0.12); }
+  .bar.b2 { border-color: var(--green); background: rgba(76, 183, 130, 0.12); }
+  .bar.b3 { border-color: var(--amber); background: rgba(242, 201, 76, 0.1); }
+  .mail { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(255, 255, 255, 0.025); font-size: 14px; }
+  .mail p:not(.mh) { margin-top: 6px; color: var(--fg-2); }
+
+  .mem ul { display: grid; }
+  .mem li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .mem li:last-child { border-bottom: 0; }
+  .mem i { font-style: normal; font-size: 12px; color: var(--mut); border: 1px solid var(--line-2); padding: 2px 10px; border-radius: 999px; }
+
+  .cn { display: flex; flex-wrap: wrap; gap: 10px; padding: 28px 22px; }
+  .cn .chip { font-size: 13.5px; padding: 6px 14px; }
+
+  dl { margin-top: 14px; display: grid; gap: 6px; }
+  dl div { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-top: 1px solid var(--line); }
+  dt { color: var(--mut); }
+  dd { color: #7fd9a8; font-weight: 500; }
+  .end { padding-top: 24px; }
+</style>
+
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-spy]');
+  const map = new Map<Element, HTMLAnchorElement>();
+  links.forEach((a) => { const s = document.getElementById(a.dataset.spy!); if (s) map.set(s, a); });
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => {
+        if (e.isIntersecting) {
+          links.forEach((l) => l.classList.remove('on'));
+          map.get(e.target)?.classList.add('on');
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    map.forEach((_, s) => io.observe(s));
+  }
+</script>

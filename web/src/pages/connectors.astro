@@ -1,0 +1,169 @@
+---
+import Base from '../layouts/Base.astro';
+import { categories } from '../data/connectors';
+const total = categories.reduce((n, c) => n + c.items.length, 0);
+const glyph = (n: string) => n.replace(/[^A-Za-z0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const users = [
+  { k: 'Home', t: 'Family and estate', ask: 'Hey Albena, dim the living room and play my evening playlist.', d: 'Lights, climate, locks, cameras, media and the shared calendar, with a memory of who likes what.', tags: ['Smart home', 'Media'] },
+  { k: 'Creators', t: 'Media and social', ask: 'Hey Albena, draft this week’s posts.', d: 'Draft, schedule and review posts and page comments. You approve before anything is published.', tags: ['Media', 'Work & comms'] },
+  { k: 'Business & IT', t: 'Tickets, cloud and identity', ask: 'Hey Albena, who still has admin access in Azure?', d: 'Read across cloud, identity and ticketing instantly. Changes go to you, with a change record and PIN when risk is high.', tags: ['Cloud', 'Identity & IT'] },
+];
+---
+<Base title="Connectors: your AI, your systems" description="Albena connects to the systems you already use: smart home, media, work tools, cloud and IT. Reads are instant, changes need your approval. Available in early access.">
+  <section class="top">
+    <div class="wrap top-grid">
+      <div>
+        <p class="eyebrow">Connectors</p>
+        <h1 class="h-display">Your AI,<br /> your systems.</h1>
+        <p class="lead">Albena plugs into the tools you already run, at home and at work. She reads them instantly, and anything that changes something goes to you for approval first.</p>
+        <p class="status"><span class="chip green">Available in early access</span> <span class="count">{total} connectors in {categories.length} categories, plus your own</span></p>
+      </div>
+      <aside class="legend" aria-label="How access works">
+        <div><b>Read</b><span>Instant. Ask about anything connected.</span></div>
+        <div><b>Change</b><span>Proposed to you. Nothing happens until you approve.</span></div>
+        <div><b>High risk</b><span>Needs a change record and your PIN.</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="catalog" aria-labelledby="catalog-h">
+    <div class="wrap">
+      <h2 id="catalog-h" class="sr">Connector catalog</h2>
+      <div class="filters" role="group" aria-label="Filter connectors by category">
+        <button type="button" class="fbtn" data-filter="all" aria-pressed="true">All <span>{total}</span></button>
+        {categories.map((c) => <button type="button" class="fbtn" data-filter={c.id} aria-pressed="false">{c.label} <span>{c.items.length}</span></button>)}
+        <button type="button" class="fbtn" data-filter="byo" aria-pressed="false">Bring your own</button>
+      </div>
+      <p class="sr" role="status" aria-live="polite" data-count></p>
+
+      {categories.map((c) => (
+        <section class="cat" data-cat={c.id} aria-labelledby={`h-${c.id}`}>
+          <div class="cat-head"><h3 id={`h-${c.id}`}>{c.label}</h3><p>{c.blurb}</p><span class="chip green">Available in early access</span></div>
+          <ul class="grid">
+            {c.items.map((i) => (
+              <li class="conn"><span class="mark" aria-hidden="true">{glyph(i.name)}</span><div><b>{i.name}</b><span>{i.note}</span></div></li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
+      <section class="cat byo" data-cat="byo" aria-labelledby="h-byo">
+        <div class="byo-card">
+          <div>
+            <h3 id="h-byo">Bring your own</h3>
+            <p>If it has a REST API or speaks MCP, Albena can connect to it. Add it as a connector, choose which actions are read-only and which need approval, and it follows the same rules as everything else.</p>
+          </div>
+          <ul class="byo-points">
+            <li><span class="mark" aria-hidden="true">{'{ }'}</span>Any REST API</li>
+            <li><span class="mark" aria-hidden="true">MC</span>Any MCP server</li>
+            <li><span class="mark" aria-hidden="true">&#10003;</span>Same approval rules and audit log</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="users" aria-labelledby="users-h">
+    <div class="wrap">
+      <p class="eyebrow">Who it is for</p>
+      <h2 id="users-h" class="h-section">Personal AI for every type of user</h2>
+      <div class="ucards">
+        {users.map((u) => (
+          <article class="ucard reveal">
+            <p class="uk">{u.k}</p>
+            <h3>{u.t}</h3>
+            <blockquote>&ldquo;{u.ask}&rdquo;</blockquote>
+            <p>{u.d}</p>
+            <p class="tags">{u.tags.map((t) => <span class="chip">{t}</span>)}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="close">
+    <div class="wrap close-in">
+      <div>
+        <h2 class="h-section">Local first, customized to you</h2>
+        <p class="sub">Her own memory of your people and routines (viewable and deletable), per-user permission tiers, and nightly learning that only ever proposes improvements. You approve them; she never deploys changes to herself.</p>
+      </div>
+      <p class="close-cta"><a class="btn btn-primary" href="/waitlist">Join the waitlist</a> <a class="btn btn-ghost" href="/how-it-works">How it works</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .top { padding: 72px 0 40px; border-bottom: 1px solid var(--line); background: radial-gradient(ellipse 60% 70% at 15% 0, rgba(113, 112, 255, 0.16), transparent 70%); }
+  .top-grid { display: grid; gap: 40px; align-items: end; }
+  h1 { font-size: clamp(44px, 9vw, 80px); max-width: 12ch; margin-bottom: 20px; }
+  .lead { max-width: 560px; }
+  .status { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+  .count { color: var(--mut); font-size: 14px; }
+  .legend { display: grid; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); overflow: hidden; }
+  .legend div { padding: 16px 18px; display: grid; gap: 2px; border-bottom: 1px solid var(--line); }
+  .legend div:last-child { border-bottom: 0; }
+  .legend b { font-weight: 550; }
+  .legend span { color: var(--mut); font-size: 14px; }
+  @media (min-width: 900px) { .top-grid { grid-template-columns: 1.4fr 1fr; } }
+
+  .catalog { padding: 40px 0 72px; }
+  .filters { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px; margin-bottom: 12px; position: sticky; top: var(--nav-h); z-index: 5; background: linear-gradient(var(--bg) 80%, transparent); }
+  .fbtn { flex: none; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; color: var(--fg-2); font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .fbtn span { color: var(--mut); margin-left: 4px; }
+  .fbtn:hover { background: rgba(255, 255, 255, 0.06); }
+  .fbtn[aria-pressed='true'] { background: var(--fg); color: #08090a; border-color: transparent; }
+  .fbtn[aria-pressed='true'] span { color: #3a3d44; }
+  .cat { margin-top: 36px; }
+  .cat[hidden] { display: none; }
+  .cat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
+  .cat-head h3 { font-size: 20px; letter-spacing: -0.02em; }
+  .cat-head p { color: var(--mut); font-size: 14px; flex: 1 1 200px; }
+  .grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+  .conn { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); transition: border-color 0.15s, background 0.15s; min-width: 0; }
+  .conn:hover { border-color: var(--line-2); background: var(--panel-2); }
+  .conn div { display: grid; min-width: 0; }
+  .conn b { font-weight: 550; font-size: 14.5px; overflow-wrap: anywhere; }
+  .conn span:not(.mark) { color: var(--mut); font-size: 13px; }
+  .mark { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-weight: 600; font-size: 13px; letter-spacing: 0.02em; color: var(--fg-2); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line-2); }
+  @media (min-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .byo-card { display: grid; gap: 24px; padding: 28px; border-radius: 18px; border: 1px dashed var(--line-2); background: radial-gradient(ellipse at 100% 0, rgba(113, 112, 255, 0.12), transparent 60%); }
+  .byo-card h3 { font-size: 22px; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .byo-card p { color: var(--mut); max-width: 56ch; }
+  .byo-points { display: grid; gap: 10px; align-content: center; }
+  .byo-points li { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 14.5px; }
+  @media (min-width: 800px) { .byo-card { grid-template-columns: 1.4fr 1fr; padding: 36px; } }
+
+  .users { padding: 88px 0; border-top: 1px solid var(--line); background: var(--bg-2); }
+  .ucards { margin-top: 40px; display: grid; gap: 14px; }
+  .ucard { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); display: flex; flex-direction: column; gap: 12px; }
+  .uk { color: var(--acc-hi); font-size: 13px; font-weight: 500; }
+  .ucard h3 { font-size: 20px; }
+  .ucard blockquote { padding: 12px 14px; border-radius: 10px; background: rgba(113, 112, 255, 0.09); border: 1px solid rgba(113, 112, 255, 0.25); color: var(--fg-2); font-size: 14.5px; line-height: 1.5; }
+  .ucard p:not(.uk):not(.tags) { color: var(--mut); font-size: 14.5px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+  @media (min-width: 860px) { .ucards { grid-template-columns: repeat(3, 1fr); } }
+
+  .close { padding: 88px 0 96px; }
+  .close-in { display: grid; gap: 28px; align-items: center; }
+  .close-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+  @media (min-width: 860px) { .close-in { grid-template-columns: 1.5fr auto; gap: 64px; } }
+</style>
+
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('.fbtn');
+  const cats = document.querySelectorAll<HTMLElement>('.cat');
+  const live = document.querySelector<HTMLElement>('[data-count]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    const f = b.dataset.filter!;
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    let shown = 0;
+    cats.forEach((c) => {
+      const on = f === 'all' || c.dataset.cat === f;
+      c.hidden = !on;
+      if (on) shown += c.querySelectorAll('.conn').length;
+    });
+    if (live) live.textContent = f === 'byo' ? 'Showing bring your own connectors' : `Showing ${shown} connectors`;
+  }));
+</script>

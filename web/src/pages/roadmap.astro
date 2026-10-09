@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+type Item = { id: string; title: string; label: string; state: 'done' | 'half' | 'todo' };
+const labels = ['Voice', 'Home', 'Daily', 'Privacy', 'Connectors', 'Apps', 'Trust', 'Scale'];
+const cols: { key: string; name: string; state: Item['state']; note: string; items: Item[] }[] = [
+  { key: 'now', name: 'Now', state: 'done', note: 'Available in early access', items: [
+    { id: 'ALB-101', title: '“Hey Albena” wake phrase', label: 'Voice', state: 'done' },
+    { id: 'ALB-102', title: 'Smart home and device control', label: 'Home', state: 'done' },
+    { id: 'ALB-103', title: 'Daily briefings, calendar and mail help', label: 'Daily', state: 'done' },
+    { id: 'ALB-104', title: 'Memory you can review and delete', label: 'Privacy', state: 'done' },
+    { id: 'ALB-105', title: 'Connectors for home, media, work, cloud and IT', label: 'Connectors', state: 'done' },
+    { id: 'ALB-106', title: 'Approvals, audit log and per-user permission tiers', label: 'Privacy', state: 'done' },
+    { id: 'ALB-107', title: 'Trust center published', label: 'Trust', state: 'done' },
+  ] },
+  { key: 'next', name: 'Next', state: 'half', note: 'In progress or up next', items: [
+    { id: 'ALB-201', title: 'Albena for iPhone', label: 'Apps', state: 'half' },
+    { id: 'ALB-202', title: 'Albena for Mac', label: 'Apps', state: 'half' },
+    { id: 'ALB-203', title: 'Notifications and quick approvals on the go', label: 'Apps', state: 'half' },
+    { id: 'ALB-204', title: 'More first-party connectors, prioritized by your requests', label: 'Connectors', state: 'half' },
+    { id: 'ALB-205', title: 'Complete the control mapping and publish evidence', label: 'Trust', state: 'half' },
+    { id: 'ALB-206', title: 'Independent accessibility review of albena.ai', label: 'Trust', state: 'todo' },
+  ] },
+  { key: 'later', name: 'Later', state: 'todo', note: 'Exploring, no dates', items: [
+    { id: 'ALB-301', title: 'Multiple homes and estates', label: 'Scale', state: 'todo' },
+    { id: 'ALB-302', title: 'Shared household profiles', label: 'Scale', state: 'todo' },
+    { id: 'ALB-303', title: 'More integrations, added by your requests', label: 'Connectors', state: 'todo' },
+    { id: 'ALB-304', title: 'Formal third-party audit (not yet scheduled)', label: 'Trust', state: 'todo' },
+  ] },
+];
+---
+<Base title="Roadmap" description="What is ready, what is in progress and what is next for Albena. A public issue board with no promised dates.">
+  <div class="shell">
+    <header class="bar">
+      <div class="wrap bar-in">
+        <div>
+          <p class="crumb"><span class="mono">Albena</span> <span aria-hidden="true">/</span> Roadmap</p>
+          <h1>Roadmap</h1>
+          <p class="note">A live view of what we are building. We list no dates, and we are upfront about what is not ready.</p>
+        </div>
+        <div class="filters" role="group" aria-label="Filter by label">
+          <button type="button" class="fchip" data-label="all" aria-pressed="true">All</button>
+          {labels.map((l) => <button type="button" class="fchip" data-label={l} aria-pressed="false">{l}</button>)}
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap board" role="region" aria-label="Roadmap board">
+      <p class="sr" role="status" aria-live="polite" data-live></p>
+      {cols.map((c) => (
+        <section class="col" aria-labelledby={`col-${c.key}`} data-col>
+          <h2 id={`col-${c.key}`}><span class={`st ${c.state}`}></span>{c.name} <small data-count>{c.items.length}</small><em>{c.note}</em></h2>
+          <ul>
+            {c.items.map((i) => (
+              <li class="issue" data-label={i.label}>
+                <span class="id mono">{i.id}</span>
+                <span class="title"><span class={`st ${i.state}`}></span><span>{i.title}</span></span>
+                <span class="chip">{i.label}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="empty" hidden>No issues with this label.</p>
+        </section>
+      ))}
+    </div>
+    <p class="wrap foot-note">Roadmap items are plans, not promises. See the <a href="/changelog">changelog</a> for what has shipped.</p>
+  </div>
+</Base>
+
+<style>
+  .shell { padding-bottom: 72px; }
+  .bar { border-bottom: 1px solid var(--line); background: var(--bg-2); padding: 36px 0 20px; }
+  .bar-in { display: grid; gap: 22px; }
+  .crumb { font-size: 13px; color: var(--mut); margin-bottom: 8px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  h1 { font-size: clamp(30px, 5vw, 40px); letter-spacing: -0.035em; font-weight: 580; }
+  .note { margin-top: 8px; color: var(--mut); max-width: 56ch; }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; align-self: end; }
+  .fchip { min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-2); background: transparent; color: var(--fg-2); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .fchip:hover { background: rgba(255, 255, 255, 0.06); }
+  .fchip[aria-pressed='true'] { background: rgba(113, 112, 255, 0.2); border-color: var(--acc); color: #fff; }
+  @media (min-width: 900px) { .bar-in { grid-template-columns: 1fr minmax(0, 420px); } .filters { justify-content: flex-end; } }
+
+  .board { display: grid; gap: 16px; padding-top: 24px; }
+  .col { border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.015); display: flex; flex-direction: column; min-width: 0; }
+  .col h2 { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: 14px; font-weight: 550; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .col h2 small { color: var(--mut); font-weight: 500; }
+  .col h2 em { font-style: normal; margin-left: auto; font-size: 12px; color: var(--mut); font-weight: 450; }
+  .col ul { padding: 8px; display: grid; gap: 8px; }
+  .issue { display: grid; gap: 8px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); transition: border-color 0.15s, background 0.15s; }
+  .issue:hover { border-color: var(--line-2); background: var(--panel-2); }
+  .issue[hidden] { display: none; }
+  .id { font-size: 12px; color: var(--mut); }
+  .title { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: #e2e4e9; line-height: 1.4; }
+  .title .st { margin-top: 3px; }
+  .issue .chip { justify-self: start; }
+  .empty { padding: 4px 14px 14px; color: var(--mut); font-size: 13px; }
+  @media (min-width: 900px) { .board { grid-template-columns: repeat(3, 1fr); align-items: start; } }
+  .foot-note { margin-top: 28px; color: var(--mut); font-size: 14px; }
+  .foot-note a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>('.fchip');
+  const live = document.querySelector<HTMLElement>('[data-live]');
+  chips.forEach((b) => b.addEventListener('click', () => {
+    const f = b.dataset.label!;
+    chips.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    let total = 0;
+    document.querySelectorAll<HTMLElement>('[data-col]').forEach((col) => {
+      let n = 0;
+      col.querySelectorAll<HTMLElement>('.issue').forEach((li) => {
+        const on = f === 'all' || li.dataset.label === f;
+        li.hidden = !on;
+        if (on) n++;
+      });
+      total += n;
+      const c = col.querySelector('[data-count]');
+      if (c) c.textContent = String(n);
+      col.querySelector<HTMLElement>('.empty')!.hidden = n !== 0;
+    });
+    if (live) live.textContent = `${total} issues shown`;
+  }));
+</script>

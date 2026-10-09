@@ -1,0 +1,98 @@
+---
+import Base from '../../layouts/Base.astro';
+import { controls, statusLabel } from '../../data/controls';
+const fws = [...new Set(controls.flatMap((c) => c.framework))].sort();
+const tone: Record<string, string> = { implemented: 'green', partial: 'amber', planned: '' };
+---
+<Base title="Control mapping" description="The controls behind Albena's security claims, mapped to NIST 800-53 Moderate, SOC 2 TSC, STIG/CIS and NIST CSF 2.0, with honest status and evidence. No framework is certified.">
+  <div class="wrap page">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/trust">Trust center</a> <span aria-hidden="true">/</span> <span>Control mapping</span></nav>
+    <header class="head">
+      <h1 class="h-section">Control mapping</h1>
+      <p class="sub">Each control we track, the frameworks it supports, how far along it is, and the evidence. This mapping is our own work and has not been independently audited. It is not a certification.</p>
+    </header>
+
+    <div class="tools" data-tools>
+      <div class="field"><label for="q">Search controls</label><input id="q" type="search" placeholder="ID, title or family" autocomplete="off" /></div>
+      <div class="field"><label for="fw">Framework</label>
+        <select id="fw"><option value="">All frameworks</option>{fws.map((f) => <option value={f}>{f}</option>)}</select></div>
+      <div class="field"><label for="st">Status</label>
+        <select id="st"><option value="">All statuses</option><option value="implemented">Implemented</option><option value="partial">Partial</option><option value="planned">Planned</option></select></div>
+    </div>
+    <p class="result" role="status" aria-live="polite" data-result>{controls.length} {controls.length === 1 ? 'control' : 'controls'} shown</p>
+
+    {controls.length === 0 ? (
+      <p class="empty">The control mapping has not been published yet.</p>
+    ) : (
+      <div class="scroll" tabindex="0" role="region" aria-label="Control table, scrolls horizontally on small screens">
+        <table>
+          <caption class="sr">Security controls with framework, status and evidence</caption>
+          <thead><tr><th scope="col">Control</th><th scope="col">Title</th><th scope="col">Frameworks</th><th scope="col">Status</th><th scope="col">Evidence</th></tr></thead>
+          <tbody>
+            {controls.map((c) => (
+              <tr data-status={c.status} data-fw={c.framework.join('|')} data-text={`${c.id} ${c.title} ${c.family}`.toLowerCase()}>
+                <th scope="row"><span class="cid">{c.id}</span><span class="fam">{c.family}</span></th>
+                <td>{c.title}</td>
+                <td><ul class="fwl">{c.framework.map((f) => <li><span class="chip">{f}</span></li>)}</ul></td>
+                <td><span class={`chip ${tone[c.status]}`}>{statusLabel[c.status]}</span></td>
+                <td class="ev">{c.evidence}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+    <p class="none" data-none hidden>No controls match those filters.</p>
+    <p class="fine">Status key: <strong>Implemented</strong> means the control is in place and we hold the evidence listed. <strong>Partial</strong> means it is in place in part. <strong>Planned</strong> means it is not yet in place. None of these is an audit finding.</p>
+  </div>
+</Base>
+
+<style>
+  .page { padding-top: 40px; padding-bottom: 96px; }
+  .crumbs { font-size: 13px; color: var(--mut); margin-bottom: 28px; }
+  .crumbs a { text-decoration: underline; text-underline-offset: 3px; }
+  .head { margin-bottom: 32px; }
+  .tools { display: grid; gap: 12px; }
+  @media (min-width: 760px) { .tools { grid-template-columns: 2fr 1fr 1fr; } }
+  .result { margin: 14px 0; color: var(--mut); font-size: 13.5px; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+  table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { font-size: 12px; font-weight: 500; color: var(--mut); background: rgba(255, 255, 255, 0.03); text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+  tr[hidden] { display: none; }
+  tbody th { font-weight: 500; white-space: nowrap; }
+  .cid { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); }
+  .fam { display: block; font-size: 12px; color: var(--mut); font-weight: 450; margin-top: 2px; white-space: normal; max-width: 18ch; }
+  .fwl { display: flex; flex-wrap: wrap; gap: 4px; }
+  .ev { color: var(--mut); min-width: 220px; }
+  .empty, .none { padding: 40px; text-align: center; color: var(--mut); border: 1px dashed var(--line-2); border-radius: 14px; }
+  .fine { margin-top: 20px; font-size: 13px; color: var(--mut); max-width: 80ch; }
+  .fine strong { color: var(--fg-2); font-weight: 500; }
+</style>
+
+<script>
+  const q = document.getElementById('q') as HTMLInputElement | null;
+  const fw = document.getElementById('fw') as HTMLSelectElement | null;
+  const st = document.getElementById('st') as HTMLSelectElement | null;
+  const rows = [...document.querySelectorAll<HTMLTableRowElement>('tbody tr')];
+  const result = document.querySelector<HTMLElement>('[data-result]');
+  const none = document.querySelector<HTMLElement>('[data-none]');
+  const scroll = document.querySelector<HTMLElement>('.scroll');
+  const apply = () => {
+    const text = (q?.value ?? '').trim().toLowerCase();
+    let n = 0;
+    rows.forEach((r) => {
+      const ok = (!text || r.dataset.text!.includes(text))
+        && (!fw?.value || r.dataset.fw!.split('|').includes(fw.value))
+        && (!st?.value || r.dataset.status === st.value);
+      r.hidden = !ok;
+      if (ok) n++;
+    });
+    if (result) result.textContent = `${n} ${n === 1 ? 'control' : 'controls'} shown`;
+    if (none) none.hidden = n !== 0;
+    if (scroll) scroll.hidden = n === 0;
+  };
+  [q, fw, st].forEach((el) => el?.addEventListener('input', apply));
+</script>

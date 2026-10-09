@@ -1,0 +1,57 @@
+---
+import Base from './Base.astro';
+interface Props { title: string; eyebrow: string; meta?: string; lede: string; description: string; toc?: { id: string; label: string }[] }
+const { title, eyebrow, meta, lede, description, toc = [] } = Astro.props;
+---
+<Base title={title} description={description}>
+  <div class="wrap doc">
+    {toc.length > 0 && (
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>{toc.map((t) => <li><a href={`#${t.id}`}>{t.label}</a></li>)}</ol>
+      </nav>
+    )}
+    <article class="legal">
+      <header class="legal-head">
+        <p class="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        {meta && <p class="meta">{meta}</p>}
+        <p class="lede">{lede}</p>
+      </header>
+      <slot />
+    </article>
+  </div>
+</Base>
+
+<style is:global>
+  .doc { display: grid; gap: 28px; padding-top: 64px; padding-bottom: 96px; }
+  .legal { max-width: 720px; overflow-wrap: anywhere; min-width: 0; }
+  .legal-head { margin-bottom: 32px; }
+  .legal h1 { font-size: clamp(32px, 6vw, 46px); line-height: 1.08; letter-spacing: -0.035em; font-weight: 600; margin-bottom: 12px; }
+  .legal .meta { color: var(--mut); font-size: 13px; margin-bottom: 16px; }
+  .legal .lede { color: var(--mut); font-size: 17px; line-height: 1.55; }
+  .legal section { scroll-margin-top: 80px; }
+  .legal h2 { font-size: 20px; line-height: 1.3; letter-spacing: -0.015em; font-weight: 600; margin: 40px 0 12px; }
+  .legal p, .legal li { color: var(--mut); font-size: 15px; line-height: 1.7; }
+  .legal p + p, .legal p + ul { margin-top: 12px; }
+  .legal ul { list-style: disc; padding-left: 22px; margin-top: 12px; }
+  .legal li { margin-top: 6px; }
+  .legal li::marker { color: var(--mut); }
+  .legal strong { color: var(--fg); font-weight: 500; }
+  .legal p a, .legal li a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; transition: text-decoration-color 0.15s; }
+  .legal p a:hover, .legal li a:hover { text-decoration-color: var(--acc-hi); }
+  .legal code { font: 500 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); background: rgba(255, 255, 255, 0.06); padding: 1px 6px; border-radius: 5px; }
+  .legal-note { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; }
+  .toc { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 18px 20px; align-self: start; }
+  .toc h2 { font-size: 12px; font-weight: 600; color: var(--mut); margin: 0 0 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .toc ol { list-style: decimal; padding-left: 20px; }
+  .toc li { margin-top: 2px; font-size: 14px; color: var(--mut); }
+  .toc li::marker { color: var(--mut); font-size: 12px; }
+  .toc a { color: var(--mut); display: inline-block; padding: 4px 0; min-height: 24px; transition: color 0.15s; }
+  .toc a:hover { color: var(--fg); }
+  @media (min-width: 600px) and (max-width: 1099px) { .toc ol { columns: 2; column-gap: 32px; } .toc li { break-inside: avoid; } }
+  @media (min-width: 1100px) {
+    .doc { grid-template-columns: 260px minmax(0, 720px); gap: 72px; justify-content: center; }
+    .toc { position: sticky; top: 88px; max-height: calc(100vh - 120px); overflow: auto; }
+  }
+</style>
