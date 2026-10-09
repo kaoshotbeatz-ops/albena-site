@@ -1,0 +1,9 @@
+{
+  "captured_utc": "2026-10-09T19:48:30Z",
+  "source": "curl https://albena.ai/api/status",
+  "response": {
+    "ok": true,
+    "lastBackupOk": true,
+    "lastVerifiedAt": "2026-10-09T17:00:41.374Z"
+  }
+}

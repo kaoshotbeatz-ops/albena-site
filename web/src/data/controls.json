@@ -61,7 +61,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": ".github/workflows/ci.yml (permissions block)"
+    "evidence": ".github/workflows/ci.yml (permissions block); portal view-as (PR #16)"
   },
   {
     "id": "AC-7",
@@ -216,7 +216,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": "worker/src/auditchain.ts; worker/src/maintenance.ts; worker/test/hardening.test.ts"
+    "evidence": "worker/src/auditchain.ts; worker/src/maintenance.ts; worker/test/hardening.test.ts; portal view-as (PR #16)"
   },
   {
     "id": "AU-3",
@@ -417,7 +417,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/pull_request_template.md; .github/workflows/ci.yml; scripts/apply-github-protections.sh"
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; GitHub Actions run 37954896953 (production environment approval gate used, deploy and ZAP success); .github/pull_request_template.md; .github/workflows/ci.yml; scripts/apply-github-protections.sh"
   },
   {
     "id": "CM-4",
@@ -439,7 +439,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS"
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS; GitHub Actions run 37954896953"
   },
   {
     "id": "CM-6",
@@ -533,7 +533,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "worker/src/maintenance.ts (runVerify); worker/RUNBOOK-restore.md"
+    "evidence": "controls/evidence/2026-10-09-status.json"
   },
   {
     "id": "CP-6",
@@ -575,8 +575,8 @@
       "NIST 800-53",
       "SOC 2"
     ],
-    "status": "partial",
-    "evidence": "worker/src/maintenance.ts; worker/wrangler.jsonc (triggers, r2_buckets); /api/status"
+    "status": "implemented",
+    "evidence": "controls/evidence/2026-10-09-status.json"
   },
   {
     "id": "CP-10",
@@ -587,7 +587,7 @@
       "SOC 2"
     ],
     "status": "partial",
-    "evidence": "worker/RUNBOOK-restore.md; controls/runbooks/contingency-plan.md (DRAFT)"
+    "evidence": "controls/evidence/2026-10-09-status.json"
   },
   {
     "id": "IA-1",
@@ -1243,7 +1243,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": ".github/workflows/ci.yml; .github/workflows/scheduled-security.yml; .github/dependabot.yml; controls/evidence/2026-10-09-github-protections.json"
+    "evidence": ".github/workflows/ci.yml; .github/workflows/scheduled-security.yml; .github/dependabot.yml; controls/evidence/2026-10-09-github-protections.json; GitHub Actions run 37954896953"
   },
   {
     "id": "RA-7",
@@ -1348,7 +1348,7 @@
       "SOC 2"
     ],
     "status": "implemented",
-    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS; .github/workflows/ci.yml"
+    "evidence": "controls/evidence/2026-10-09-github-protections.json; .github/CODEOWNERS; .github/workflows/ci.yml; GitHub Actions run 37954896953 (auto-deploy through production approval gate)"
   },
   {
     "id": "SA-11",
@@ -1358,7 +1358,7 @@
       "NIST 800-53"
     ],
     "status": "implemented",
-    "evidence": ".github/workflows/ci.yml"
+    "evidence": ".github/workflows/ci.yml; docs/security-review-portal-2026-10-09.md; docs/security-review-2026-10-09.md"
   },
   {
     "id": "SA-15",
