@@ -6,6 +6,9 @@ updates:
     cooldown: { default-days: 7 }
   - package-ecosystem: npm
     directory: /web
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]  # @astrojs/check supports TS ^5||^6 only
     schedule: { interval: weekly }
     cooldown: { default-days: 7 }
     open-pull-requests-limit: 5
