@@ -18,6 +18,17 @@ async function openPortal(btn: HTMLButtonElement) {
 
 function planPanel(b: BillingSummary) {
   const none = b.plan === 'none';
+  if (b.source === 'manual' && !none) {
+    // Set up by the Albena team: there is no Stripe subscription, so no billing portal.
+    const live = b.status === 'active';
+    return panel('Current plan', [
+      h('p', { class: 'big' }, b.planName),
+      h('dl', { class: 'kv' },
+        h('dt', {}, 'Status'), h('dd', {}, chip(live ? 'Active' : b.status, live ? 'green' : 'grey')),
+        h('dt', {}, b.status === 'expired' ? 'Ended' : 'Ends'), h('dd', {}, b.endsAt ? fmtDate(b.endsAt) : 'No end date')),
+      h('p', { class: 'mut' }, live ? 'This plan was set up for you by the Albena team, so there is nothing to pay or manage here. Questions? Use Support.' : 'This plan is not active. Contact the Albena team, or choose a plan below.'),
+    ]);
+  }
   const portal = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Manage billing');
   portal.addEventListener('click', () => openPortal(portal));
   const tone = b.status === 'active' || b.status === 'trialing' ? 'green' : b.status === 'past_due' ? 'red' : 'grey';
@@ -73,7 +84,7 @@ function invoicesPanel(list: Awaited<ReturnType<typeof api.invoices>>) {
   const [b, inv] = await Promise.allSettled([api.billing(), api.invoices()]);
   if (b.status === 'rejected') throw b.reason;
   root.replaceChildren(h('div', { class: 'stack' },
-    planPanel(b.value), plansPanel(b.value.plan),
+    planPanel(b.value), ...(b.value.source === 'manual' && b.value.status === 'active' ? [] : [plansPanel(b.value.plan)]),
     inv.status === 'fulfilled' ? invoicesPanel(inv.value) : panel('Invoices', h('p', { class: 'is-error' }, 'Could not load invoices.'))));
   root.setAttribute('aria-busy', 'false');
 })().catch((e) => failInto(root, e));

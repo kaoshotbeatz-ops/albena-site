@@ -1,0 +1,45 @@
+---
+import Logo from '../components/Logo.astro';
+import '../styles/portal.css';
+
+interface Props { title: string; lead?: string; section: 'customers' | 'invites' }
+const { title, lead, section } = Astro.props;
+const nav = [
+  { id: 'customers', href: '/support/customers', label: 'Customers' },
+  { id: 'invites', href: '/support/invite', label: 'Invites' },
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} (staff) | Albena account</title>
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="theme-color" content="#08090a" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="staff">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="staff-top">
+    <a class="brand" href="https://albena.ai/admin" aria-label="Back to admin"><Logo size={22} id="st" /><span>Albena staff</span></a>
+    <nav aria-label="Staff">
+      {nav.map((n) => <a href={n.href} aria-current={n.id === section ? 'page' : undefined}>{n.label}</a>)}
+      <a href="https://albena.ai/admin/waitlist" rel="noopener">Waitlist</a>
+    </nav>
+  </header>
+  <main id="main" tabindex="-1" class="staff-main">
+    <div class="page-head">
+      <div>
+        <h1>{title}</h1>
+        {lead && <p class="page-lead">{lead}</p>}
+      </div>
+      <div class="page-actions"><slot name="actions" /></div>
+    </div>
+    <slot />
+  </main>
+  <p class="toast" id="toast" role="status" aria-live="polite"></p>
+</body>
+</html>

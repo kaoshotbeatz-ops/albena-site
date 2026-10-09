@@ -15,6 +15,7 @@ let sessions = [
   { id: 's1', current: true, createdAt: now - 2 * H, lastSeen: now - 60, expiresAt: now + 6 * D },
   { id: 's2', current: false, createdAt: now - 5 * D, lastSeen: now - 6 * H, expiresAt: now + 2 * D },
 ];
+let pending = [{ id: 'i1', email: 'kid@example.com', createdAt: now - D, expiresAt: now + 13 * D }];
 const members = [{ id: 'm1', email: 'omar@example.com', role: 'owner', status: 'active' }, { id: 'm2', email: 'deena@example.com', role: 'member', status: 'active' }];
 
 export function handle(method: string, path: string, body: unknown): unknown {
@@ -22,7 +23,7 @@ export function handle(method: string, path: string, body: unknown): unknown {
   const p = url.pathname;
   const b = (body ?? {}) as Record<string, unknown>;
   if (p === '/api/me') return { user: { id: 'u1', email: 'omar@example.com', role: 'owner', accountId: 'a1' } };
-  if (p === '/api/billing/summary') return { entitlement: { plan: 'hub_mac', status: 'active', active: true, maxHubs: 1, billingInterval: 'monthly', currentPeriodEnd: now + 18 * D, cancelAtPeriodEnd: false, stripeSubscriptionId: 'sub_mock' }, hasBillingAccount: true };
+  if (p === '/api/billing/summary') return { entitlement: { plan: 'hub_mac', status: 'active', active: true, maxHubs: 1, billingInterval: 'monthly', currentPeriodEnd: now + 18 * D, cancelAtPeriodEnd: false, stripeSubscriptionId: 'sub_mock', source: 'stripe', endsAt: null, comp: false }, hasBillingAccount: true };
   if (p === '/api/billing/invoices') return { invoices };
   if (p === '/api/billing/portal' || p === '/api/billing/checkout') return { url: '/billing?mock=1&redirected=1' };
   if (p === '/api/billing/orders') return { orders: [
@@ -42,8 +43,11 @@ export function handle(method: string, path: string, body: unknown): unknown {
     const ed = url.searchParams.get('edition') ?? 'mac';
     return { edition: ed, channel: 'stable', version: '1.8.2', manifestUrl: 'https://example.invalid/releases/1.8.2/manifest.json', signatureUrl: 'https://example.invalid/releases/1.8.2/manifest.json.sig', signature: null, signatureScheme: 'ssh-ed25519', namespace: 'albena-hub-release', sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', releasedAt: now - 6 * D };
   }
-  if (p === '/api/account') return { account: { id: 'a1', createdAt: now - 90 * D }, members, connectors: [] };
-  if (p === '/api/account/members/invite') throw new ApiError(501, 'not_implemented');
+  if (p === '/api/account') return { account: { id: 'a1', createdAt: now - 90 * D }, members, invites: pending, connectors: [] };
+  if (p === '/api/account/members/invite') { pending = [...pending, { id: `i${pending.length + 2}`, email: String(b.email), createdAt: now, expiresAt: now + 14 * D }]; return { invite: pending.at(-1) }; }
+  const mi = /^\/api\/account\/members\/invites\/([^/]+)$/.exec(p);
+  if (mi) { pending = pending.filter((i) => i.id !== mi[1]); return { ok: true }; }
+  if (p === '/api/invite/accept') return { ok: true };
   if (p === '/api/account/export') return { exportedAt: new Date().toISOString(), account: { id: 'a1' }, members, hubs };
   if (p === '/api/account/delete') return { ok: true };
   if (p === '/api/security/sessions') return { sessions };

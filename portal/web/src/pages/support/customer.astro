@@ -1,0 +1,9 @@
+---
+import Staff from '../../layouts/Staff.astro';
+---
+<!-- Served by the worker for every /support/customers/<id>; the script reads the id from the path. -->
+<Staff title="Customer" lead="Plan, people, Hubs, orders and everything staff did for this account." section="customers">
+  <a slot="actions" class="btn" href="/support/customers">All customers</a>
+  <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
+  <script>import '../../scripts/support-customer';</script>
+</Staff>

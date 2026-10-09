@@ -1,20 +1,46 @@
 // Staff-only list (Cloudflare Access gates this page and /api/support/*). No customer session needed.
-import { api } from '../lib/api';
-import { h, must, chip, fmtDate, failInto, empty, table } from '../lib/ui';
+import { h, must, chip, fmtDate, failInto, empty, table, run, toast } from '../lib/ui';
+import { field, planFields, PLAN_NAMES } from '../lib/forms';
+import { staff, type AccountRow } from '../lib/staff';
 
 document.documentElement.classList.add('js');
 const root = must('#root');
 const q = must<HTMLInputElement>('#q');
+const count = must('#count');
 
-api.supportAccounts().then(({ me, accounts }) => {
+const tone = (s: string) => (s === 'active' || s === 'trialing' ? 'green' : s === 'past_due' || s === 'suspended' ? 'red' : s === 'expired' ? 'amber' : 'grey');
+const planLabel = (a: AccountRow) => (a.comp ? `${PLAN_NAMES[a.plan] ?? a.plan} (comp)` : PLAN_NAMES[a.plan] ?? a.plan);
+
+function buildNewForm() {
+  const email = field('Email', 'input', { type: 'email', placeholder: 'person@example.com', required: true });
+  const name = field('Name (optional)', 'input');
+  const plans = planFields({ allowEmpty: true });
+  const go = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Create customer');
+  const status = h('p', { class: 'form-status', role: 'status', 'aria-live': 'polite' });
+  const form = h('form', { class: 'stack', novalidate: true },
+    h('p', { class: 'mut' }, 'Creates the account now. There is no email and no login: the person signs in later with this address and finds the plan in place.'),
+    h('div', { class: 'form-grid' }, email.wrap, name.wrap), ...plans.nodes, h('div', { class: 'row' }, go), status);
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const fragment = plans.value();
+    if (typeof fragment === 'string') { status.textContent = fragment; status.className = 'form-status is-error'; return; }
+    const r = await run(go, () => staff.createAccount({ email: email.el.value.trim(), ...(name.el.value.trim() ? { name: name.el.value.trim() } : {}), ...fragment }));
+    if (r) location.assign(`/support/customers/${encodeURIComponent(r.accountId)}`);
+  });
+  must('#new-body').append(form);
+}
+
+staff.accounts().then(({ me, accounts }) => {
   root.setAttribute('aria-busy', 'false');
   const render = () => {
     const term = q.value.trim().toLowerCase();
-    const rows = accounts.filter((a) => !term || [a.email, a.id, a.plan, a.status].some((v) => v.toLowerCase().includes(term)));
+    const rows = accounts.filter((a) => !term || [a.email, a.id, a.plan, a.status, a.source].some((v) => v.toLowerCase().includes(term)));
+    count.textContent = `${rows.length} of ${accounts.length}`;
     if (!rows.length) { root.replaceChildren(empty('No matching customers.')); return; }
-    const t = table('Customers', ['Email', 'Plan', 'Status', 'Hubs', 'Created', ''], rows.map((a) => [
-      h('span', {}, a.email, a.email.toLowerCase() === me ? chip('you', 'indigo') : null),
-      document.createTextNode(a.plan), chip(a.status, a.status === 'active' || a.status === 'trialing' ? 'green' : a.status === 'past_due' ? 'red' : 'grey'),
+    const t = table('Customers', ['Email', 'Plan', 'Status', 'Source', 'Ends', 'Hubs', 'Created', ''], rows.map((a) => [
+      h('a', { class: 'tlink', href: `/support/customers/${encodeURIComponent(a.id)}` }, a.email, a.email.toLowerCase() === me ? ' (you)' : ''),
+      document.createTextNode(planLabel(a)), chip(a.status, tone(a.status)), chip(a.source, a.source === 'manual' ? 'indigo' : 'grey'),
+      document.createTextNode(a.endsAt ? fmtDate(new Date(a.endsAt * 1000).toISOString()) : ''),
       h('span', { class: 'num' }, String(a.hubs)), document.createTextNode(fmtDate(new Date(a.created * 1000).toISOString())),
       h('a', { class: 'btn btn-sm', href: `/support/view-as?account=${encodeURIComponent(a.id)}`, 'aria-label': `View as ${a.email}` }, 'View as'),
     ]));
@@ -23,4 +49,5 @@ api.supportAccounts().then(({ me, accounts }) => {
   };
   q.addEventListener('input', render);
   render();
-}).catch((e) => failInto(root, e));
+  buildNewForm();
+}).catch((e) => { failInto(root, e); toast('Could not load customers.', true); });

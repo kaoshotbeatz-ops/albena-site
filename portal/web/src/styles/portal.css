@@ -234,3 +234,31 @@ body.auth { display: grid; place-items: center; padding: 24px 16px; }
 html.viewas .side { top: 40px; height: calc(100vh - 40px); }
 html.viewas main button:disabled, html.viewas main input:disabled { cursor: not-allowed; opacity: 0.5; }
 .cust-me td { background: rgba(113, 112, 255, 0.08); }
+
+/* Staff area (account.albena.ai/support/*, behind Cloudflare Access) */
+body.staff { display: block; }
+.staff-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 8px clamp(16px, 3.4vw, 44px); border-bottom: 1px solid var(--line); background: var(--bg-2); }
+.staff-top nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.staff-top nav a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 8px; color: var(--fg-2); font-weight: 500; }
+.staff-top nav a:hover { color: var(--fg); background: rgba(255, 255, 255, 0.05); }
+.staff-top nav a[aria-current='page'] { color: var(--fg); background: rgba(255, 255, 255, 0.08); }
+.staff-main { padding: 28px clamp(16px, 3.4vw, 44px) 72px; max-width: 1240px; margin: 0 auto; display: grid; gap: 16px; }
+.staff-main .page-head { margin-bottom: 4px; }
+.staff-main .panel-body > .stack { margin-top: 0; }
+.toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.toolbar .grow { flex: 1 1 260px; }
+.ta { min-height: 96px; padding: 10px 12px; resize: vertical; line-height: 1.45; font-family: inherit; }
+.field[hidden] { display: none; }
+dialog.confirm.wide { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
+.small-code { font-size: 15px; letter-spacing: 0.04em; word-break: break-all; user-select: all; }
+.tbl td.wrap, .tbl th.wrap { white-space: normal; min-width: 180px; }
+.tbl td .row { flex-wrap: nowrap; }
+.who { display: grid; gap: 2px; }
+.btn-link { all: unset; cursor: pointer; color: var(--acc-hi); text-decoration: underline; text-underline-offset: 3px; }
+.btn-link:focus-visible { outline: 2px solid var(--acc-hi); outline-offset: 2px; }
+details.panel > summary { cursor: pointer; padding: 12px 16px; font-weight: 560; list-style: none; min-height: 48px; display: flex; align-items: center; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel[open] > summary { border-bottom: 1px solid var(--line); }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; align-items: end; }
+.res-ok { color: #7fd9a8; } .res-bad { color: var(--red); }
+.timeline td:first-child { color: var(--mut); }
