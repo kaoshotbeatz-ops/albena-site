@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Albena — Your home's AI assistant</title>
 <meta name="description" content="Meet Albena, a private, voice-first AI assistant for your home and life. Say &quot;Hey Albena&quot; and she handles the rest, with local AI first and your approval on every action.">
-<meta name="theme-color" content="#08090d" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f7f7fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#08090a">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://albena.ai/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Albena">
@@ -16,102 +16,125 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Meet Albena">
 <meta name="twitter:description" content="A private, voice-first AI assistant for your home and life.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.35' cy='.3' r='.9'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='.55' stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%23312e81'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%2308090d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.35' cy='.3' r='.9'%3E%3Cstop offset='0' stop-color='%23c4b5fd'/%3E%3Cstop offset='.55' stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%23312e81'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%2308090a'/%3E%3Ccircle cx='16' cy='16' r='9' fill='url(%23g)'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="nav">
-  <div class="wrap nav-in">
+  <div class="nav-in">
     <a class="brand" href="#top" aria-label="Albena home">
-      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="lg" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#c4b5fd"/><stop offset=".55" stop-color="#6366f1"/><stop offset="1" stop-color="#312e81"/></radialGradient></defs><circle cx="16" cy="16" r="12" fill="url(#lg)"/></svg>
-      Albena
+      <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true"><defs><radialGradient id="lg" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#c4b5fd"/><stop offset=".55" stop-color="#6366f1"/><stop offset="1" stop-color="#312e81"/></radialGradient></defs><circle cx="16" cy="16" r="13" fill="url(#lg)"/></svg>
+      <span>Albena</span>
     </a>
     <nav aria-label="Primary">
       <ul class="links">
-        <li><a href="#features">What she does</a></li>
+        <li><a href="#features">Features</a></li>
         <li><a href="#how">How it works</a></li>
         <li><a href="#roadmap">Roadmap</a></li>
         <li><a href="#privacy">Privacy</a></li>
       </ul>
     </nav>
-    <a class="btn btn-sm" href="#waitlist">Join the waitlist</a>
+    <a class="btn btn-sm" href="#waitlist">Join waitlist</a>
   </div>
 </header>
 
 <main id="main">
 <section class="hero" id="top">
-  <div class="glow" aria-hidden="true"></div>
-  <div class="wrap hero-grid">
-    <div class="hero-copy reveal">
-      <p class="pill"><span class="dot" aria-hidden="true"></span> Early access opening soon</p>
-      <h1>Meet Albena.</h1>
-      <p class="lead">The assistant for your home and life that listens when you call, remembers what matters, and never acts without asking.</p>
-      <div class="cta">
-        <a class="btn" href="#waitlist">Join the waitlist</a>
-        <a class="btn btn-ghost" href="#features">See what she does</a>
-      </div>
-      <p class="fine">Say <strong>&ldquo;Hey Albena.&rdquo;</strong> She takes it from there.</p>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="hero-in">
+    <a class="announce reveal" href="#waitlist"><span class="dot" aria-hidden="true"></span>Albena early access <span aria-hidden="true">&rarr;</span></a>
+    <h1 class="reveal">The assistant for your<br class="br"> home and life</h1>
+    <p class="lead reveal">Albena listens when you call, remembers what matters, and never acts without asking. Say &ldquo;Hey Albena&rdquo; and she takes it from there.</p>
+    <div class="cta reveal">
+      <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
+      <a class="btn btn-ghost" href="#features">See what she does</a>
     </div>
+  </div>
 
-    <div class="visual reveal" role="img" aria-label="Illustration of Albena's glowing voice orb above a sample morning briefing card.">
-      <div class="orb-wrap" aria-hidden="true">
-        <svg class="rings" viewBox="0 0 400 400">
-          <circle cx="200" cy="200" r="120" class="ring r1"/>
-          <circle cx="200" cy="200" r="160" class="ring r2"/>
-          <circle cx="200" cy="200" r="195" class="ring r3"/>
-        </svg>
-        <div class="orb"></div>
-        <div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-      </div>
-      <div class="card brief" aria-hidden="true">
-        <div class="brief-h"><span class="chip">Morning briefing</span><span class="muted">7:30</span></div>
-        <p class="brief-t">Good morning. Here's your day.</p>
-        <ul>
-          <li><span class="ic">&#9679;</span> Dentist at 10:15, leave by 9:50</li>
-          <li><span class="ic">&#9679;</span> 3 emails need a reply, drafts ready</li>
-          <li><span class="ic">&#9679;</span> Front door locked, thermostat set to 68&deg;</li>
-        </ul>
-        <div class="approve"><span>Send the reply drafts?</span><b>Approve</b></div>
+  <div class="stage" role="img" aria-label="Illustration of the Albena app: a sidebar, a good morning briefing with status rows, and a Hey Albena voice bar.">
+    <div class="stage-glow" aria-hidden="true"></div>
+    <div class="win" aria-hidden="true">
+      <div class="win-bar"><i></i><i></i><i></i><span>Albena</span></div>
+      <div class="win-body">
+        <aside class="side">
+          <p class="side-h">Workspace</p>
+          <a class="on"><svg viewBox="0 0 16 16"><path d="M2 7.5 8 3l6 4.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"/></svg>Home</a>
+          <a><svg viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M5 6.5h6M5 9.5h4"/></svg>Briefing<b>3</b></a>
+          <a><svg viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="11" rx="2"/><circle cx="8" cy="9.5" r="1.5"/></svg>Devices</a>
+          <a><svg viewBox="0 0 16 16"><circle cx="4" cy="8" r="1.7"/><circle cx="12" cy="4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><path d="m5.5 7.2 5-2.4M5.5 8.8l5 2.4"/></svg>Memory</a>
+          <p class="side-h">Rooms</p>
+          <a><span class="sq"></span>Kitchen</a>
+          <a><span class="sq s2"></span>Living room</a>
+        </aside>
+        <div class="main-pane">
+          <div class="pane-h"><h3>Good morning, Omar</h3><span class="kbd">7:30</span></div>
+          <ul class="rows">
+            <li><span class="st done"></span><span class="t">Front door locked, thermostat set to 68&deg;</span><span class="chip">Home</span><span class="kbd">G H</span></li>
+            <li><span class="st half"></span><span class="t">Dentist at 10:15, leave by 9:50</span><span class="chip">Calendar</span><span class="kbd">G C</span></li>
+            <li><span class="st half"></span><span class="t">3 email replies drafted</span><span class="chip c2">Needs approval</span><span class="kbd">&#8984; &#8629;</span></li>
+            <li><span class="st"></span><span class="t">Reorder coffee filters</span><span class="chip c3">Suggested</span><span class="kbd">G S</span></li>
+            <li class="hide-s"><span class="st done"></span><span class="t">Garage camera: no motion overnight</span><span class="chip">Devices</span><span class="kbd">G D</span></li>
+          </ul>
+          <div class="voice">
+            <span class="mic"><svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 0 0 9 0M8 12.5V14"/></svg></span>
+            <span class="vt">Hey Albena<span class="caret"></span></span>
+            <span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
       </div>
     </div>
+    <div class="stage-fade" aria-hidden="true"></div>
   </div>
 </section>
 
 <section class="sec" id="features">
   <div class="wrap">
     <div class="head reveal">
-      <p class="eyebrow">What she does</p>
-      <h2>One assistant. The whole household.</h2>
+      <p class="eyebrow">Features</p>
+      <h2>One assistant for the whole household</h2>
       <p class="sub">Albena handles the small things that add up, so you can stay in the moment.</p>
     </div>
-    <div class="grid">
-      <article class="card reveal">
-        <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Zm-7 9a7 7 0 0 0 14 0M12 19v3"/></svg></div>
+    <div class="bento">
+      <article class="bcard span2 reveal">
+        <div class="ill ill-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Voice, naturally</h3>
         <p>Say &ldquo;Hey Albena&rdquo; from across the room. She understands real sentences, not rigid commands.</p>
       </article>
-      <article class="card reveal">
-        <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z"/></svg></div>
+      <article class="bcard reveal">
+        <div class="ill ill-tog" aria-hidden="true">
+          <div><span>Living room lights</span><b class="tg on"></b></div>
+          <div><span>Thermostat &middot; 68&deg;</span><b class="tg on"></b></div>
+          <div><span>Back door</span><b class="tg"></b></div>
+        </div>
         <h3>Home &amp; devices</h3>
-        <p>Lights, climate, locks, cameras, and media in one conversation. Ask once and it's done.</p>
+        <p>Lights, climate, locks, cameras and media in one conversation.</p>
       </article>
-      <article class="card reveal">
-        <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>
+      <article class="bcard reveal">
+        <div class="ill ill-cal" aria-hidden="true">
+          <div><em>9:00</em><span class="bar b1">Standup</span></div>
+          <div><em>10:15</em><span class="bar b2">Dentist</span></div>
+          <div><em>13:00</em><span class="bar b3">Reply drafts ready</span></div>
+        </div>
         <h3>Calendar, mail &amp; briefings</h3>
-        <p>A calm daily briefing, drafted replies, and reminders that show up before you need them.</p>
+        <p>A calm daily briefing, drafted replies, and reminders before you need them.</p>
       </article>
-      <article class="card reveal">
-        <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V4a3 3 0 0 0-3 0Zm6 0a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/></svg></div>
+      <article class="bcard reveal">
+        <div class="ill ill-mem" aria-hidden="true">
+          <svg viewBox="0 0 200 110"><path d="M100 55 40 25M100 55 160 28M100 55 55 90M100 55 150 88M40 25 55 90M160 28 150 88"/><circle cx="100" cy="55" r="9" class="c"/><circle cx="40" cy="25" r="5"/><circle cx="160" cy="28" r="5"/><circle cx="55" cy="90" r="5"/><circle cx="150" cy="88" r="5"/></svg>
+        </div>
         <h3>Memory that learns you</h3>
-        <p>She remembers your preferences, routines, and the people in your life, and you can see or erase any of it.</p>
+        <p>Preferences, routines and people, and you can see or erase any of it.</p>
       </article>
-      <article class="card reveal wide">
-        <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+      <article class="bcard span2 reveal">
+        <div class="ill ill-lock" aria-hidden="true">
+          <svg viewBox="0 0 48 56"><rect x="6" y="22" width="36" height="30" rx="7"/><path d="M14 22v-6a10 10 0 0 1 20 0v6"/><circle cx="24" cy="37" r="3.5"/></svg>
+          <div class="lock-rows"><span>Processed on your devices</span><span>Nothing leaves without approval</span><span>Delete memory any time</span></div>
+        </div>
         <h3>Privacy-first local AI</h3>
         <p>Your requests are handled on devices you own wherever possible. What happens at home stays at home.</p>
       </article>
@@ -119,7 +142,7 @@
   </div>
 </section>
 
-<section class="sec alt" id="how">
+<section class="sec" id="how">
   <div class="wrap">
     <div class="head reveal">
       <p class="eyebrow">How it works</p>
@@ -127,9 +150,9 @@
       <p class="sub">Three simple principles shape everything Albena does.</p>
     </div>
     <ol class="steps">
-      <li class="card reveal"><span class="num">1</span><h3>On-device first</h3><p>Everyday requests run on your own hardware with local models. Fast, private, and they work even when the internet doesn't.</p></li>
-      <li class="card reveal"><span class="num">2</span><h3>Cloud only when needed</h3><p>For the rare hard question, Albena can reach for a larger model. She tells you when she does, and shares only what's needed.</p></li>
-      <li class="card reveal"><span class="num">3</span><h3>You approve every action</h3><p>Sending a message, unlocking a door, making a change: Albena proposes, you say yes. Nothing happens behind your back.</p></li>
+      <li class="reveal"><span class="num">1</span><h3>On-device first</h3><p>Everyday requests run on your own hardware with local models. Fast, private, and they keep working when the internet doesn't.</p></li>
+      <li class="reveal"><span class="num">2</span><h3>Cloud only when needed</h3><p>For the rare hard question, Albena can reach for a larger model. She tells you when she does, and shares only what's needed.</p></li>
+      <li class="reveal"><span class="num">3</span><h3>You approve every action</h3><p>Sending a message, unlocking a door, making a change: Albena proposes, you say yes. Nothing happens behind your back.</p></li>
     </ol>
   </div>
 </section>
@@ -138,69 +161,77 @@
   <div class="wrap">
     <div class="head reveal">
       <p class="eyebrow">Roadmap</p>
-      <h2>Where Albena is headed.</h2>
-      <p class="sub">We build in the open about what's ready and what isn't.</p>
+      <h2>Where Albena is headed</h2>
+      <p class="sub">We're upfront about what's ready and what isn't.</p>
     </div>
-    <div class="grid three">
-      <article class="card reveal">
-        <span class="tag now">Now</span>
-        <h3>Voice &amp; home control</h3>
-        <ul class="list"><li>&ldquo;Hey Albena&rdquo; wake phrase</li><li>Smart home and device control</li><li>Daily briefings, calendar, and mail help</li><li>Memory you can review</li></ul>
-      </article>
-      <article class="card reveal">
-        <span class="tag next">Next</span>
-        <h3>Native apps</h3>
-        <ul class="list"><li>Albena for iPhone</li><li>Albena for Mac</li><li>Notifications and quick approvals on the go</li></ul>
-      </article>
-      <article class="card reveal">
-        <span class="tag later">Later</span>
-        <h3>Bigger households</h3>
-        <ul class="list"><li>Multiple homes and estates</li><li>Shared household profiles</li><li>More integrations, added by your requests</li></ul>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="sec alt" id="privacy">
-  <div class="wrap narrow">
-    <div class="promise reveal">
-      <p class="eyebrow">Our privacy promise</p>
-      <h2>Your home is not our data.</h2>
-      <ul class="checks">
-        <li>We never sell your data, and we never use your conversations to train advertising.</li>
-        <li>Local processing is the default, not an upgrade.</li>
-        <li>You can see what Albena remembers, and delete it any time.</li>
-        <li>Every action that touches the outside world needs your say-so.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="waitlist">
-  <div class="wrap narrow">
-    <div class="cta-box reveal">
-      <h2>Be first to meet her.</h2>
-      <p class="sub">Leave your email and we'll write when early access opens. No spam, ever.</p>
-      <form id="waitlist-form" action="mailto:hello@albena.ai" method="post" enctype="text/plain" novalidate>
-        <label for="email" class="sr">Email address</label>
-        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="form-msg">
-        <button class="btn" type="submit">Join the waitlist</button>
-      </form>
-      <p id="form-msg" class="fine" role="status" aria-live="polite"></p>
-      <div id="thanks" class="thanks" hidden tabindex="-1">
-        <h3>You're on the list.</h3>
-        <p>Your email app should have opened with a note to us. Just press send and we'll be in touch.</p>
+    <div class="cols">
+      <div class="col reveal">
+        <h3><span class="st done"></span>Now <small>4</small></h3>
+        <ul>
+          <li><span class="st done"></span><span class="t">&ldquo;Hey Albena&rdquo; wake phrase</span><span class="chip">Voice</span></li>
+          <li><span class="st done"></span><span class="t">Smart home and device control</span><span class="chip">Home</span></li>
+          <li><span class="st done"></span><span class="t">Daily briefings, calendar and mail help</span><span class="chip">Daily</span></li>
+          <li><span class="st done"></span><span class="t">Memory you can review</span><span class="chip">Privacy</span></li>
+        </ul>
       </div>
+      <div class="col reveal">
+        <h3><span class="st half"></span>Next <small>3</small></h3>
+        <ul>
+          <li><span class="st half"></span><span class="t">Albena for iPhone</span><span class="chip c2">Apps</span></li>
+          <li><span class="st half"></span><span class="t">Albena for Mac</span><span class="chip c2">Apps</span></li>
+          <li><span class="st half"></span><span class="t">Notifications and quick approvals on the go</span><span class="chip c2">Mobile</span></li>
+        </ul>
+      </div>
+      <div class="col reveal">
+        <h3><span class="st"></span>Later <small>3</small></h3>
+        <ul>
+          <li><span class="st"></span><span class="t">Multiple homes and estates</span><span class="chip c3">Scale</span></li>
+          <li><span class="st"></span><span class="t">Shared household profiles</span><span class="chip c3">Family</span></li>
+          <li><span class="st"></span><span class="t">More integrations, added by your requests</span><span class="chip c3">Ecosystem</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="privacy">
+  <div class="wrap">
+    <p class="eyebrow reveal">Privacy</p>
+    <p class="statement reveal">Your home is not our data. <b>We never sell your data</b> and never use conversations for advertising. <b>Local processing is the default</b>, not an upgrade. You can <b>see everything Albena remembers</b> and delete it any time, and every action that touches the outside world needs <b>your say-so</b>.</p>
+  </div>
+</section>
+
+<section class="sec cta-sec" id="waitlist">
+  <div class="cta-glow" aria-hidden="true"></div>
+  <div class="wrap center">
+    <h2 class="reveal">Be first to meet her</h2>
+    <p class="sub reveal">Leave your email and we'll write when early access opens. No spam, ever.</p>
+    <form id="waitlist-form" class="reveal" action="mailto:hello@albena.ai" method="post" enctype="text/plain" novalidate>
+      <label for="email" class="sr">Email address</label>
+      <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="form-msg">
+      <button class="btn btn-primary" type="submit">Join waitlist</button>
+    </form>
+    <p id="form-msg" class="fine" role="status" aria-live="polite"></p>
+    <div id="thanks" class="thanks" hidden tabindex="-1">
+      <h3>You're on the list.</h3>
+      <p>Your email app should have opened with a note to us. Just press send and we'll be in touch.</p>
     </div>
   </div>
 </section>
 </main>
 
 <footer class="foot">
-  <div class="wrap foot-in">
-    <p>&copy; 2026 Omar Huertas LLC</p>
-    <p class="muted">Albena is a trademark of Omar Huertas LLC.</p>
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href="#top" aria-label="Albena home"><svg width="18" height="18" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="url(#lg)"/></svg><span>Albena</span></a>
+      <p>Your home's AI assistant.</p>
+    </div>
+    <nav class="fcols" aria-label="Footer">
+      <div><h4>Product</h4><a href="#features">Features</a><a href="#how">How it works</a><a href="#roadmap">Roadmap</a></div>
+      <div><h4>Company</h4><a href="#privacy">Privacy</a><a href="#waitlist">Join waitlist</a><a href="mailto:hello@albena.ai">Contact</a></div>
+    </nav>
   </div>
+  <div class="foot-bot"><p>&copy; 2026 Omar Huertas LLC</p></div>
 </footer>
 
 <script src="main.js" defer></script>

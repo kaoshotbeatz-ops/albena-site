@@ -1,7 +1,6 @@
 (function () {
-  // Scroll reveal
-  var els = document.querySelectorAll('.reveal');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
   if (reduce || !('IntersectionObserver' in window)) {
     els.forEach(function (e) { e.classList.add('in'); });
   } else {
@@ -10,9 +9,26 @@
       entries.forEach(function (en) {
         if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
       });
-    }, { threshold: 0.12 });
+    }, { threshold: 0.1 });
     els.forEach(function (e) { io.observe(e); });
   }
+
+  // Pointer-follow highlight on bento cards
+  if (!reduce) {
+    document.querySelectorAll('.bcard').forEach(function (c) {
+      c.addEventListener('pointermove', function (ev) {
+        var r = c.getBoundingClientRect();
+        c.style.setProperty('--mx', (ev.clientX - r.left) + 'px');
+        c.style.setProperty('--my', (ev.clientY - r.top) + 'px');
+      });
+    });
+  }
+
+  // Sticky nav border on scroll
+  var nav = document.querySelector('.nav');
+  var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
   // Waitlist
   var form = document.getElementById('waitlist-form');
