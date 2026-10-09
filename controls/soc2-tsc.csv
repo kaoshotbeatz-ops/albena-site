@@ -28,13 +28,13 @@ CC7.1,Security,Detects configuration changes and vulnerabilities,RA-5;CM-6;SI-2,
 CC7.2,Security,Monitors for anomalies,SI-4;AU-6;AU-12,partial,Hash-chained audit log and backup status indicator exist; no alerting or log review cadence
 CC7.3,Security,Evaluates security events,IR-4;IR-5;AU-6,planned,No triage procedure in use
 CC7.4,Security,Responds to security incidents,IR-4;IR-8,partial,IR runbook drafted; policy unapproved and tabletop not yet run (Omar)
-CC7.5,Security,Recovers from incidents,CP-10;IR-4,partial,Restore runbook and weekly restore verification built; first backup due 2026-10-10 and no restore drill yet
-CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,"PR, 1 CODEOWNERS review, 7 required checks and environment approval enforced on main; residual: enforce_admins=false (sole owner bypass), no signed commits, no formal impact analysis"
+CC7.5,Security,Recovers from incidents,CP-10;IR-4,partial,Nightly backup ran and weekly verification passed 2026-10-09 (controls/evidence/2026-10-09-status.json); restore runbook exists; no restore drill yet
+CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,"PR, 1 CODEOWNERS review, 7 required checks and production environment approval enforced on main (approval gate used in auto-deploy run 37954896953); residual: enforce_admins=false (sole owner bypass), no signed commits, no formal impact analysis"
 CC9.1,Security,Mitigates business disruption risk,CP-2;RA-3,partial,Contingency plan drafted (RPO 24h); not approved or tested (Omar)
 CC9.2,Security,Manages vendor and partner risk,SA-9;SR-6;CA-3,partial,Vendor register drafted; SOC report reviews missing (Omar)
 A1.1,Availability,Capacity management,AU-4;SC-5;CP-2,partial,Provider capacity; backup status indicator exists; no monitoring thresholds
-A1.2,Availability,Environmental protections and recovery infrastructure,PE-9;PE-11;PE-13;CP-6;CP-7;CP-9,partial,"Inherited redundancy; nightly R2 backup deployed, first run due 2026-10-10 03:17 UTC"
-A1.3,Availability,Tests recovery plan procedures,CP-4;CP-10,partial,Weekly restore verification built; no restore test performed yet
+A1.2,Availability,Environmental protections and recovery infrastructure,PE-9;PE-11;PE-13;CP-6;CP-7;CP-9,partial,"Inherited redundancy; nightly R2 backup running (first run 2026-10-09, lastBackupOk=true, verified)"
+A1.3,Availability,Tests recovery plan procedures,CP-4;CP-10,partial,Backup readability and hash verification passed 2026-10-09; no full restore drill performed yet
 C1.1,Confidentiality,Identifies and maintains confidential information,RA-2;SC-28;SI-12,planned,Data classification not documented
 C1.2,Confidentiality,Disposes of confidential information,MP-6;SI-12;AU-11,partial,Ticket anonymization and 35-day backup pruning enforced in Worker; retention policy unapproved (Omar)
 P1.1,Privacy,Privacy notice,PT-5;PL-2,partial,privacy.html exists; review against practice needed (PT family is outside Moderate baseline)

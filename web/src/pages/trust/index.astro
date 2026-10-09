@@ -57,7 +57,7 @@ const principles = [
           <span class="dot" aria-hidden="true"></span>
           <span data-backup-text>Checking backup status...</span>
         </p>
-        <p class="fine" data-backup-detail>The first scheduled backup runs on October 10, 2026 (03:17 UTC). Until then this shows a neutral state, not a failure.</p>
+        <p class="fine" data-backup-detail>Backups run nightly at 03:17 UTC. A neutral state means the status could not be read, not a failure.</p>
       </div>
       <div>
         <h3 class="chg-h">What changed today</h3>
@@ -67,6 +67,12 @@ const principles = [
           <li>Weekly automated security scans of our code and live site, filed as issues when something fails.</li>
           <li>HTTPS only with HSTS preload, TLS 1.2 or newer, and a strict content security policy.</li>
           <li>Admin pages now sit behind Cloudflare Access (owner-only, 8 hour sessions) and our code is protected by required reviews and checks. The owner can still bypass these as sole maintainer.</li>
+          <li>First nightly backup completed and weekly verification passed (October 9, 2026); a full restore drill is still to do.</li>
+          <li>Audit log race condition fixed. One earlier fork in the chain is awaiting an owner-confirmed repair, so we still rate audit protection as partial.</li>
+          <li>Code now deploys automatically from main through a manual production approval step, followed by a security scan of the live site.</li>
+          <li>Customer portal at account.albena.ai is live with the same security headers, email link plus code or passkey sign-in, and an independent model security review whose 11 findings are fixed.</li>
+          <li>Support staff can open a read-only, 30 minute, audited view of a customer account for help, behind Cloudflare Access.</li>
+          <li>Outbound email is signed with SPF and DKIM and protected by a DMARC quarantine policy.</li>
           <li>Control statuses re-scored against evidence; items waiting on us are marked partial.</li>
         </ul>
       </div>

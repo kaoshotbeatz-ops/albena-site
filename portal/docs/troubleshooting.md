@@ -11,6 +11,7 @@ The link only works in the same browser where you requested it, and mail apps of
 - **Wrong code:** check the digits in the email. You have 5 attempts per email.
 - **Too many attempts:** the email's link and code are now void. Go to the sign-in page and request a new link.
 - **Expired or already used:** codes expire after 15 minutes and work once. Request a new link.
+- **No email arrived:** Didn't get it? Check spam or your company's email quarantine, and allow accounts@albena.ai.
 - **No "Check your email" page open:** the code only works in the browser that requested it. Request a new link from that browser.
 
 **Passkey not working**  
