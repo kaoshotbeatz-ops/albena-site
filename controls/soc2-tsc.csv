@@ -16,7 +16,7 @@ CC4.2,Security,Communicates deficiencies,CA-5;RA-7,partial,GAPS.md exists; owner
 CC5.1,Security,Selects and develops control activities,PL-10;PL-11;CA-2,implemented,Baseline selected and tailored in controls/
 CC5.2,Security,Selects technology general controls,CM-2;CM-6;SA-3,partial,Technology controls run in CI and on the live Worker; policy approval pending (Omar)
 CC5.3,Security,Deploys through policies and procedures,all -1 controls,planned,Policies are DRAFT
-CC6.1,Security,Logical access security,AC-2;AC-3;AC-6;IA-2;IA-5;SC-7,partial,"Admin deny-by-default; Cloudflare Access not enabled, MFA and token rotation not evidenced (Omar)"
+CC6.1,Security,Logical access security,AC-2;AC-3;AC-6;IA-2;IA-5;SC-7,partial,"Admin deny-by-default plus Cloudflare Access (owner-only, 8h session) live; email OTP is single factor so MFA is not claimed; GitHub org 2FA, token rotation and access reviews not evidenced (Omar)"
 CC6.2,Security,Registers and authorizes users,AC-2;IA-4,partial,No documented provisioning workflow
 CC6.3,Security,Removes or modifies access,AC-2;PS-4;PS-5,planned,No periodic access review or offboarding checklist
 CC6.4,Security,Restricts physical access,PE-2;PE-3,partial,Inherited from Cloudflare/GitHub; SOC reports not obtained
@@ -29,7 +29,7 @@ CC7.2,Security,Monitors for anomalies,SI-4;AU-6;AU-12,partial,Hash-chained audit
 CC7.3,Security,Evaluates security events,IR-4;IR-5;AU-6,planned,No triage procedure in use
 CC7.4,Security,Responds to security incidents,IR-4;IR-8,partial,IR runbook drafted; policy unapproved and tabletop not yet run (Omar)
 CC7.5,Security,Recovers from incidents,CP-10;IR-4,partial,Restore runbook and weekly restore verification built; first backup due 2026-10-10 and no restore drill yet
-CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,"PR template, CI gates and environment approval in place; branch protection script not yet applied (Omar)"
+CC8.1,Security,Manages changes,CM-3;CM-4;CM-5;SA-10,partial,"PR, 1 CODEOWNERS review, 7 required checks and environment approval enforced on main; residual: enforce_admins=false (sole owner bypass), no signed commits, no formal impact analysis"
 CC9.1,Security,Mitigates business disruption risk,CP-2;RA-3,partial,Contingency plan drafted (RPO 24h); not approved or tested (Omar)
 CC9.2,Security,Manages vendor and partner risk,SA-9;SR-6;CA-3,partial,Vendor register drafted; SOC report reviews missing (Omar)
 A1.1,Availability,Capacity management,AU-4;SC-5;CP-2,partial,Provider capacity; backup status indicator exists; no monitoring thresholds
