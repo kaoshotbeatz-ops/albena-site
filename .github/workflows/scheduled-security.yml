@@ -1,0 +1,149 @@
+name: Scheduled security
+
+# NIST RA-5 (vulnerability scanning) / SI-2 (flaw remediation): weekly full scan of repo and live site.
+# Any failing job opens or updates a single GitHub issue labelled "security".
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-security
+  cancel-in-progress: false
+
+env:
+  SITE_URL: https://albena.ai
+  SITE_HOST: albena.ai
+
+jobs:
+  gitleaks:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            detect --source /repo --redact --verbose --exit-code 1
+
+  npm-audit:
+    name: npm audit (${{ matrix.dir }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [web, worker]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: npm audit (high and above, incl. dev dependencies)
+        working-directory: ${{ matrix.dir }}
+        run: npm audit --audit-level=high
+
+  semgrep:
+    name: Semgrep (p/default)
+    runs-on: ubuntu-latest
+    container:
+      # same digest as ci.yml; refresh manually (Dependabot does not track workflow container images)
+      image: semgrep/semgrep@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Semgrep scan
+        run: semgrep scan --config p/default --error --metrics=off --exclude controls --exclude node_modules
+
+  osv:
+    name: OSV-Scanner (lockfiles)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+        with:
+          scan-args: |-
+            --lockfile=web/package-lock.json
+            --lockfile=worker/package-lock.json
+
+  headers:
+    name: Live security headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - run: bash scripts/check-headers.sh "$SITE_URL"
+
+  tls:
+    name: TLS check (sslyze)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install sslyze
+        run: python3 -m pip install --user 'sslyze==6.*'
+      - name: Fail on TLS < 1.2 or weak ciphers
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          bash scripts/check-tls.sh "$SITE_HOST"
+
+  zap:
+    name: OWASP ZAP baseline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@7c4deb10e6261301961c86d65d54a516394f9aed # v0.14.0
+        with:
+          target: ${{ env.SITE_URL }}
+          # -I: warnings do not fail the job; only FAIL-level alerts do. Issue is opened by the report job.
+          cmd_options: "-I"
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-baseline-report
+
+  report:
+    name: Open or update security issue
+    needs: [gitleaks, npm-audit, semgrep, osv, headers, tls, zap]
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Create or update issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          title="Scheduled security scan failures"
+          failed="$(jq -r 'to_entries[] | select(.value.result=="failure") | "- `" + .key + "`"' <<<"$RESULTS")"
+          body="$(printf 'The scheduled security workflow found failures.\n\n%s\n\nRun: %s\n\nReview the job logs and the zap-baseline-report artifact. This issue is updated on each failing run and should be closed once all findings are remediated or risk-accepted (NIST SI-2 / RA-5).\n' "$failed" "$RUN_URL")"
+          gh label create security --color B60205 --description "Security findings" 2>/dev/null || true
+          existing="$(gh issue list --label security --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --label security --body "$body"
+          fi
