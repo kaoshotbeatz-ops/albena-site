@@ -1,5 +1,5 @@
 :root{
-  --bg:#08090a;--bg2:#0f1011;--panel:#101113;--fg:#f7f8f8;--mut:#8a8f98;--mut2:#62666d;
+  --bg:#08090a;--bg2:#0f1011;--panel:#101113;--fg:#f7f8f8;--mut:#8a8f98;--mut2:#80858e;
   --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.14);--acc:#7170ff;--acc2:#5e6ad2;
   --green:#4cb782;--amber:#f2c94c;--max:1120px;
 }
@@ -189,8 +189,8 @@ h3{font-weight:550;letter-spacing:-.01em}
 .foot{border-top:1px solid var(--bd);padding:56px 20px 28px}
 .foot-in{max-width:var(--max);margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between}
 .foot-brand p{margin-top:10px;color:var(--mut);font-size:14px}
-.fcols{display:flex;gap:64px;flex-wrap:wrap}
-.fcols h4{font-size:13px;font-weight:500;color:var(--fg);margin-bottom:12px}
+.fcols{display:flex;gap:48px 64px;flex-wrap:wrap}
+.fcols h2{font-size:13px;font-weight:500;color:var(--fg);margin-bottom:12px}
 .fcols a{display:block;color:var(--mut);font-size:14px;padding:4px 0;transition:color .15s}
 .fcols a:hover{color:var(--fg)}
 .foot-bot{max-width:var(--max);margin:48px auto 0;padding-top:20px;border-top:1px solid var(--bd);font-size:13px;color:var(--mut)}
@@ -241,3 +241,10 @@ h3{font-weight:550;letter-spacing:-.01em}
 .faq details[open] summary::after{content:"\2212"}
 .faq details p{margin-top:10px}
 .legal-note{margin-top:44px;padding-top:20px;border-top:1px solid var(--bd);font-size:14px}
+
+.legal code{font:500 13px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fg);background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px}
+main:focus{outline:0}
+.nf{min-height:70vh;display:grid;place-items:center;text-align:center;padding:72px 20px}
+.nf h1{max-width:none}
+.nf p{margin:16px 0 24px;color:var(--mut)}
+.legal .toc a{display:inline-block;padding:3px 0;min-height:24px}

@@ -26,7 +26,7 @@
 
   // Sticky nav border on scroll
   var nav = document.querySelector('.nav');
-  var onScroll = function () { nav.classList.toggle('scrolled', window.scrollY > 8); };
+  var onScroll = function () { if (nav) nav.classList.toggle('scrolled', window.scrollY > 8); };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
@@ -35,7 +35,7 @@
   var msg = document.getElementById('form-msg');
   var thanks = document.getElementById('thanks');
   var input = document.getElementById('email');
-  form.addEventListener('submit', function (ev) {
+  if (form) form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     var v = input.value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
