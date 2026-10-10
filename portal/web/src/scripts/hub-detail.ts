@@ -1,7 +1,7 @@
 // Hub detail (customer /hubs/<id> and read-only staff /support/hubs/<id>). Counts and numbers only; no conversation content ever reaches the portal.
 import { api } from '../lib/api';
 import { staff } from '../lib/staff';
-import { h, must, chip, dot, ago, fmtDateTime, failInto, empty, table, panel } from '../lib/ui';
+import { h, must, chip, dot, ago, fmtDateTime, failInto, empty, table, panel, toast } from '../lib/ui';
 import type { HubDetail, HubStats, MetricPoint, MetricRange } from '../lib/types';
 
 const staffMode = location.pathname.startsWith('/support/');
@@ -141,13 +141,31 @@ function updatesPanel(x: HubDetail) {
     newer ? h('p', { class: 'note' }, 'A different version is available. The Hub installs updates on its own schedule.') : null,
   ]);
 }
+function internetPanel(x: HubDetail) {
+  const p = x.publicNetwork;
+  if (!p) return null; // members never receive it
+  const ip: Node | string = p.ip
+    ? h('span', { class: 'row' }, h('span', { class: 'mono' }, p.ip), h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': 'Copy public IP address' }, 'Copy'))
+    : DASH;
+  if (typeof ip !== 'string') ip.lastChild?.addEventListener('click', async () => { try { await navigator.clipboard.writeText(p.ip!); toast('Copied.'); } catch { toast('Copy failed. Select the address and copy it by hand.', true); } });
+  const place = [p.city, p.region, p.country].filter(Boolean).join(', ');
+  return panel('Internet', [
+    kv([
+      ['Public IP', ip],
+      ['Provider', p.isp ? (p.asn ? `${p.isp} (AS${p.asn})` : p.isp) : p.asn ? `AS${p.asn}` : DASH],
+      ['Approx. location', place || DASH],
+      ['Last IP change', p.changedAt ? ago(iso(p.changedAt)) : DASH],
+    ]),
+    h('p', { class: 'note' }, 'Shown only to the account owner to help troubleshoot connectivity.'),
+  ]);
+}
 
 function render(x: HubDetail) {
   document.title = `${x.name} | ${staffMode ? 'Hub (staff)' : 'Hubs'} | Albena account`;
   const head = h('div', { class: 'row' }, dot(x.online ? 'ok' : 'bad'), h('h2', { class: 'hub-title' }, x.name), staffMode ? chip('read-only', 'grey') : null,
     h('a', { class: 'btn btn-sm', href: staffMode && x.accountId ? `/support/customers/${encodeURIComponent(x.accountId)}` : '/hubs' }, staffMode ? 'Back to customer' : 'All Hubs'));
   const banner = x.online ? null : h('div', { class: 'banner is-warn', role: 'alert' }, h('span', {}, `This Hub is offline. It last reported ${x.lastSeen ? ago(iso(x.lastSeen)) : 'never'}. Numbers below are its last known state.`));
-  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), servicesPanel(x),
+  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), internetPanel(x), servicesPanel(x),
     h('div', { class: 'grid-2' }, hardwarePanel(x.stats), aiPanel(x.stats)), activityPanel(x.stats), chartsPanel()));
 }
 

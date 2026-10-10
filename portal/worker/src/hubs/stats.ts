@@ -59,7 +59,7 @@ export async function loadMetrics(db: D1Database, hubId: string, range: Range, t
 }
 
 /** Detail view of one Hub. `accountId` null = no account restriction (staff routes). Returns null when not found. */
-export async function loadDetail(db: D1Database, hubId: string, accountId: string | null) {
+export async function loadDetail(db: D1Database, hubId: string, accountId: string | null, withNet = false) {
   const row = await db.prepare(`SELECT * FROM hubs WHERE id = ?1 AND (?2 IS NULL OR account_id = ?2)`).bind(hubId, accountId).first<any>();
   if (!row) return null;
   return {
@@ -67,5 +67,9 @@ export async function loadDetail(db: D1Database, hubId: string, accountId: strin
     updateChannel: row.update_channel, remoteAccess: !!row.remote_access,
     health: row.health_json ? JSON.parse(row.health_json) : null, stats: parseStored(row.stats_json),
     lastSeen: row.last_seen as number | null, online: isOnline(row.last_seen), createdAt: row.created_at,
+    ...(withNet ? { publicNetwork: {
+      ip: row.net_ip ?? null, isp: row.net_isp ?? null, asn: row.net_asn ?? null, city: row.net_city ?? null, region: row.net_region ?? null,
+      country: row.net_country ?? null, timezone: row.net_tz ?? null, changedAt: row.net_changed_at ?? null,
+    } } : {}),
   };
 }

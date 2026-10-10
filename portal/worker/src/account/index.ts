@@ -41,7 +41,7 @@ export function mount(app: Hono<AppEnv>): void {
       account: (await q("SELECT id, created_at AS createdAt FROM accounts WHERE id = ?"))[0] ?? null,
       members: await q("SELECT u.id, u.email, m.role FROM members m JOIN users u ON u.id = m.user_id WHERE m.account_id = ?"),
       entitlement: await getEntitlement(c.env.DB, u.accountId),
-      hubs: await q("SELECT id, name, edition, profile, version, update_channel AS updateChannel, remote_access AS remoteAccess, last_seen AS lastSeen, created_at AS createdAt FROM hubs WHERE account_id = ?"),
+      hubs: await q("SELECT id, name, edition, profile, version, update_channel AS updateChannel, remote_access AS remoteAccess, last_seen AS lastSeen, created_at AS createdAt, net_ip AS publicIp, net_isp AS publicIsp, net_asn AS publicAsn, net_city AS publicCity, net_region AS publicRegion, net_country AS publicCountry, net_tz AS publicTimezone, net_changed_at AS publicIpChangedAt FROM hubs WHERE account_id = ?"),
       orders: await q("SELECT id, plan, source, edition, carrier, tracking, shipping_status AS shippingStatus, refunded, refund_status AS refundStatus, amount_total AS amountTotal, currency, shipping_json AS shipping, created_at AS createdAt FROM hardware_orders WHERE account_id = ?"),
       passkeys: (await c.env.DB.prepare("SELECT id, created_at AS createdAt FROM passkeys WHERE user_id = ?").bind(u.id).all()).results,
     };

@@ -240,4 +240,84 @@ describe("hub telemetry end to end", () => {
     expect((await call(`/api/hubs/${hub.id}`, OWNER, { method: "DELETE" })).status).toBe(200);
     expect((await e.DB.prepare("SELECT COUNT(*) n FROM hub_metrics WHERE hub_id = ?").bind(hub.id).first<{ n: number }>())!.n).toBe(0);
   });
+
+  describe("public network info", () => {
+    const CF = { asOrganization: "Example Fiber", asn: 64500, city: "Charlotte", region: "North Carolina", country: "US", timezone: "America/New_York" };
+    let tick = 0;
+    const beat = (ip: string, cf: unknown = CF) => heartbeat2(hub, hbBody(), ip, cf, Math.floor(Date.now() / 1000) + ++tick); // distinct ts per beat: an identical signature is a replay
+    async function heartbeat2(h: { id: string; kp: CryptoKeyPair }, body: unknown, ip: string, cf: unknown, ts = Math.floor(Date.now() / 1000)) {
+      const raw = JSON.stringify(body);
+      const path = "/api/hubs/heartbeat";
+      const sig = b64encode(new Uint8Array(await crypto.subtle.sign({ name: "Ed25519" }, h.kp.privateKey, new TextEncoder().encode(`POST\n${path}\n${ts}\n${await sha256Hex(raw)}`))));
+      return call(path, undefined, { method: "POST", body: raw, cf, headers: { "cf-connecting-ip": ip, "x-hub-id": h.id, "x-hub-timestamp": String(ts), "x-hub-signature": sig } } as RequestInit);
+    }
+    const row = () => e.DB.prepare("SELECT * FROM hubs WHERE id = ?").bind(hub.id).first<any>();
+    const detail = async (cookie: string) => ((await (await call(`/api/hubs/${hub.id}`, cookie)).json()) as any).hub;
+
+    it("stores IP and cf fields from the heartbeat request, only current values", async () => {
+      const t = Math.floor(Date.now() / 1000);
+      expect((await beat("203.0.113.9")).status).toBe(200);
+      const r = await row();
+      expect(r).toMatchObject({ net_ip: "203.0.113.9", net_isp: "Example Fiber", net_asn: 64500, net_city: "Charlotte", net_region: "North Carolina", net_country: "US", net_tz: "America/New_York" });
+      expect(r.net_changed_at).toBeGreaterThanOrEqual(t);
+      expect((await e.DB.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE name LIKE '%net%' AND type = 'table'").first<{ n: number }>())!.n).toBe(0);
+    });
+
+    it("same IP keeps net_changed_at; a new IP updates it and audits the change without the IP", async () => {
+      await beat("203.0.113.9");
+      const first = (await row()).net_changed_at;
+      await e.DB.prepare("UPDATE hubs SET net_changed_at = ? WHERE id = ?").bind(1000, hub.id).run();
+      await beat("203.0.113.9", { ...CF, city: "Raleigh" });
+      expect(await row()).toMatchObject({ net_changed_at: 1000, net_city: "Raleigh" });
+      const before = await e.DB.prepare("SELECT COUNT(*) n FROM audit_log WHERE action = 'hub.public_ip_changed'").first<{ n: number }>();
+      expect(before!.n).toBe(0); // first sighting and unchanged heartbeats are not changes
+      await beat("198.51.100.77");
+      const r = await row();
+      expect(r.net_ip).toBe("198.51.100.77");
+      expect(r.net_changed_at).toBeGreaterThanOrEqual(first);
+      const logs = (await e.DB.prepare("SELECT target, meta FROM audit_log WHERE action = 'hub.public_ip_changed'").all<any>()).results;
+      expect(logs).toHaveLength(1);
+      expect(logs[0].target).toBe(hub.id);
+      const dump = JSON.stringify((await e.DB.prepare("SELECT * FROM audit_log").all()).results);
+      expect(dump).not.toContain("198.51.100.77");
+      expect(dump).not.toContain("203.0.113.9");
+    });
+
+    it("a heartbeat with no IP leaves stored values alone", async () => {
+      await beat("203.0.113.9");
+      expect((await beat("")).status).toBe(200);
+      expect((await row()).net_ip).toBe("203.0.113.9");
+    });
+
+    it("owner sees publicNetwork; member does not; other accounts 404; list never has it; view-as and staff see it", async () => {
+      await beat("203.0.113.9");
+      expect((await detail(OWNER)).publicNetwork).toEqual({ ip: "203.0.113.9", isp: "Example Fiber", asn: 64500, city: "Charlotte", region: "North Carolina", country: "US", timezone: "America/New_York", changedAt: expect.any(Number) });
+      const m = await detail(MEMBER);
+      expect(m).toBeDefined();
+      expect("publicNetwork" in m).toBe(false);
+      expect(JSON.stringify(m)).not.toContain("203.0.113.9");
+      expect((await call(`/api/hubs/${hub.id}`, OTHER)).status).toBe(404);
+      const list = JSON.stringify(await (await call("/api/hubs", OWNER)).json());
+      expect(list).not.toContain("203.0.113.9");
+      expect(list).not.toContain("publicNetwork");
+
+      const jwt = await new SignJWT({ email: ADMIN }).setProtectedHeader({ alg: "RS256", kid: "k1" }).setIssuer(`https://${TEAM}`).setAudience(AUD).setIssuedAt().setExpirationTime("5m").sign(keys.privateKey);
+      const staff = (path: string) => app.request(ORIGIN + path, { headers: { "Cf-Access-Jwt-Assertion": jwt }, redirect: "manual" }, env());
+      const s = (await (await staff(`/api/support/hubs/${hub.id}`)).json()) as any;
+      expect(s.hub.publicNetwork.ip).toBe("203.0.113.9");
+      const va = await staff("/support/view-as?account=hs-acc1");
+      const cookie = (va.headers.get("set-cookie") ?? "").split(";")[0];
+      expect((await detail(cookie)).publicNetwork.ip).toBe("203.0.113.9");
+    });
+
+    it("export includes it for the owner; account deletion clears it", async () => {
+      await beat("203.0.113.9");
+      const ex = (await (await call("/api/account/export", OWNER)).json()) as any;
+      expect(ex.hubs[0]).toMatchObject({ publicIp: "203.0.113.9", publicIsp: "Example Fiber", publicAsn: 64500, publicCity: "Charlotte", publicCountry: "US", publicTimezone: "America/New_York" });
+      await e.DB.prepare("DELETE FROM entitlements WHERE account_id = ?").bind("hs-acc1").run(); // nothing to cancel at Stripe
+      expect((await call("/api/account/delete", OWNER, { method: "POST", body: JSON.stringify({ confirm: "DELETE" }) })).status).toBe(200);
+      expect(await row()).toBeNull();
+      expect((await e.DB.prepare("SELECT COUNT(*) n FROM hubs WHERE net_ip IS NOT NULL").first<{ n: number }>())!.n).toBe(0);
+    });
+  });
 });
