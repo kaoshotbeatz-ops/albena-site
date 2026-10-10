@@ -78,7 +78,7 @@ export async function auditSince(id: number): Promise<{ action: string; target: 
   return (await e.DB.prepare("SELECT action, target FROM audit_log WHERE id > ? ORDER BY id").bind(id).all<{ action: string; target: string | null }>()).results;
 }
 export async function clearPortalTables() {
-  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_rate", "releases", "refunds", "checkout_pending"]
+  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_metrics", "hub_rate", "releases", "refunds", "checkout_pending"]
     .map(t => e.DB.prepare(`DELETE FROM ${t}`)));
 }
 

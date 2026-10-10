@@ -1,0 +1,8 @@
+---
+import App from '../layouts/App.astro';
+---
+<!-- Served by the worker for every /hubs/<id>; the script reads the id from the path. -->
+<App title="Hub" section="hubs" lead="Status, hardware and activity for this Hub.">
+  <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
+  <script>import '../scripts/hub';</script>
+</App>

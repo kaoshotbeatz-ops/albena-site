@@ -11,6 +11,18 @@ let timer: number | undefined;
 
 const editionLabel = (e: string) => (e === 'mac' ? 'Hub for Mac' : e === 'nvidia' ? 'Hub for NVIDIA' : e);
 
+function bar(label: string, pct: number | null, text: string) {
+  return h('span', { class: 'mini' }, h('span', { class: 'mini-l' }, label),
+    pct === null ? h('span', { class: 'mini-na' }, '—') : h('meter', { class: 'meter', min: '0', max: '100', value: String(Math.round(pct)), 'aria-label': `${label} ${text}` }),
+    h('span', { class: 'num' }, text));
+}
+function miniBars(x: Hub) {
+  const s = x.summary;
+  if (!s) return null;
+  const mem = s.mem_used_mb !== null && s.mem_total_mb ? (s.mem_used_mb / s.mem_total_mb) * 100 : null;
+  return h('span', { class: 'minis' }, bar('CPU', s.cpu_pct, s.cpu_pct === null ? '—' : `${Math.round(s.cpu_pct)}%`), bar('Memory', mem, mem === null ? '—' : `${Math.round(mem)}%`));
+}
+
 function renderList() {
   if (!hubs.length) {
     root.replaceChildren(panel('Your Hubs', empty('No Hubs paired yet. Use “Pair a new Hub” to connect one.')));
@@ -20,10 +32,12 @@ function renderList() {
   for (const x of hubs) {
     const open = h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': `Manage ${x.name}` }, 'Manage');
     open.addEventListener('click', () => select(x.id, true));
+    const view = h('a', { class: 'btn btn-sm', href: `/hubs/${encodeURIComponent(x.id)}`, 'aria-label': `Details for ${x.name}` }, 'Details');
     ul.append(h('li', {},
       h('div', { class: 'main' }, h('span', { class: 'name' }, dot(x.online ? 'ok' : x.health === 'degraded' ? 'warn' : 'bad'), x.name),
-        h('span', { class: 'sub' }, `${editionLabel(x.edition)} · v${x.version} · ${x.online ? 'Online' : `Offline, last seen ${ago(x.lastSeenAt)}`}`)),
-      h('div', { class: 'row' }, x.remoteAccess && chip('Remote access on', 'amber'), open)));
+        h('span', { class: 'sub' }, `${editionLabel(x.edition)} · v${x.version} · ${x.online ? 'Online' : `Offline, last seen ${ago(x.lastSeenAt)}`}`),
+        miniBars(x)),
+      h('div', { class: 'row' }, x.remoteAccess && chip('Remote access on', 'amber'), view, open)));
   }
   const detail = h('div', { id: 'detail', tabindex: '-1', 'aria-live': 'polite' });
   root.replaceChildren(h('div', { class: 'stack' }, panel('Your Hubs', h('div', {}, ul)), detail));

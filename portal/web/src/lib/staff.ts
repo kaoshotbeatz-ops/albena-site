@@ -1,5 +1,6 @@
 // Staff API (Cloudflare Access gates /support/* and /api/support/*). Shapes match portal/worker/src/support/*.ts.
 import { req } from './api';
+import type { HubDetail, MetricPoint, MetricRange } from './types';
 
 const opt = { noRedirect: true };
 const get = <T>(p: string) => req<T>('GET', p, undefined, opt);
@@ -24,6 +25,8 @@ export interface Detail {
 export interface Invite { id: string; email: string; plan: string | null; days: number | null; note: string | null; invitedBy: string; createdAt: number; expiresAt: number; acceptedAt: number | null; revokedAt: number | null; accountId: string | null; sendCount: number; status: 'pending' | 'accepted' | 'revoked' | 'expired' }
 
 export const staff = {
+  hub: async (id: string): Promise<HubDetail> => (await get<{ hub: HubDetail }>(`/api/support/hubs/${encodeURIComponent(id)}`)).hub,
+  hubMetrics: async (id: string, range: MetricRange): Promise<MetricPoint[]> => (await get<{ points: MetricPoint[] }>(`/api/support/hubs/${encodeURIComponent(id)}/metrics?range=${range}`)).points,
   accounts: () => get<{ me: string; accounts: AccountRow[] }>('/api/support/accounts'),
   account: (id: string) => get<Detail>(`/api/support/accounts/${encodeURIComponent(id)}`),
   createAccount: (b: Record<string, unknown>) => send<{ accountId: string }>('POST', '/api/support/accounts', b),

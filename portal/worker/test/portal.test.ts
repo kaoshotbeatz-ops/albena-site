@@ -168,7 +168,7 @@ describe("scheduled prune", () => {
     await run("INSERT INTO hub_nonces (hub_id,sig_hash,expires_at) VALUES ('h','old',?),('h','new',?)", t - 1, t + 100);
     await run("INSERT INTO hub_rate (bucket,window_start,count) VALUES ('old',?,1),('new',?,1)", t - 7200, t - 10);
     const counts = await prune(e, t);
-    expect(counts).toEqual({ magicTokens: 1, authChallenges: 1, sessions: 2, hubPairCodes: 2, hubNonces: 1, hubRate: 1 });
+    expect(counts).toEqual({ magicTokens: 1, authChallenges: 1, sessions: 2, hubPairCodes: 2, hubNonces: 1, hubRate: 1, hubMetrics: 0 });
     const ids = async (sql: string) => (await e.DB.prepare(sql).all<{ i: string }>()).results.map(r => r.i).sort();
     expect(await ids("SELECT id i FROM magic_tokens")).toEqual(["new"]);
     expect(await ids("SELECT id i FROM sessions WHERE user_id='po'")).toEqual(["s-ok"]);

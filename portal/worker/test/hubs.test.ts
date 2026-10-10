@@ -186,9 +186,9 @@ describe("heartbeat schema", () => {
     ];
     for (const c of cases) expect((await call(P, await signed(hub, P, js(c)))).status).toBe(400);
   });
-  it("caps body at 4KB", async () => {
+  it("caps body at 8KB", async () => {
     const hub = await pairHub();
-    const big = js({ ...hb, version: "1.0.0" }) + " ".repeat(5000);
+    const big = js({ ...hb, version: "1.0.0" }) + " ".repeat(9000);
     expect((await call(P, await signed(hub, P, big))).status).toBe(413);
   });
   it("stores metadata and shows it to the owner only", async () => {
