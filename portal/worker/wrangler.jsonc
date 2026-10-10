@@ -28,6 +28,37 @@
     "PRICE_HUB_MAC_MONTHLY": "", "PRICE_HUB_MAC_ANNUAL": "", "PRICE_HUB_MAC_HARDWARE": "",
     "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": ""
   }
+  ,
+  // STAGING (deploy.yml deploy-staging). Separate worker + separate D1 so migrations and tests never touch production data.
+  // Wrangler does not inherit bindings or vars into an env, so everything is repeated. TODO values must be filled in by Omar
+  // after the one-time setup in docs/PIPELINE.md (nothing here has been created yet).
+  "env": {
+    "staging": {
+      "name": "albena-portal-staging",
+      "workers_dev": true,
+      "routes": [],
+      "observability": { "enabled": false },
+      "assets": { "directory": "../web/dist", "binding": "ASSETS", "html_handling": "auto-trailing-slash", "not_found_handling": "404-page", "run_worker_first": true },
+      "send_email": [{ "name": "EMAIL" }],
+      "triggers": { "crons": [] },
+      "d1_databases": [{ "binding": "DB", "database_name": "albena_portal_staging", "database_id": "84652d20-b3cb-4d8e-be10-e92047f9d384", "migrations_dir": "migrations" }],
+      "ratelimits": [
+        { "name": "AUTH_IP_LIMITER", "namespace_id": "1201", "simple": { "limit": 20, "period": 60 } },
+        { "name": "AUTH_EMAIL_LIMITER", "namespace_id": "1202", "simple": { "limit": 5, "period": 60 } }
+      ],
+      "vars": {
+        // "test": mail is redacted and not sent outside production (see src/auth/mail.ts); never "production" here.
+        "ENVIRONMENT": "test",
+        "PORTAL_ORIGIN": "https://albena-portal-staging.albena-site.workers.dev",
+        "RP_ID": "albena-portal-staging.albena-site.workers.dev",
+        "MAIL_FROM": "accounts@albena.ai",
+        "MAIL_PROVIDER": "dev",
+        "PRICE_BYO_MONTHLY": "", "PRICE_BYO_ANNUAL": "",
+        "PRICE_HUB_MAC_MONTHLY": "", "PRICE_HUB_MAC_ANNUAL": "", "PRICE_HUB_MAC_HARDWARE": "",
+        "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": ""
+      }
+    }
+  }
   // EMAIL is Cloudflare Email Sending: onboard the MAIL_FROM domain first (wrangler email sending enable albena.ai).
   // Support view-as (Cloudflare Access): secrets TEAM_DOMAIN (purple-firefly-9815.cloudflareaccess.com), ADMIN_AUD (the existing admin Access app AUD tag),
   // SUPPORT_ADMIN_EMAILS (comma-separated allowlist). Access destinations: account.albena.ai/support/* and account.albena.ai/api/support/* (customer ops: invites, manual plans, orders, reserved Hubs, license keys).

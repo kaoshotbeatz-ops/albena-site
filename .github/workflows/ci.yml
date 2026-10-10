@@ -95,6 +95,8 @@ jobs:
           npm ci
           # CI build only: Cloudflare test Turnstile key. Never deployed.
           ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
+          # Build guard: required pages (/, /login, /invite) exist and a Turnstile site key is baked in.
+          npm run check:build
       - name: Install, typecheck, test
         working-directory: portal/worker
         run: |
@@ -119,6 +121,8 @@ jobs:
           npm ci
           # CI build only: Cloudflare test Turnstile key. Never deployed.
           ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
+          # Build guard: required pages (/, /login, /invite) exist and a Turnstile site key is baked in.
+          npm run check:build
 
   portal-hub-client:
     name: Portal hub client tests
