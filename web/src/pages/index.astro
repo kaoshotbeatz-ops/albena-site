@@ -1,16 +1,17 @@
 ---
+import { APPROVAL_POLICY } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
 const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Jellyfin', 'Immich', 'GitHub', 'AWS', 'Azure', 'Cloudflare', 'Jira', 'Tailscale'];
 ---
-<Base title="Albena: private local AI assistant for your home" description="Albena is a private AI assistant that runs on your Mac or NVIDIA hardware, controls Home Assistant and more, and asks for your approval before any change.">
+<Base title="Albena: private local AI assistant for your home" description="Albena is a private AI assistant that runs on your Mac or NVIDIA hardware, controls Home Assistant and more, and asks before anything that matters.">
   <section class="hero" id="top">
     <div class="grid-bg" aria-hidden="true"></div>
     <div class="hero-in">
       <a class="announce reveal" href="/waitlist"><span class="dot" aria-hidden="true"></span>Early access is open <span aria-hidden="true">&rarr;</span></a>
       <h1 class="h-display reveal">Your AI.<br class="br" /> Your systems.</h1>
-      <p class="lead reveal">Albena is personal AI you can run locally: private, shaped around you, your household or your business, and connected to the systems you already use. She never acts without your approval.</p>
+      <p class="lead reveal">Albena is personal AI you can run locally: private, shaped around you, your household or your business, and connected to the systems you already use. {APPROVAL_POLICY}</p>
       <div class="cta reveal">
         <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
         <a class="btn btn-ghost" href="/features">See what she does</a>
@@ -33,7 +34,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
             <a><span class="sq s2"></span>Living room</a>
           </aside>
           <div class="main-pane">
-            <div class="pane-h"><h3>Good morning, Omar</h3><span class="kbd">7:30</span></div>
+            <div class="pane-h"><h3>Good morning, Alex</h3><span class="kbd">7:30</span></div>
             <ul class="rows">
               <li><span class="st done"></span><span class="t">Front door locked, thermostat set to 68&deg;</span><span class="chip">Home</span><span class="kbd">G H</span></li>
               <li><span class="st half"></span><span class="t">Dentist at 10:15, leave by 9:50</span><span class="chip">Calendar</span><span class="kbd">G C</span></li>
@@ -151,7 +152,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
       <ol class="steps">
         <li class="reveal"><span class="num">1</span><div><h3>On-device first</h3><p>Everyday requests run on your own hardware with local models and Apple on-device intelligence. Fast, private, and they keep working when the internet does not.</p></div></li>
         <li class="reveal"><span class="num">2</span><div><h3>Cloud only when you allow it</h3><p>For the rare hard question, Albena can reach for a larger model, but only if the task needs it and you allow it. She tells you when she does.</p></div></li>
-        <li class="reveal"><span class="num">3</span><div><h3>You set the approval rules</h3><p>Reads are instant. Low-risk routines like lights can be pre-approved; unlocking a door, sending a message or spending money is always proposed first and needs your yes.</p></div></li>
+        <li class="reveal"><span class="num">3</span><div><h3>You set the approval rules</h3><p>{APPROVAL_POLICY}</p></div></li>
       </ol>
     </div>
   </section>

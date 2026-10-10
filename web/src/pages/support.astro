@@ -1,10 +1,11 @@
 ---
+import { APPROVAL_POLICY } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import { faqPage } from '../data/seo';
 import Turnstile from '../components/Turnstile.astro';
 const faqs: { cat: string; q: string; a: string }[] = [
-  { cat: 'Getting started', q: 'What is Albena?', a: 'Albena is a voice-first AI assistant for your home and life, built by Omar Huertas LLC. You say “Hey Albena” and she can help with your home, calendar, mail and everyday tasks. She is local-first and asks for your approval before she acts.' },
+  { cat: 'Getting started', q: 'What is Albena?', a: 'Albena is a voice-first AI assistant for your home and life, built by Omar Huertas LLC. You say “Hey Albena” and she can help with your home, calendar, mail and everyday tasks. She is local-first. ' + APPROVAL_POLICY },
   { cat: 'Getting started', q: 'When will Albena be available?', a: 'Albena is in early access and not yet generally available. We are inviting people from the waitlist in small groups. There is no fixed public launch date yet; we will email waitlist members before anything changes for them.' },
   { cat: 'Getting started', q: 'Which devices does Albena run on?', a: 'Early access is focused on Apple devices, with a home hub that runs on a computer in your home. Support for more platforms and smart-home brands is planned. Tell us what you use when you join the waitlist and it helps us prioritize.' },
   { cat: 'Getting started', q: 'What can Albena connect to?', a: 'Smart home, media, work and communication tools, cloud and infrastructure, and identity and IT systems, all available in early access. You can also add any REST API or MCP server. See the connectors page for the full list.' },

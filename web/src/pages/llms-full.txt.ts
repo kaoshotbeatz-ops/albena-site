@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 import { faqGroups } from '../data/faq';
-import { entries } from '../data/changelog';
 import { categories } from '../data/connectors';
 
 const abs = (h: string) => `https://albena.ai${h}`;
@@ -10,7 +9,6 @@ export const GET: APIRoute = () => {
     .map((g) => `### ${g.title}\n\n` + g.items.map((f) => `**${f.q}**\n${f.a}${f.more ? ` (${abs(f.more[1])})` : ''}`).join('\n\n'))
     .join('\n\n');
   const connectors = categories.map((c) => `- ${c.label}: ${c.items.map((i) => i.name).join(', ')}`).join('\n');
-  const log = entries.slice(0, 5).map((e) => `- ${e.iso}: ${e.title}`).join('\n');
   const body = `# Albena: full reference
 
 > Albena is a private, local-first AI assistant for your home and life, made by Omar Huertas LLC. Early access; not yet generally available. Canonical site: https://albena.ai. Short index: https://albena.ai/llms.txt
@@ -44,12 +42,6 @@ ${faq}
 ## Comparisons
 
 Albena vs cloud assistants (ChatGPT, Claude, Gemini, Copilot) and Home Assistant Assist, with sources and a last-verified date: ${abs('/compare')}
-
-## Recent changelog entries
-
-${log}
-
-Full changelog: ${abs('/changelog')}
 
 ## Contact
 

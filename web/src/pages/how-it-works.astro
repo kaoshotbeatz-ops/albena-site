@@ -1,4 +1,5 @@
 ---
+import { APPROVAL_POLICY, APPROVAL_HEADING } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import Diagram from '../components/Diagram.astro';
@@ -112,12 +113,12 @@ const memNarrow: { nodes: DNode[]; edges: DEdge[] } = {
   ],
 };
 ---
-<Base title="How Albena works: local-first AI with approvals" description="Albena's architecture: local models on hardware you own, cloud only when needed and allowed, an approval gate for every change, and memory you can erase.">
+<Base title="How Albena works: local-first AI with approvals" description="Albena's architecture: local models on hardware you own, cloud only when needed and allowed, an approval gate, and memory you can erase.">
   <header class="intro">
     <div class="wrap">
       <p class="eyebrow">How it works</p>
       <h1 class="h-display">Personal AI you run yourself.</h1>
-      <p class="lead">Albena runs on your own hardware with local models. She is shaped around you, your household or your business, connects to the systems you already use, and never makes a change without your approval.</p>
+      <p class="lead">Albena runs on your own hardware with local models. She is shaped around you, your household or your business, connects to the systems you already use, and follows one approval policy: {APPROVAL_POLICY}</p>
     </div>
   </header>
 
@@ -133,7 +134,7 @@ const memNarrow: { nodes: DNode[]; edges: DEdge[] } = {
     </section>
 
     <section class="chapter" aria-labelledby="c2">
-      <div class="side"><span class="no">2</span><h2 id="c2">You approve every change</h2><p>Reading is instant: ask about anything connected. Anything that changes something is proposed to you first, shown exactly as it will run.</p>
+      <div class="side"><span class="no">2</span><h2 id="c2">{APPROVAL_HEADING}</h2><p>{APPROVAL_POLICY}</p>
         <ul class="facts"><li>High-risk actions need a change record and your PIN</li><li>Full audit log of what was asked and done</li><li>Rollback information saved with each change</li><li>Per-user permission tiers for the household or team</li></ul></div>
       <figure class="fig">
         <Diagram id="appr-w" variant="wide" w={900} h={400} nodes={apprWide.nodes} edges={apprWide.edges} label="Approval flow" desc="A request is planned. If it only reads, it is answered instantly. If it changes something, it is proposed to you, you approve or decline, then it runs once and is recorded in the audit log with rollback information. High-risk changes also require a change record and your PIN." />

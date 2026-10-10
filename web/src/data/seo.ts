@@ -1,3 +1,4 @@
+import { APPROVAL_POLICY } from './approval';
 // Shared constants and schema.org builders. Nothing here is invented: every
 // value comes from copy that is visible on the site.
 export const SITE = 'https://albena.ai';
@@ -42,7 +43,7 @@ export const software = {
   name: 'Albena',
   url: SITE,
   description:
-    'Albena is a private, local-first AI assistant that runs on hardware you own, connects to your smart home, media, work and cloud systems, and asks for your approval before it changes anything.',
+    'Albena is a private, local-first AI assistant that runs on hardware you own, connects to your smart home, media, work and cloud systems, and asks before anything that matters.',
   applicationCategory: 'LifestyleApplication',
   applicationSubCategory: 'Home automation and personal AI assistant',
   operatingSystem: 'macOS, Linux',
@@ -51,10 +52,9 @@ export const software = {
     'Voice assistant with a custom wake phrase, processed on your own devices',
     'Runs local models on a Mac (Apple silicon) or NVIDIA RTX hardware, with optional cloud models only if you allow them',
     'Connectors for Home Assistant, Philips Hue, Slack, Google Workspace, Jira, GitHub, AWS and more, plus any REST API or MCP server',
-    'Every change is proposed and needs your approval; high-risk changes also need a change record and PIN',
+    APPROVAL_POLICY,
     'Memory you can view, correct and delete',
   ],
-  releaseNotes: `${SITE}/changelog`,
   publisher: { '@id': ORG_ID },
   offers: preOrderOffer('/pricing'),
 };
