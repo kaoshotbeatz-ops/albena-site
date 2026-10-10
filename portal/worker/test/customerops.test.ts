@@ -269,7 +269,7 @@ describe("customer invites", () => {
     expect(row).toMatchObject({ email: "new@example.com", plan: "pilot", invited_by: `support:${ADMIN}`, accepted_at: null, revoked_at: null });
     expect(row.expires_at - row.created_at).toBe(14 * 86400);
     const mail = last("new@example.com");
-    expect(mail.subject).toBe("You're invited to Albena");
+    expect(mail.subject).toBe("You're invited to the Albena pilot");
     const url = new URL(mail.text.match(/https:\/\/\S+/)![0]);
     expect(url.origin + url.pathname).toBe("https://account.albena.ai/invite");
     const [id, secret] = url.searchParams.get("token")!.split(".");
@@ -383,7 +383,7 @@ describe("customer invites", () => {
     ]);
     expect((await staff("POST", "/api/support/invites/bulk", { emails: [] })).status).toBe(400);
     expect((await staff("POST", "/api/support/invites/bulk", { emails: Array.from({ length: 51 }, (_, i) => `x${i}@example.com`) })).status).toBe(400);
-    expect(mailbox.filter((m) => m.subject === "You're invited to Albena")).toHaveLength(2);
+    expect(mailbox.filter((m) => m.subject === "You're invited to the Albena pilot")).toHaveLength(2);
   });
   it("lists invites with status and never exposes token material", async () => {
     await invite({ email: "list@example.com" });

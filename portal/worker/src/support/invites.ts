@@ -5,6 +5,7 @@ import { EMAIL_RE, startMagic } from "../auth/magic";
 import { allowed, turnstile } from "../auth/limits";
 import { equalHash, randomToken, sha256 } from "../auth/crypto";
 import { sendNotice } from "../auth/mail";
+import { composeInvite } from "../auth/compose";
 import { getEntitlement, recordHistory, writeManualEntitlement } from "../billing/entitlements";
 import { DAY, now, parsePlanFields, readObj, text, type Obj } from "./grant";
 
@@ -15,8 +16,7 @@ const MIN_RESEND_S = 60;
 const BULK_MAX = 50;
 
 const link = (c: C, id: string, secret: string) => `${c.env.PORTAL_ORIGIN}/invite?token=${id}.${secret}`;
-const mailBody = (url: string) =>
-  `You're invited to Albena.\n\nOpen this link to set up your account: ${url}\n\nYou will be asked to confirm this email address, then we send a normal sign-in email to it. The link works once and expires in 14 days. If you were not expecting this, ignore this email.`;
+const inviteNotice = (to: string, url: string) => ({ to, ...composeInvite(url) });
 
 const statusOf = (r: { accepted_at: number | null; revoked_at: number | null; expires_at: number }, ts: number) =>
   r.accepted_at ? "accepted" : r.revoked_at ? "revoked" : r.expires_at <= ts ? "expired" : "pending";
@@ -43,7 +43,7 @@ async function createInvite(c: C, email: string, b: Obj): Promise<Made> {
   await db.prepare("INSERT INTO invites (id, email, token_hash, plan, base_plan, days, note, invited_by, created_at, expires_at, last_sent_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
     .bind(id, email, await sha256(secret), plan, basePlan, days, note, `support:${c.get("supportActor")}`, ts, ts + INVITE_TTL_S, ts).run();
   try {
-    await sendNotice(c.env, { to: email, subject: "You're invited to Albena", text: mailBody(link(c, id, secret)) });
+    await sendNotice(c.env, inviteNotice(email, link(c, id, secret)));
   } catch {
     await db.prepare("DELETE FROM invites WHERE id = ?").bind(id).run();
     return { ok: false, status: 502, error: "mail_failed" };
@@ -96,7 +96,7 @@ export function mountInvites(app: Hono<AppEnv>): void {
     ).bind(await sha256(secret), ts + INVITE_TTL_S, ts, id, ts - MIN_RESEND_S).first<{ email: string }>();
     if (!r) return c.json({ error: "too_soon" }, 429);
     try {
-      await sendNotice(c.env, { to: r.email, subject: "You're invited to Albena", text: mailBody(link(c, id, secret)) });
+      await sendNotice(c.env, inviteNotice(r.email, link(c, id, secret)));
     } catch {
       return c.json({ error: "mail_failed" }, 502);
     }
