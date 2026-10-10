@@ -30,7 +30,7 @@
   }
   ,
   // STAGING (deploy.yml deploy-staging). Separate worker + separate D1 so migrations and tests never touch production data.
-  // Wrangler does not inherit bindings or vars into an env, so everything is repeated. TODO values must be filled in by Omar
+  // Wrangler does not inherit bindings or vars into an env, so everything is repeated.
   // after the one-time setup in docs/PIPELINE.md (nothing here has been created yet).
   "env": {
     "staging": {
