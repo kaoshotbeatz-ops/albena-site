@@ -15,7 +15,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: d59bc8ce599de891f475d1cd8af22370
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
       - name: Install age
@@ -29,7 +29,7 @@ jobs:
           done
           tar -c ./*.sql | age -r age1zhr5cvrvp5a8j06due4r0tz8g3wj9zjqgc8suc9a80zak0mq9ccs54p65n -o d1-export.tar.age
           rm -f ./*.sql
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: d1-export
           path: d1-export.tar.age
