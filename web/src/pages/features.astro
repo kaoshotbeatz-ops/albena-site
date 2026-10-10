@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 const nav = [
   ['voice', 'Voice'], ['home', 'Home & devices'], ['daily', 'Briefings, mail & calendar'],
   ['memory', 'Memory'], ['connectors', 'Connectors'], ['approvals', 'Approvals'], ['personal', 'Personal & customizable'],
 ];
 ---
-<Base title="Features" description="Deep dive into what Albena does: voice, home and devices, briefings, memory you control, connectors, and an approval model that keeps you in charge.">
+<Base title="Features: voice, home control and approvals" description="Voice, smart-home control, briefings, memory you can delete, connectors and an approval model that keeps you in charge. Local-first AI for your home.">
   <div class="wrap layout">
     <aside class="rail" aria-label="On this page">
       <p class="eyebrow">Features</p>
@@ -122,6 +123,7 @@ const nav = [
       <p class="end"><a class="btn btn-primary" href="/waitlist">Join the waitlist</a></p>
     </div>
   </div>
+  <RelatedLinks keys={['connectors', 'how', 'hardware', 'compare', 'faq']} />
 </Base>
 
 <style>

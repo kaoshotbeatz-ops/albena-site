@@ -1,0 +1,43 @@
+# Albena
+
+> Albena is a private, local-first AI assistant for your home and life, made by Omar Huertas LLC. She runs on hardware you own (a Mac with Apple silicon, or an NVIDIA RTX Linux machine), uses local models first, connects to smart-home, media, work and cloud systems, and asks for your approval before she changes anything. Albena is in early access and is not yet generally available; no prices or launch date are published.
+
+Facts, stated plainly:
+- Voice-first: the wake phrase is "Hey Albena", processed on your own devices. Touch and keyboard also work.
+- Local-first: everyday requests, audio, device data and memory are processed on hardware you own wherever possible. A cloud model is used only if a task needs it and you allow it.
+- Approvals: reads are instant. Anything that changes something is proposed to you first. High-risk actions also need a change record and your PIN, with rollback information and an audit log.
+- Memory: Albena remembers people, routines and preferences; the owner can view, correct and delete any of it.
+- Connectors: Home Assistant, Philips Hue, WiZ, Google Nest, TVs, cameras, Jellyfin, Navidrome, Immich, YouTube, Google Workspace, Microsoft Teams, Slack, Jira, ServiceNow, GitHub, LinkedIn, Meta pages, AWS, Azure, Cloudflare, VMware, Docker, Kubernetes, Tailscale, AdGuard, Active Directory/LDAP and more, plus any REST API or MCP server.
+- Editions: Albena Hub for Mac, Albena Hub for NVIDIA, Bring Your Own (software license for hardware you own), and Pro / Estate install. All are early access with pricing not yet announced.
+- Security status: no certifications are claimed. Practices are aligned with frameworks such as SOC 2 and NIST 800-53 and mapped honestly in a public control mapping; independent audits have not been completed.
+- Not yet available: native iPhone and Mac apps, published pricing, Albena Voice room satellites.
+
+## Core pages
+- [Home](https://albena.ai/): what Albena is and who she is for
+- [Features](https://albena.ai/features): voice, home and devices, briefings, memory, connectors, approvals
+- [How it works](https://albena.ai/how-it-works): local-first architecture, lane router, approval gate, memory and learning
+- [Connectors](https://albena.ai/connectors): every system Albena connects to, and how to add your own
+- [Hardware](https://albena.ai/hardware): Albena Hub for Mac and for NVIDIA, bring-your-own hardware, setup and security
+- [Pricing](https://albena.ai/pricing): plans and reservations (no prices published yet)
+
+## Answers and comparisons
+- [FAQ](https://albena.ai/faq): short answers, including running Albena on a Mac or NVIDIA hardware, Home Assistant, approvals and privacy
+- [Compare](https://albena.ai/compare): Albena vs cloud assistants, Aldena and Home Assistant Assist (last verified 2026-10-09, with sources)
+- [Support](https://albena.ai/support): help center and contact
+
+## Trust and policies
+- [Trust center](https://albena.ai/trust): security status and where we stand on control frameworks
+- [Control mapping](https://albena.ai/trust/controls): each control, its status and evidence
+- [Security](https://albena.ai/security): practices and how to report a vulnerability
+- [Privacy policy](https://albena.ai/privacy): the website sets no cookies and runs no trackers; we never sell data
+- [Terms](https://albena.ai/terms)
+- [Accessibility](https://albena.ai/accessibility): WCAG 2.2 AA target
+
+## Updates
+- [Roadmap](https://albena.ai/roadmap): what is ready, in progress and next, with no promised dates
+- [Changelog](https://albena.ai/changelog): dated release notes
+- [Waitlist](https://albena.ai/waitlist): early-access signup
+
+## Optional
+- [Full text of the FAQ and key facts](https://albena.ai/llms-full.txt)
+- Contact: omar@dbaomarhuertasllc.com

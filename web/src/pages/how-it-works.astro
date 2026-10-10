@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 import Diagram from '../components/Diagram.astro';
 import type { DNode, DEdge } from '../components/Diagram.astro';
 
@@ -111,7 +112,7 @@ const memNarrow: { nodes: DNode[]; edges: DEdge[] } = {
   ],
 };
 ---
-<Base title="How it works" description="Albena's architecture: local-first AI on hardware you own, cloud only when needed and allowed, an approval gate for every change, and memory you can inspect and erase.">
+<Base title="How Albena works: local-first AI with approvals" description="Albena's architecture: local models on hardware you own, cloud only when needed and allowed, an approval gate for every change, and memory you can erase.">
   <header class="intro">
     <div class="wrap">
       <p class="eyebrow">How it works</p>
@@ -158,6 +159,7 @@ const memNarrow: { nodes: DNode[]; edges: DEdge[] } = {
       <a class="btn btn-primary" href="/waitlist">Join the waitlist</a>
     </div>
   </section>
+  <RelatedLinks keys={['features', 'connectors', 'hardware', 'trust', 'faq']} />
 </Base>
 
 <style>

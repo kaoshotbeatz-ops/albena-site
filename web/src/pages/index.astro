@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
 const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Jellyfin', 'Immich', 'GitHub', 'AWS', 'Azure', 'Cloudflare', 'Jira', 'Tailscale'];
 ---
-<Base title="Albena: personal AI you run yourself" description="Albena is personal AI you can run locally: private, customizable for you, your household or your business, and connected to the systems you already use. You approve every action.">
+<Base title="Albena: private local AI assistant for your home" description="Albena is a private AI assistant that runs on your Mac or NVIDIA hardware, controls Home Assistant and more, and asks for your approval before any change.">
   <section class="hero" id="top">
     <div class="grid-bg" aria-hidden="true"></div>
     <div class="hero-in">
@@ -66,7 +67,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
     <div class="wrap">
       <div class="head reveal">
         <p class="eyebrow">Features</p>
-        <h2 class="h-section">One assistant for the whole household</h2>
+        <h2 class="h-section">What does a private home AI assistant do?</h2>
         <p class="sub">Albena handles the small things that add up, so you can stay in the moment.</p>
       </div>
       <div class="bento">
@@ -143,7 +144,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
     <div class="wrap how-grid">
       <div class="head reveal">
         <p class="eyebrow">How it works</p>
-        <h2 class="h-section">Local first. You in charge.</h2>
+        <h2 class="h-section">How does Albena keep you in charge?</h2>
         <p class="sub">Three principles shape everything Albena does.</p>
         <p class="more"><a class="btn btn-ghost" href="/how-it-works">See the architecture</a></p>
       </div>
@@ -175,6 +176,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
       <div class="cta-form reveal"><WaitlistForm id="home" /></div>
     </div>
   </section>
+  <RelatedLinks keys={['features', 'how', 'connectors', 'hardware', 'compare', 'faq']} />
 </Base>
 
 <style>

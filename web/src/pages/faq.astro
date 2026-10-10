@@ -1,0 +1,49 @@
+---
+import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
+import { faqGroups, allFaqs } from '../data/faq';
+import { faqPage, webPage } from '../data/seo';
+const title = 'FAQ: private, local AI assistant questions';
+const description = 'Short answers about Albena: running a private AI assistant on a Mac or NVIDIA box, Home Assistant, approvals, privacy, pricing and alternatives to Alexa.';
+---
+<Base title="FAQ: private, local AI assistant" description={description} crumb="FAQ" schema={[webPage('/faq', title, description, 'FAQPage'), faqPage(allFaqs, '/faq')]}>
+  <div class="wrap page">
+    <header class="head">
+      <p class="eyebrow">FAQ</p>
+      <h1 class="h-section">Questions about running a private home AI</h1>
+      <p class="sub">Direct answers about Albena, a local-first AI assistant that runs on hardware you own. Last reviewed <time datetime="2026-10-09">October 9, 2026</time>.</p>
+      <nav class="jump" aria-label="FAQ sections">
+        {faqGroups.map((g) => <a href={`#${g.id}`}>{g.title}</a>)}
+      </nav>
+    </header>
+    {faqGroups.map((g) => (
+      <section class="grp" aria-labelledby={g.id}>
+        <h2 id={g.id}>{g.title}</h2>
+        {g.items.map((f) => (
+          <article class="qa">
+            <h3>{f.q}</h3>
+            <p>{f.a} {f.more && <a class="ul" href={f.more[1]}>{f.more[0]}</a>}</p>
+          </article>
+        ))}
+      </section>
+    ))}
+    <p class="more">Still stuck? <a class="ul" href="/support">Contact support</a> or <a class="ul" href="/waitlist">join the waitlist</a>.</p>
+  </div>
+  <RelatedLinks keys={['compare', 'hardware', 'connectors', 'pricing', 'trust']} />
+</Base>
+
+<style>
+  .page { padding-top: 72px; padding-bottom: 48px; max-width: 820px; }
+  .head { margin-bottom: 32px; }
+  .head h1 { font-size: clamp(32px, 5.5vw, 48px); }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .jump a { padding: 6px 12px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 13px; color: var(--fg-2); }
+  .jump a:hover { border-color: var(--acc-hi); }
+  .grp { margin-top: 44px; }
+  .grp h2 { font-size: 22px; font-weight: 560; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .qa { padding: 18px 0; border-top: 1px solid var(--line); }
+  .qa h3 { font-size: 16.5px; font-weight: 560; margin-bottom: 6px; }
+  .qa p { color: var(--fg-2); max-width: 68ch; }
+  .ul { color: var(--acc-hi); text-decoration: underline; text-underline-offset: 3px; }
+  .more { margin-top: 36px; color: var(--mut); }
+</style>

@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import RelatedLinks from '../../components/RelatedLinks.astro';
 import { controls } from '../../data/controls';
 const count = (s: string) => controls.filter((c) => c.status === s).length;
 const frameworks = [
@@ -21,7 +22,7 @@ const principles = [
   ['Honest status', 'We say what is done, what is in progress, and what has not been audited.'],
 ];
 ---
-<Base title="Trust center" description="Albena's security practices and where we stand on NIST 800-53, SOC 2, STIG/CIS and NIST CSF 2.0. No certifications are claimed; audits have not yet been completed.">
+<Base title="Trust center: security status and controls" description="Albena's security practices and where we stand on NIST 800-53, SOC 2, STIG/CIS and CSF 2.0. No certifications are claimed; audits are not yet done.">
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
@@ -116,6 +117,7 @@ const principles = [
       <a href="/support"><strong>Questions?</strong><span>Ask us anything about trust and data</span></a>
     </div>
   </section>
+  <RelatedLinks keys={['how', 'compare', 'faq']} />
 </Base>
 
 <style>

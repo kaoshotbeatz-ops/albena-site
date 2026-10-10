@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 import { categories } from '../data/connectors';
 const total = categories.reduce((n, c) => n + c.items.length, 0);
 const glyph = (n: string) => n.replace(/[^A-Za-z0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -9,7 +10,7 @@ const users = [
   { k: 'Business & IT', t: 'Tickets, cloud and identity', ask: 'Hey Albena, who still has admin access in Azure?', d: 'Read across cloud, identity and ticketing instantly. Changes go to you, with a change record and PIN when risk is high.', tags: ['Cloud', 'Identity & IT'] },
 ];
 ---
-<Base title="Connectors: your AI, your systems" description="Albena connects to the systems you already use: smart home, media, work tools, cloud and IT. Reads are instant, changes need your approval. Available in early access.">
+<Base title="Connectors: Home Assistant, Hue, Slack and more" description="Albena connects Home Assistant, Hue, Google Workspace, Slack, Jira, GitHub, AWS and more. Reads are instant; every change needs your approval.">
   <section class="top">
     <div class="wrap top-grid">
       <div>
@@ -28,7 +29,7 @@ const users = [
 
   <section class="catalog" aria-labelledby="catalog-h">
     <div class="wrap">
-      <h2 id="catalog-h" class="sr">Connector catalog</h2>
+      <h2 id="catalog-h" class="sr">Which systems can Albena connect to?</h2>
       <div class="filters" role="group" aria-label="Filter connectors by category">
         <button type="button" class="fbtn" data-filter="all" aria-pressed="true">All <span>{total}</span></button>
         {categories.map((c) => <button type="button" class="fbtn" data-filter={c.id} aria-pressed="false">{c.label} <span>{c.items.length}</span></button>)}
@@ -90,6 +91,7 @@ const users = [
       <p class="close-cta"><a class="btn btn-primary" href="/waitlist">Join the waitlist</a> <a class="btn btn-ghost" href="/how-it-works">How it works</a></p>
     </div>
   </section>
+  <RelatedLinks keys={['features', 'how', 'hardware', 'trust', 'faq']} />
 </Base>
 
 <style>

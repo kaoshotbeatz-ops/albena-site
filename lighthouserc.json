@@ -2,11 +2,12 @@
   "ci": {
     "collect": {
       "numberOfRuns": 1,
-      "settings": { "chromeFlags": "--no-sandbox", "onlyCategories": ["accessibility"] }
+      "settings": { "chromeFlags": "--no-sandbox", "onlyCategories": ["accessibility", "seo"] }
     },
     "assert": {
       "assertions": {
-        "categories:accessibility": ["error", { "minScore": 0.95 }]
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:seo": ["error", { "minScore": 0.95 }]
       }
     }
   }
