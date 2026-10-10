@@ -109,10 +109,13 @@ export default {
     const to = message.to.toLowerCase();
     const source = parseRoutes(env.ROUTES).get(to);
     if (!source) { message.setReject("550 5.1.1 unknown recipient"); return; }
+    // Loop guard: never ticket auto-generated mail (OOO, bounces, our own acknowledgements).
+    const auto = (message.headers.get("auto-submitted") || "no").toLowerCase();
+    if (auto !== "no" || /bulk|junk|auto_reply/i.test(message.headers.get("precedence") || "") || message.headers.has("x-auto-response-suppress")) return;
     const lenient = env.LENIENT_DOMAINS.split(",").map((s) => s.trim()).includes(to.split("@")[1]);
     const auth = parseAuth(message.headers);
     const verdict = authVerdict(auth, lenient);
-    if (verdict) { message.setReject(verdict); return; }
+    if (verdict) { console.log("reject", verdict, JSON.stringify(auth), message.headers.get("authentication-results")); message.setReject(verdict); return; }
 
     let raw: Uint8Array;
     try { raw = await readRaw(message.raw, message.rawSize); } catch { message.setReject("552 5.3.4 message too large"); return; }
