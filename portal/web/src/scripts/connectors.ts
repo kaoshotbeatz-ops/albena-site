@@ -1,7 +1,7 @@
 import './shell';
 import { api } from '../lib/api';
 import { h, must, panel, chip, dot, failInto, empty } from '../lib/ui';
-import { ACCESS_HELP, ACCESS_TEXT, DOCS_URL, SOON, STATE_TEXT, lastUsed, stateChip, type Shown } from '../lib/connections';
+import { ACCESS_HELP, ACCESS_TEXT, DOCS_URL, SOON, STATE_TEXT, lastUsed, stateChip, unverifiedBadge, type Shown } from '../lib/connections';
 import type { CatalogItem, ConnectionsView, HubConn } from '../lib/types';
 
 const root = must('#root');
@@ -26,7 +26,7 @@ function card(c: CatalogItem) {
     const access = conn?.access;
     return h('div', { class: 'conn-hub' },
       multi && hub ? h('span', { class: 'conn-hubname' }, hub.name) : null,
-      stateChip(state),
+      stateChip(state, conn?.verified),
       access ? h('span', { class: 'chip ' + (access === 'write' ? 'indigo' : 'grey'), title: ACCESS_HELP[access] }, ACCESS_TEXT[access]) : null,
       conn ? h('span', { class: 'sub' }, lastUsed(conn.last_used_h)) : null,
       access ? h('span', { class: 'sub' }, ACCESS_HELP[access]) : null);
@@ -58,7 +58,7 @@ function results() {
     const own = panel('Your own connections', h('ul', { class: 'list' }, ...custom.map((x) => h('li', {},
       h('div', { class: 'main' }, h('span', { class: 'name' }, dot(x.state === 'connected' ? 'ok' : x.state === 'needs_attention' ? 'warn' : ''), x.label),
         h('span', { class: 'sub' }, `${x.kind.toUpperCase()} on ${name(x.hubId)}. ${lastUsed(x.last_used_h)}`)),
-      h('span', { class: 'row' }, chip(ACCESS_TEXT[x.access], x.access === 'write' ? 'indigo' : 'grey'), chip(STATE_TEXT[x.state], x.state === 'connected' ? 'green' : x.state === 'needs_attention' ? 'amber' : 'grey'))))));
+      h('span', { class: 'row' }, chip(ACCESS_TEXT[x.access], x.access === 'write' ? 'indigo' : 'grey'), chip(STATE_TEXT[x.state], x.state === 'connected' ? 'green' : x.state === 'needs_attention' ? 'amber' : 'grey'), unverifiedBadge(x.state, x.verified))))));
     own.querySelector('.panel-body')?.classList.add('flush');
     out.push(own);
   }

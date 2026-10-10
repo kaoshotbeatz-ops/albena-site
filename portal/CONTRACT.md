@@ -66,12 +66,13 @@ Support: proxy-free. The portal links to albena.ai/support.
 
 ## Connections (phase 1: visibility only, no remote control)
 The portal shows which connectors a Hub has set up and whether they work. It never holds, sees or forwards a credential, token, URL, host or address, and it has no route that changes a connector.
-- Heartbeat: optional `stats.connectors`, an array of at most 60 entries `{id, state, access, kind, label?, last_used_h?}`, strict (unknown keys are 400):
+- Heartbeat: optional `stats.connectors`, an array of at most 60 entries `{id, state, access, kind, label?, last_used_h?, verified?}`, strict (unknown keys are 400):
   - `id`: a catalog id (`portal/worker/src/connectors/catalog.ts`, mirrors the albena.ai connector catalog) or `"custom"`. Unknown ids are 400.
   - `state`: `connected` | `needs_attention` | `off`. `access`: `read` | `write` (`write` only for catalog entries that can write).
   - `kind`: `builtin` | `mcp` | `rest`. `custom` is always `mcp` or `rest`.
   - `label`: only when `kind` is `mcp` or `rest`; required for `custom`. 1 to 48 chars of letters, digits, space and `_ ( ) + & ' -`; rejected when it looks like an address (`@`, `://`, `www`, a dotted name ending in letters, an IPv4, `/`, `\` or `:`).
   - `last_used_h`: optional int 0 to 8760, whole hours since last use (coarse on purpose).
+  - `verified`: optional boolean. `false` means the Hub has no health-check result for this connection yet (state is only "configured"); `true` means a stored health check backs the state. Absent (older Hubs) means unknown. The UI shows a "Connected — not yet verified" badge only for `state=connected` with `verified === false`. Strict boolean: anything else is 400. `GET /api/connectors` passes it through on the per-Hub entries and `custom` rows.
   - No duplicate catalog ids; no duplicate custom labels.
 - Omitting `connectors` keeps the previous snapshot; `[]` clears it. The validated array is stored apart from stats in `hubs.connectors_json` (migration 0800_hub_connectors.sql); `GET /api/hubs/:id` returns it as `hub.connectors` (null when never reported) and staff `GET /api/support/hubs/:id` likewise.
 - GET /api/connectors (owner, member, read-only view-as) -> `{categories: [{id,label}], catalog: [{id,name,category,auth: oauth_device|oauth_local|api_key|local|mcp,write,description,hubs: [{hubId,state,access,kind,last_used_h?}]}], custom: [{id:"custom",label,state,access,kind,last_used_h?,hubId}], hubs: [{id,name,online,lastSeen,reported}]}` for the caller's own account only. There are no write routes.

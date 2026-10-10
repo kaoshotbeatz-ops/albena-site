@@ -28,7 +28,7 @@ export interface Connector { id: string; name: string; status: 'connected' | 'ne
 export interface PendingInvite { id: string; email: string; expiresAt: string }
 /** GET /api/connectors (customer) and /api/support/accounts/:id/connectors (staff). Names and status only; see portal/CONTRACT.md. */
 export type ConnState = 'connected' | 'needs_attention' | 'off';
-export interface HubConn { hubId: string; state: ConnState; access: 'read' | 'write'; kind: 'builtin' | 'mcp' | 'rest'; last_used_h?: number }
+export interface HubConn { hubId: string; state: ConnState; access: 'read' | 'write'; kind: 'builtin' | 'mcp' | 'rest'; last_used_h?: number; verified?: boolean }
 export interface CatalogItem { id: string; name: string; category: string; auth: 'oauth_device' | 'oauth_local' | 'api_key' | 'local' | 'mcp'; write: boolean; description: string; hubs: HubConn[] }
 export interface CustomConn extends HubConn { id: 'custom'; label: string }
 export interface ConnectionsView {
