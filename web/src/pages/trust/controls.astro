@@ -1,10 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
+import RelatedLinks from '../../components/RelatedLinks.astro';
 import { controls, statusLabel } from '../../data/controls';
 const fws = [...new Set(controls.flatMap((c) => c.framework))].sort();
 const tone: Record<string, string> = { implemented: 'green', partial: 'amber', planned: '' };
 ---
-<Base title="Control mapping" description="The controls behind Albena's security claims, mapped to NIST 800-53 Moderate, SOC 2 TSC, STIG/CIS and NIST CSF 2.0, with honest status and evidence. No framework is certified.">
+<Base title="Control mapping: NIST 800-53, SOC 2, CIS, CSF" description="Controls behind Albena's security claims, mapped to NIST 800-53, SOC 2, STIG/CIS and CSF 2.0 with honest status and evidence. Nothing is certified.">
   <div class="wrap page">
     <nav class="crumbs" aria-label="Breadcrumb"><a href="/trust">Trust center</a> <span aria-hidden="true">/</span> <span>Control mapping</span></nav>
     <header class="head">
@@ -45,6 +46,7 @@ const tone: Record<string, string> = { implemented: 'green', partial: 'amber', p
     <p class="none" data-none hidden>No controls match those filters.</p>
     <p class="fine">Status key: <strong>Implemented</strong> means the control is in place and we hold the evidence listed. <strong>Partial</strong> means it is in place in part. <strong>Planned</strong> means it is not yet in place. None of these is an audit finding.</p>
   </div>
+  <RelatedLinks keys={['trust', 'how', 'faq']} />
 </Base>
 
 <style>

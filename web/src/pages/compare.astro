@@ -1,0 +1,121 @@
+---
+import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
+import { webPage } from '../data/seo';
+const title = 'Albena vs cloud assistants, Aldena and Home Assistant Assist';
+const description = 'A neutral comparison of Albena, a local-first private AI assistant, with cloud assistants, Aldena and Home Assistant Assist. Last verified October 9, 2026.';
+const cols = ['Albena', 'Cloud assistants (ChatGPT, Claude, Gemini, Copilot)', 'Aldena', 'Home Assistant Assist'];
+const rows: [string, string, string, string, string][] = [
+  ['Primary job', 'Personal and household assistant spanning home, media, work and systems you own.', 'General conversation, research, content and work productivity.', 'Cloud AI workforce for founders and agencies, organized into project and client rooms.', 'Private voice control of a smart home through Home Assistant.'],
+  ['Where it runs', 'On hardware you own (Mac or NVIDIA). Cloud models are optional and off unless you allow them.', 'Mostly provider-hosted. Apple pairs on-device processing with Private Cloud Compute.', 'Cloud service. Each room has isolated compute, credentials, integrations and memory.', 'Can run entirely on hardware you own, with local or cloud conversation models.'],
+  ['Voice', 'Core: “Hey Albena”, designed for across-the-room conversation.', 'Often polished, especially on phones and provider-supported devices.', 'Mainly a visual project interface; public materials do not present ambient voice as a core feature.', 'Core, with a fully local speech pipeline and supported voice hardware.'],
+  ['Smart home', 'Broad: Home Assistant, Hue, WiZ, Nest, TVs and cameras.', 'Varies. Alexa, Siri and Gemini have native ecosystem reach; general chat assistants are less unified.', 'Not positioned for household or smart-home control.', 'The strongest local specialist for Home Assistant.'],
+  ['Work and IT connectors', 'Cross-vendor set including Google Workspace, Teams, Slack, Jira, ServiceNow and GitHub, plus any REST API or MCP server.', 'Strong inside a vendor’s own ecosystem; cross-vendor breadth and write support vary.', 'Ten public account connectors, including GitHub, Gmail, Jira, Linear, Notion, Slack and Vercel.', 'Focused on the home rather than work systems.'],
+  ['Approval before changes', 'Every state-changing action is proposed first. Risky actions add a PIN, change record, rollback information and audit trail.', 'Product-dependent. Enterprise offerings can add substantial admin controls.', 'Per-tool allow, ask or deny policies; agents do not merge their own pull requests.', 'Depends on how the home is configured.'],
+  ['Memory control', 'Owner can inspect, correct and delete memory; stored on their hardware first.', 'Improving but variable. ChatGPT lets users review and delete memories.', 'Private per-agent memory plus shared room memory; entries are visible and correctable.', 'Depends on the conversation model and configuration chosen.'],
+  ['Pricing', 'Not published yet; early-access waitlist.', 'Commonly free plus subscription tiers.', 'Starter $99 and Business $249 per active member per month, plus prepaid usage credits (as listed October 9, 2026).', 'Home Assistant is open-source software you run yourself.'],
+];
+const sources: [string, string][] = [
+  ['ChatGPT memory controls (OpenAI)', 'https://help.openai.com/en/articles/8590148-memory-in-chatgpt'],
+  ['ChatGPT Voice (OpenAI)', 'https://help.openai.com/en/articles/20001274/'],
+  ['Apple Intelligence privacy', 'https://www.apple.com/privacy/features/'],
+  ['Microsoft Copilot connectors overview', 'https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/overview'],
+  ['Aldena product', 'https://aldena.ai/'],
+  ['Aldena integrations', 'https://aldena.ai/integrations'],
+  ['Aldena approval gates', 'https://aldena.ai/features/human-in-the-loop'],
+  ['Aldena memory', 'https://aldena.ai/features/agent-memory'],
+  ['Aldena pricing', 'https://aldena.ai/pricing'],
+  ['Home Assistant Assist voice control', 'https://www.home-assistant.io/voice_control/'],
+  ['Home Assistant fully local voice setup', 'https://www.home-assistant.io/voice_control/voice_remote_local_assistant'],
+];
+const page = { ...webPage('/compare', title, description), dateModified: '2026-10-09' };
+---
+<Base title="Albena vs cloud assistants, Aldena, Assist" description={description} crumb="Compare" schema={[page]}>
+  <div class="wrap page">
+    <header class="head">
+      <p class="eyebrow">Compare</p>
+      <h1 class="h-section">Albena compared with cloud assistants, Aldena and Home Assistant Assist</h1>
+      <p class="sub">Albena is a private, local-first AI assistant for your home and life. Here is how she differs from other kinds of assistant, and when another choice is better. Last verified <time datetime="2026-10-09">October 9, 2026</time> against public product pages; capabilities change quickly, so follow the source links.</p>
+    </header>
+
+    <section aria-labelledby="glance">
+      <h2 id="glance">How does Albena compare at a glance?</h2>
+      <div class="scroll" role="region" aria-label="Comparison table" tabindex="0">
+        <table>
+          <caption class="sr">Albena compared with cloud assistants, Aldena and Home Assistant Assist, last verified October 9, 2026</caption>
+          <thead><tr><th scope="col"><span class="sr">Dimension</span></th>{cols.map((c) => <th scope="col">{c}</th>)}</tr></thead>
+          <tbody>
+            {rows.map((r) => <tr><th scope="row">{r[0]}</th>{r.slice(1).map((c) => <td>{c}</td>)}</tr>)}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="cloud">
+      <h2 id="cloud">How is Albena different from ChatGPT, Claude and Gemini?</h2>
+      <p>ChatGPT, Claude, Gemini and Copilot offer powerful models, polished apps and fast-growing integrations. They are often the best choice when you want immediate access to frontier cloud intelligence or deep integration with one provider’s ecosystem. Albena does not claim better models. When you allow it, a cloud model can be one of the tools she uses.</p>
+      <p>The difference is who controls the operating layer. Albena handles suitable requests on your own hardware, tells you when a request needs the cloud, keeps memory visible and deletable, and asks before sending, changing, purchasing or unlocking anything. Cloud assistants have their own privacy controls; Albena’s distinction is putting local models, optional cloud models, personal systems and change governance in one owner-controlled assistant.</p>
+    </section>
+
+    <section aria-labelledby="aldena">
+      <h2 id="aldena">How is Albena different from Aldena?</h2>
+      <p>The names are similar; the products are not. Aldena describes itself as an AI workforce for founders and agencies, with agents working in isolated cloud project rooms. Albena is a personal assistant for an individual, a household or an owner-operated business, centered on natural voice, local execution, smart-home and media control, and personal memory.</p>
+      <p>Choose Aldena to staff cloud project rooms with specialist software-delivery agents. Choose Albena for one trusted assistant with governed reach across the real life and systems you own.</p>
+    </section>
+
+    <section aria-labelledby="assist">
+      <h2 id="assist">How is Albena different from Home Assistant Assist?</h2>
+      <p>Home Assistant Assist is an excellent choice for private smart-home voice control. It can run a fully local speech pipeline, supports owned voice hardware and can use local or cloud conversation models. Albena is broader by design: Home Assistant is one of her connectors, while she also coordinates calendars, mail, collaboration tools, media, source control, cloud platforms and identity systems under the same approval and audit model.</p>
+      <p>Choose Assist when your main goal is an open, local voice interface for Home Assistant. Choose Albena when you want the home to be one part of a wider personal assistant. The two work together.</p>
+    </section>
+
+    <section aria-labelledby="alexa">
+      <h2 id="alexa">Is Albena a privacy alternative to Alexa?</h2>
+      <p>Albena is designed as a private, local-first alternative to cloud voice assistants: the wake phrase is processed on your own devices, everyday requests run on hardware you own, and a cloud model is used only if you allow it. Alexa, Siri and Gemini have native ecosystem reach that Albena does not try to match, so check that the devices and services you rely on are covered by <a class="ul" href="/connectors">Albena’s connectors</a>.</p>
+    </section>
+
+    <section aria-labelledby="gaps">
+      <h2 id="gaps">Where is Albena still growing?</h2>
+      <p>Albena is in early access. Native iPhone and Mac apps, mobile notifications and approvals, published pricing, more first-party connectors, complete control evidence and independent security and accessibility assessments are still in progress. No certification is claimed. See the <a class="ul" href="/roadmap">roadmap</a>, the <a class="ul" href="/trust">trust center</a> and the <a class="ul" href="/changelog">changelog</a>.</p>
+    </section>
+
+    <section aria-labelledby="choose">
+      <h2 id="choose">Which assistant is right for you?</h2>
+      <ul class="pick">
+        <li><strong>A large cloud assistant</strong> if you want frontier-model access and a provider’s ecosystem matters more than local operation.</li>
+        <li><strong>An AI workforce platform</strong> if you want cloud agents organized around business projects and delivery roles.</li>
+        <li><strong>A smart-home assistant</strong> if voice control of household devices is the main job.</li>
+        <li><strong>Albena</strong> if you want one personal assistant across home and work, running locally where possible, reaching the cloud only when permitted, and asking before anything changes. <a class="ul" href="/waitlist">Join the waitlist.</a></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="src">
+      <h2 id="src">Sources</h2>
+      <ul class="src">
+        {sources.map(([l, u]) => <li><a class="ul" href={u} rel="noopener noreferrer">{l}</a></li>)}
+      </ul>
+      <p class="note">Statements about other products come from their public pages on the verification date above and are summaries, not endorsements. Albena details come from this site’s <a class="ul" href="/features">features</a>, <a class="ul" href="/how-it-works">architecture</a> and <a class="ul" href="/connectors">connectors</a> pages. Spotted an error? Email <a class="ul" href="mailto:omar@dbaomarhuertasllc.com">omar@dbaomarhuertasllc.com</a>.</p>
+    </section>
+  </div>
+  <RelatedLinks keys={['faq', 'how', 'hardware', 'connectors', 'trust']} />
+</Base>
+
+<style>
+  .page { padding-top: 72px; padding-bottom: 48px; }
+  .head { max-width: 760px; margin-bottom: 40px; }
+  .head h1 { font-size: clamp(30px, 5vw, 46px); }
+  .head .sub { max-width: 680px; }
+  section { margin-top: 44px; max-width: 760px; }
+  section:first-of-type { max-width: none; }
+  h2 { font-size: 22px; font-weight: 560; letter-spacing: -0.02em; margin-bottom: 12px; }
+  p { color: var(--fg-2); margin-bottom: 12px; }
+  .ul { color: var(--acc-hi); text-decoration: underline; text-underline-offset: 3px; }
+  .scroll { overflow-x: auto; border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); }
+  table { border-collapse: collapse; min-width: 980px; width: 100%; font-size: 13.5px; line-height: 1.5; }
+  th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-top: 1px solid var(--line); }
+  thead th { border-top: 0; color: var(--fg); font-weight: 560; background: var(--panel-2); }
+  tbody th { color: var(--fg); font-weight: 560; width: 130px; }
+  td { color: var(--fg-2); }
+  .pick li, .src li { margin: 0 0 10px 18px; list-style: disc; color: var(--fg-2); }
+  .note { color: var(--mut); font-size: 13.5px; margin-top: 14px; }
+</style>

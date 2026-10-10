@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 type Item = { id: string; title: string; label: string; state: 'done' | 'half' | 'todo' };
 const labels = ['Voice', 'Home', 'Daily', 'Privacy', 'Connectors', 'Apps', 'Trust', 'Scale'];
 const cols: { key: string; name: string; state: Item['state']; note: string; items: Item[] }[] = [
@@ -28,7 +29,7 @@ const cols: { key: string; name: string; state: Item['state']; note: string; ite
   ] },
 ];
 ---
-<Base title="Roadmap" description="What is ready, what is in progress and what is next for Albena. A public issue board with no promised dates.">
+<Base title="Roadmap: what is ready and what is next" description="What is ready, what is in progress and what is next for Albena. A public issue board with no promised dates.">
   <div class="shell">
     <header class="bar">
       <div class="wrap bar-in">
@@ -64,6 +65,7 @@ const cols: { key: string; name: string; state: Item['state']; note: string; ite
     </div>
     <p class="wrap foot-note">Roadmap items are plans, not promises. See the <a href="/changelog">changelog</a> for what has shipped.</p>
   </div>
+  <RelatedLinks keys={['changelog', 'features', 'hardware', 'trust']} />
 </Base>
 
 <style>

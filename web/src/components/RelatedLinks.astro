@@ -1,0 +1,35 @@
+---
+// Internal-link block shown at the end of content pages. Keys select entries.
+const catalog: Record<string, { href: string; label: string; desc: string }> = {
+  features: { href: '/features', label: 'Features', desc: 'Voice, home control, briefings, memory and approvals.' },
+  connectors: { href: '/connectors', label: 'Connectors', desc: 'Home Assistant, Hue, Slack, Jira, AWS and more.' },
+  hardware: { href: '/hardware', label: 'Hardware', desc: 'Albena Hub for Mac and for NVIDIA, or bring your own.' },
+  pricing: { href: '/pricing', label: 'Pricing', desc: 'Plans and reservations. No prices set yet.' },
+  how: { href: '/how-it-works', label: 'How it works', desc: 'Local-first architecture and the approval gate.' },
+  trust: { href: '/trust', label: 'Trust center', desc: 'Security practices and honest control status.' },
+  compare: { href: '/compare', label: 'Compare', desc: 'Albena vs cloud assistants, Aldena and Home Assistant Assist.' },
+  faq: { href: '/faq', label: 'FAQ', desc: 'Short answers about running a private home AI.' },
+  roadmap: { href: '/roadmap', label: 'Roadmap', desc: 'What is ready, in progress and next.' },
+  changelog: { href: '/changelog', label: 'Changelog', desc: 'Dated release notes.' },
+  waitlist: { href: '/waitlist', label: 'Join the waitlist', desc: 'Early access, invited in small groups.' },
+};
+interface Props { keys: (keyof typeof catalog)[] }
+const items = Astro.props.keys.map((k) => catalog[k]);
+---
+<aside class="related" aria-labelledby="related-h">
+  <div class="wrap">
+    <h2 id="related-h">Keep reading</h2>
+    <ul>
+      {items.map((i) => <li><a href={i.href}><strong>{i.label}</strong><span>{i.desc}</span></a></li>)}
+    </ul>
+  </div>
+</aside>
+<style>
+  .related { padding: 8px 0 72px; }
+  .related h2 { font-size: 15px; font-weight: 560; color: var(--fg-2); margin-bottom: 14px; }
+  .related ul { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .related a { display: block; height: 100%; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--panel); }
+  .related a:hover { border-color: var(--acc-hi); }
+  .related strong { display: block; font-weight: 560; color: var(--fg); margin-bottom: 2px; }
+  .related span { color: var(--mut); font-size: 13.5px; line-height: 1.45; }
+</style>

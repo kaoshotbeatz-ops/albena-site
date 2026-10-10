@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
+import { webPage, hubProduct } from '../data/seo';
 const specs = [
   ['Memory', 'Unified memory, shared by CPU and GPU. Tiers set at order.', 'Dedicated GPU memory (VRAM) tiers, plus system RAM.'],
   ['Model size class', 'Small to mid-size local models, comfortable for a home.', 'Mid to large local models. Higher VRAM tiers run bigger ones.'],
@@ -23,7 +25,7 @@ const safety = [
   ['Your data stays on the device', 'Memory, conversations and settings live on hardware you own. Cloud models are used only if you allow it.'],
 ];
 ---
-<Base title="Hardware: Albena Hub" description="Albena Hub is personal AI that lives in your home, on hardware you own. Choose a Hub for Mac (Apple silicon) or a Hub for NVIDIA RTX, or bring your own hardware.">
+<Base title="Albena Hub for Mac and NVIDIA: local AI hardware" description="Albena Hub puts a private AI assistant on hardware you own: a Mac mini (Apple silicon) or an NVIDIA RTX box. Or install on a machine you already have." schema={[webPage('/hardware', 'Albena Hub hardware', 'Albena Hub for Mac and Albena Hub for NVIDIA: private AI assistant hardware you own.', 'CollectionPage'), hubProduct('mac'), hubProduct('nvidia')]}>
   <section class="hero">
     <div class="glow" aria-hidden="true"></div>
     <div class="wrap hero-in">
@@ -96,7 +98,7 @@ const safety = [
 
   <section class="sec" aria-labelledby="cmp-h">
     <div class="wrap">
-      <div class="head"><p class="eyebrow">Compare</p><h2 id="cmp-h" class="h-section">Which Hub fits your home</h2><p class="sub">Qualitative by design. We will publish tested figures at launch, not before.</p></div>
+      <div class="head"><p class="eyebrow">Compare</p><h2 id="cmp-h" class="h-section">Which Albena Hub fits your home?</h2><p class="sub">Qualitative by design. We will publish tested figures at launch, not before.</p></div>
       <div class="tbl">
         <table>
           <caption class="sr">Albena Hub for Mac compared with Albena Hub for NVIDIA</caption>
@@ -130,7 +132,7 @@ const safety = [
 
   <section class="sec" aria-labelledby="set-h">
     <div class="wrap">
-      <div class="head"><p class="eyebrow">Setup</p><h2 id="set-h" class="h-section">Set up in about 10 minutes</h2></div>
+      <div class="head"><p class="eyebrow">Setup</p><h2 id="set-h" class="h-section">How long does Albena Hub take to set up?</h2></div>
       <ol class="flow">
         {steps.map(([t, d], i) => <li><span class="n" aria-hidden="true">{i + 1}</span><div><h3>{t}</h3><p>{d}</p></div></li>)}
       </ol>
@@ -158,6 +160,7 @@ const safety = [
       <p class="cta"><a class="btn btn-primary" href="/pricing">See plans</a><a class="btn btn-ghost" href="/waitlist">Join the waitlist</a></p>
     </div>
   </section>
+  <RelatedLinks keys={['pricing', 'how', 'trust', 'compare', 'faq']} />
 </Base>
 
 <style>

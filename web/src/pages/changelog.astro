@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
 import { entries } from '../data/changelog';
+import { SITE, ORG_ID, OG_IMAGE } from '../data/seo';
+const posts = entries.map((e) => ({ '@type': 'BlogPosting', '@id': `${SITE}/changelog#e-${e.slug ?? e.iso}`, url: `${SITE}/changelog#e-${e.slug ?? e.iso}`, mainEntityOfPage: `${SITE}/changelog`, headline: e.title, description: e.summary, datePublished: e.iso, dateModified: e.iso, inLanguage: 'en', image: OG_IMAGE, author: { '@id': ORG_ID }, publisher: { '@id': ORG_ID } }));
 ---
-<Base title="Changelog" description="Dated release notes for Albena. Starting with the October 9, 2026 early-access launch.">
+<Base title="Changelog: Albena release notes" description="Dated release notes for Albena, newest first, including the October 9, 2026 early-access launch, trust updates and the Hub announcement." schema={posts}>
   <div class="wrap page">
     <header class="head">
       <p class="eyebrow">Changelog</p>
@@ -31,6 +34,7 @@ import { entries } from '../data/changelog';
     </ol>
     <p class="more">That is everything so far. Join the <a href="/waitlist">waitlist</a> to hear about each release.</p>
   </div>
+  <RelatedLinks keys={['roadmap', 'features', 'faq']} />
 </Base>
 
 <style>

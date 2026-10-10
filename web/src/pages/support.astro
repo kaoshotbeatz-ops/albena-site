@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
+import { faqPage } from '../data/seo';
 import Turnstile from '../components/Turnstile.astro';
 const faqs: { cat: string; q: string; a: string }[] = [
   { cat: 'Getting started', q: 'What is Albena?', a: 'Albena is a voice-first AI assistant for your home and life, built by Omar Huertas LLC. You say “Hey Albena” and she can help with your home, calendar, mail and everyday tasks. She is local-first and asks for your approval before she acts.' },
@@ -16,7 +18,7 @@ const faqs: { cat: string; q: string; a: string }[] = [
 ];
 const cats = [...new Set(faqs.map((f) => f.cat))];
 ---
-<Base title="Support" description="Help center for Albena: search the FAQ, contact support, and see response times.">
+<Base title="Support and FAQ: help with Albena" description="Help center for Albena: answers on privacy, deleting your data, devices and connectors, how to contact support, and response times." schema={[faqPage(faqs, '/support')]}>
   <section class="hero">
     <div class="wrap">
       <p class="eyebrow">Help center</p>
@@ -87,6 +89,7 @@ const cats = [...new Set(faqs.map((f) => f.cat))];
       </div>
     </aside>
   </div>
+  <RelatedLinks keys={['faq', 'compare', 'trust']} />
 </Base>
 
 <style>

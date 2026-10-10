@@ -49,6 +49,7 @@ jobs:
             npm ci
             # Preview/CI build only: uses Cloudflare's test Turnstile key. Never deployed.
             ALBENA_ALLOW_TEST_TURNSTILE=1 npm run build
+            node scripts/seo-check.mjs
             cd ..
             rsync -a web/dist/ dist-out/
           else
@@ -281,6 +282,10 @@ jobs:
         run: echo "worker/ not present; nothing to deploy with wrangler."
       - name: Post-deploy header check
         run: bash scripts/check-headers.sh "$SITE_URL"
+      - name: Notify IndexNow (Bing, Yandex) of the new sitemap
+        # Best effort: a failed ping must never fail a deploy. The key is public by design.
+        continue-on-error: true
+        run: node scripts/indexnow.mjs
 
   zap:
     name: OWASP ZAP baseline (non-blocking)

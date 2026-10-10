@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import RelatedLinks from '../components/RelatedLinks.astro';
+import { faqPage } from '../data/seo';
 const plans = [
   { id: 'byo', name: 'Bring Your Own', tag: 'Software license', blurb: 'Install Albena on a Mac or NVIDIA Linux machine you already own.', pts: ['Albena software license', 'Your Mac or NVIDIA Linux box', 'Self-guided setup'], edition: 'byo', cta: 'Reserve Bring Your Own' },
   { id: 'mac', name: 'Hub for Mac', tag: 'Apple silicon', blurb: 'A quiet, efficient Mac mini with Albena preinstalled. Ideal for homes.', pts: ['Albena Hub hardware, ready to plug in', 'Apple on-device intelligence and local models', '10-minute guided setup'], edition: 'mac', cta: 'Reserve Hub for Mac', featured: true },
@@ -21,7 +23,7 @@ const faq = [
   ['When can I buy?', 'We have not set dates or prices. Reserving costs nothing and commits you to nothing; we will email you first.'],
 ];
 ---
-<Base title="Pricing" description="Albena plans: Bring Your Own software license, Hub for Mac, Hub for NVIDIA, and Pro / Estate install. Early access pricing is announced soon.">
+<Base title="Pricing: Albena Hub, Bring Your Own and Estate" description="Plans for Albena: Bring Your Own license, Hub for Mac, Hub for NVIDIA and Pro / Estate install. Early access pricing is announced soon; reserving is free." schema={[faqPage(faq.map(([q, a]) => ({ q, a })), '/pricing')]}>
   <div class="wrap page">
     <header class="top">
       <p class="eyebrow">Pricing</p>
@@ -45,7 +47,7 @@ const faq = [
     </ul>
 
     <section class="inc" aria-labelledby="inc-h">
-      <h2 id="inc-h">Every plan includes</h2>
+      <h2 id="inc-h">What does every plan include?</h2>
       <dl>
         {every.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
       </dl>
@@ -53,13 +55,14 @@ const faq = [
     </section>
 
     <section class="faq" aria-labelledby="faq-h">
-      <h2 id="faq-h">Questions</h2>
+      <h2 id="faq-h">Pricing questions</h2>
       <div class="qs">
         {faq.map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}
       </div>
       <p class="more">Not sure which fits? Read about the <a href="/hardware">hardware editions</a> or <a href="/support">contact support</a>.</p>
     </section>
   </div>
+  <RelatedLinks keys={['hardware', 'features', 'faq', 'compare']} />
 </Base>
 
 <style>
