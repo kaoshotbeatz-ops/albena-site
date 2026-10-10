@@ -49,9 +49,8 @@
       "vars": {
         // "test": mail is redacted and not sent outside production (see src/auth/mail.ts); never "production" here.
         "ENVIRONMENT": "test",
-        // TODO: real workers.dev URL of albena-portal-staging; RP_ID must equal that hostname (workers.dev is a public suffix).
-        "PORTAL_ORIGIN": "https://albena-portal-staging.TODO-SUBDOMAIN.workers.dev",
-        "RP_ID": "albena-portal-staging.TODO-SUBDOMAIN.workers.dev",
+        "PORTAL_ORIGIN": "https://albena-portal-staging.albena-site.workers.dev",
+        "RP_ID": "albena-portal-staging.albena-site.workers.dev",
         "MAIL_FROM": "accounts@albena.ai",
         "MAIL_PROVIDER": "dev",
         "PRICE_BYO_MONTHLY": "", "PRICE_BYO_ANNUAL": "",
