@@ -41,7 +41,7 @@
       "assets": { "directory": "../web/dist", "binding": "ASSETS", "html_handling": "auto-trailing-slash", "not_found_handling": "404-page", "run_worker_first": true },
       "send_email": [{ "name": "EMAIL" }],
       "triggers": { "crons": [] },
-      "d1_databases": [{ "binding": "DB", "database_name": "albena_portal_staging", "database_id": "TODO-STAGING-D1-ID", "migrations_dir": "migrations" }],
+      "d1_databases": [{ "binding": "DB", "database_name": "albena_portal_staging", "database_id": "84652d20-b3cb-4d8e-be10-e92047f9d384", "migrations_dir": "migrations" }],
       "ratelimits": [
         { "name": "AUTH_IP_LIMITER", "namespace_id": "1201", "simple": { "limit": 20, "period": 60 } },
         { "name": "AUTH_EMAIL_LIMITER", "namespace_id": "1202", "simple": { "limit": 5, "period": 60 } }
