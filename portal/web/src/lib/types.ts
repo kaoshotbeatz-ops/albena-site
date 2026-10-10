@@ -26,6 +26,15 @@ export interface Member { id: string; email: string; role: 'owner' | 'member'; s
 /** Connectors live on the Hub, so the portal always reports an empty list. */
 export interface Connector { id: string; name: string; status: 'connected' | 'needs_attention' }
 export interface PendingInvite { id: string; email: string; expiresAt: string }
+/** GET /api/connectors (customer) and /api/support/accounts/:id/connectors (staff). Names and status only; see portal/CONTRACT.md. */
+export type ConnState = 'connected' | 'needs_attention' | 'off';
+export interface HubConn { hubId: string; state: ConnState; access: 'read' | 'write'; kind: 'builtin' | 'mcp' | 'rest'; last_used_h?: number }
+export interface CatalogItem { id: string; name: string; category: string; auth: 'oauth_device' | 'oauth_local' | 'api_key' | 'local' | 'mcp'; write: boolean; description: string; hubs: HubConn[] }
+export interface CustomConn extends HubConn { id: 'custom'; label: string }
+export interface ConnectionsView {
+  categories: { id: string; label: string }[]; catalog: CatalogItem[]; custom: CustomConn[];
+  hubs: { id: string; name: string; online: boolean; lastSeen: number | null; reported: boolean }[];
+}
 export interface Account { id: string; members: Member[]; invites: PendingInvite[]; connectors: Connector[] }
 
 /** Telemetry snapshot: every field is optional (a Hub reports only what it knows). Missing renders as an em dash, never 0. */
@@ -39,7 +48,7 @@ export interface HubStats {
 }
 export interface HubDetail {
   id: string; accountId?: string; name: string; edition: 'mac' | 'nvidia'; profile: string; version: string; updateChannel: 'stable' | 'beta'; remoteAccess: boolean;
-  health: { ok: boolean; services: ([string, string] | [string, string, number])[] } | null; stats: HubStats | null; lastSeen: number | null; online: boolean; createdAt: number;
+  health: { ok: boolean; services: ([string, string] | [string, string, number])[] } | null; stats: HubStats | null; connectors?: (HubConn & { id: string; label?: string })[] | null; lastSeen: number | null; online: boolean; createdAt: number;
   /** Only present for the account owner, view-as sessions and staff. */
   publicNetwork?: { ip: string | null; isp: string | null; asn: number | null; city: string | null; region: string | null; country: string | null; timezone: string | null; changedAt: number | null };
 }

@@ -1,5 +1,6 @@
 // Strict hand-written validators: unknown keys are rejected so a hub (or bug) cannot smuggle personal data.
-export const MAX_BODY = 8192;
+import { parseConnectors, type ConnectorStat } from "../connectors/schema";
+export const MAX_BODY = 16384;
 const SEMVER = /^\d+(\.\d+){1,3}([-+][0-9A-Za-z.-]{1,16})?$/;
 const NAME = /^[A-Za-z0-9._-]{1,48}$/;
 export const SERVICE_STATUS = ["ok", "degraded", "down", "unknown"] as const;
@@ -37,6 +38,8 @@ export type HubStats = {
   ai?: { mode?: "local" | "local+cloud"; models?: ModelStat[]; avg_latency_ms?: number };
   activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number };
   updates?: { latest_known?: string; last_result?: (typeof UPDATE_RESULTS)[number]; last_at?: number };
+  /** Names and status of connections only (see ../connectors/schema.ts). Split off into hubs.connectors_json on heartbeat. */
+  connectors?: ConnectorStat[];
 };
 
 const num = (v: unknown, min: number, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
@@ -53,7 +56,7 @@ function parseService<S extends readonly string[]>(s: unknown, names: RegExp, st
 export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: false; error: string } {
   const bad = (m: string) => ({ ok: false as const, error: `stats: ${m}` });
   if (!isObj(v)) return bad("must be an object");
-  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates"]);
+  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates", "connectors"]);
   if (e) return bad(e);
   // Every field is optional (a Hub reports only what it knows); anything present is validated.
   const out: HubStats = {};
@@ -132,6 +135,11 @@ export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: fa
     if ("latest_known" in u) { if (!ver(u.latest_known)) return bad("bad latest_known"); out.updates.latest_known = u.latest_known; }
     if ("last_result" in u) { if (!oneOf(UPDATE_RESULTS, u.last_result)) return bad("bad last_result"); out.updates.last_result = u.last_result; }
     if ("last_at" in u) { if (!int(u.last_at, 0, MAX_TS)) return bad("bad last_at"); out.updates.last_at = u.last_at; }
+  }
+  if ("connectors" in v) {
+    const cs = parseConnectors(v.connectors);
+    if (!cs.ok) return bad(cs.error.replace(/^connectors: /, "connectors: "));
+    out.connectors = cs.value;
   }
   return { ok: true, value: out };
 }

@@ -2,6 +2,8 @@
 import { h, must, chip, fmtDateTime, failInto, empty, table, panel, run, confirmDialog, toast, money } from '../lib/ui';
 import { field, formDialog, planFields, secretDialog, PLAN_NAMES } from '../lib/forms';
 import { staff, type Detail } from '../lib/staff';
+import { connectionsPanel } from '../lib/connections';
+import type { ConnectionsView } from '../lib/types';
 
 document.documentElement.classList.add('js');
 const root = must('#root');
@@ -18,8 +20,9 @@ const btn = (label: string, fn: (b: HTMLButtonElement) => void | Promise<void>, 
 };
 
 let d: Detail;
+let conns: ConnectionsView | null = null;
 async function reload() {
-  try { d = await staff.account(id); root.setAttribute('aria-busy', 'false'); render(); }
+  try { d = await staff.account(id); conns = await staff.connectors(id).catch(() => null); root.setAttribute('aria-busy', 'false'); render(); }
   catch (e) { failInto(root, e); }
 }
 const act = async (b: HTMLButtonElement | null, fn: () => Promise<unknown>, msg: string) => { if (await run(b, fn, msg) !== undefined) await reload(); };
@@ -178,7 +181,7 @@ function auditPanel() {
 
 function render() {
   document.title = `${d.account.ownerEmail} (staff) | Albena account`;
-  const parts: (HTMLElement | null)[] = [head(), h('div', { class: 'grid-2' }, planPanel(), usersPanel()), ...hubsPanel(), ordersPanel(), keysPanel(), historyPanel(), notesPanel(), invitesPanel(), auditPanel()];
+  const parts: (HTMLElement | null)[] = [head(), h('div', { class: 'grid-2' }, planPanel(), usersPanel()), ...hubsPanel(), ...(conns ? d.hubs.map((x) => connectionsPanel(conns!, x.id, true, `Connections: ${x.name} (read-only)`)) : []), ordersPanel(), keysPanel(), historyPanel(), notesPanel(), invitesPanel(), auditPanel()];
   root.replaceChildren(h('div', { class: 'stack' }, ...parts.filter((p): p is HTMLElement => p !== null)));
 }
 

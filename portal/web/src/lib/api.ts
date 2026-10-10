@@ -1,5 +1,5 @@
 // Same-origin portal API client (see portal/CONTRACT.md). Session cookie is HttpOnly; no tokens in JS.
-import type { HubDetail, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
+import type { HubDetail, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member, ConnectionsView } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
@@ -112,6 +112,7 @@ export const api = {
     return { edition: r.edition, version: r.version, releasedAt: iso(r.releasedAt), manifestUrl: r.manifestUrl, signatureUrl: r.signatureUrl, sha256: r.sha256 };
   },
   account: async (): Promise<Account> => { const r = await get<W.Account>('/api/account'); return { id: r.account.id, members: r.members, invites: (r.invites ?? []).map((i) => ({ id: i.id, email: i.email, expiresAt: iso(i.expiresAt) })), connectors: r.connectors }; },
+  connectors: () => get<ConnectionsView>('/api/connectors'),
   inviteMember: (email: string) => req<unknown>('POST', '/api/account/members/invite', { email }),
   revokeMemberInvite: (id: string) => req<unknown>('DELETE', `/api/account/members/invites/${encodeURIComponent(id)}`),
   removeMember: (id: string) => req<unknown>('DELETE', `/api/account/members/${encodeURIComponent(id)}`),

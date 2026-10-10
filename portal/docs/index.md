@@ -11,6 +11,7 @@ Welcome to the Albena customer portal at account.albena.ai. This is where you ma
 
 - [Household](household.md) — Invite family members and manage roles
 - [Security](security.md) — Passkeys, sessions, and remote access
+- [Connectors](connectors.md) — What the portal shows about your connections
 - [Privacy](privacy.md) — What we store vs. what stays on your Hub
 
 ## Billing & purchases

@@ -51,6 +51,22 @@ export function handle(method: string, path: string, body: unknown): unknown {
     const ed = url.searchParams.get('edition') ?? 'mac';
     return { edition: ed, channel: 'stable', version: '1.8.2', manifestUrl: 'https://example.invalid/releases/1.8.2/manifest.json', signatureUrl: 'https://example.invalid/releases/1.8.2/manifest.json.sig', signature: null, signatureScheme: 'ssh-ed25519', namespace: 'albena-hub-release', sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', releasedAt: now - 6 * D };
   }
+  if (p === '/api/connectors') {
+    const hid = hubs[0]?.id ?? 'h1';
+    const cat = (id: string, name: string, category: string, auth: string, write: boolean, description: string, h: unknown[] = []) => ({ id, name, category, auth, write, description, hubs: h });
+    return {
+      categories: [{ id: 'home', label: 'Smart home' }, { id: 'work', label: 'Work & comms' }, { id: 'cloud', label: 'Cloud & infrastructure' }],
+      catalog: [
+        cat('home_assistant', 'Home Assistant', 'home', 'api_key', true, 'Devices and scenes', [{ hubId: hid, state: 'connected', access: 'write', kind: 'builtin', last_used_h: 2 }]),
+        cat('cameras', 'Cameras', 'home', 'local', false, 'Motion and snapshots', [{ hubId: hid, state: 'connected', access: 'read', kind: 'builtin', last_used_h: 0 }]),
+        cat('slack', 'Slack', 'work', 'oauth_local', true, 'Messages', [{ hubId: hid, state: 'needs_attention', access: 'read', kind: 'builtin', last_used_h: 70 }]),
+        cat('github', 'GitHub', 'work', 'oauth_device', true, 'Issues and workflows'),
+        cat('aws', 'AWS', 'cloud', 'api_key', true, 'Cloud resources', [{ hubId: hid, state: 'off', access: 'read', kind: 'builtin' }]),
+      ],
+      custom: [{ id: 'custom', label: 'Garage sensors', hubId: hid, state: 'connected', access: 'read', kind: 'mcp', last_used_h: 12 }],
+      hubs: hubs.map((x) => ({ id: x.id, name: x.name, online: true, lastSeen: now - 60, reported: true })),
+    };
+  }
   if (p === '/api/account') return { account: { id: 'a1', createdAt: now - 90 * D }, members, invites: pending, connectors: [] };
   if (p === '/api/account/members/invite') { pending = [...pending, { id: `i${pending.length + 2}`, email: String(b.email), createdAt: now, expiresAt: now + 14 * D }]; return { invite: pending.at(-1) }; }
   const mi = /^\/api\/account\/members\/invites\/([^/]+)$/.exec(p);
