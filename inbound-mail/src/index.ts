@@ -19,8 +19,8 @@ export interface AuthResult { spf: string; dkim: string; dmarc: string; present:
 /** Read the receiving MTA's verdicts from Authentication-Results. Absent header => present:false. */
 export function parseAuth(h: Headers): AuthResult {
   const raw = h.get("authentication-results") || "";
-  const pick = (k: string) => (raw.match(new RegExp(`\\b${k}=([a-z]+)`, "i"))?.[1] || "none").toLowerCase();
-  return { spf: pick("spf"), dkim: pick("dkim"), dmarc: pick("dmarc"), present: raw.length > 0 };
+  const pick = (re: RegExp) => (raw.match(re)?.[1] || "none").toLowerCase();
+  return { spf: pick(/\bspf=([a-z]+)/i), dkim: pick(/\bdkim=([a-z]+)/i), dmarc: pick(/\bdmarc=([a-z]+)/i), present: raw.length > 0 };
 }
 
 /** null = accept; otherwise the rejection text. */
