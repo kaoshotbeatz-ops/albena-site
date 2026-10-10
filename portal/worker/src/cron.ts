@@ -1,6 +1,7 @@
 import type { Bindings } from "./types";
 import { auditSystem, sealAudit } from "./auditchain";
 import { dropCodesIfInactive, recordHistory } from "./billing/entitlements";
+import { METRIC_RETAIN_S } from "./hubs/stats";
 import { IDLE_SECONDS } from "./auth/sessions";
 
 /** Hub rate windows are at most 10 minutes; keep a margin before deleting the counter. */
@@ -32,6 +33,7 @@ export async function prune(env: Bindings, ts = Math.floor(Date.now() / 1000)): 
     run("hubPairCodes", "DELETE FROM hub_pair_codes WHERE expires_at <= ? OR (used_at IS NOT NULL AND used_at <= ?)", ts - USED_CODE_RETAIN_S, ts - USED_CODE_RETAIN_S),
     run("hubNonces", "DELETE FROM hub_nonces WHERE expires_at <= ?", ts),
     run("hubRate", "DELETE FROM hub_rate WHERE window_start <= ?", ts - RATE_RETAIN_S),
+    run("hubMetrics", "DELETE FROM hub_metrics WHERE ts < ?", ts - METRIC_RETAIN_S),
   ]);
   return Object.fromEntries(out);
 }

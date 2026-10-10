@@ -1,5 +1,5 @@
 // Same-origin portal API client (see portal/CONTRACT.md). Session cookie is HttpOnly; no tokens in JS.
-import type { Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
+import type { HubDetail, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
@@ -54,6 +54,7 @@ namespace W {
   export interface WireHub {
     id: string; name: string; edition: 'mac' | 'nvidia'; profile: string; version: string; updateChannel: 'stable' | 'beta'; remoteAccess: boolean;
     health: { ok: boolean; services: [string, string][] } | null; lastSeen: number | null; createdAt: number;
+    online?: boolean; summary?: Hub['summary'];
   }
   export interface Release { edition: string; channel: string; version: string; manifestUrl: string; signatureUrl: string; signature: string | null; signatureScheme: string; namespace: string; sha256: string; releasedAt: number }
   export interface Account { account: { id: string; createdAt: number }; members: Member[]; invites?: { id: string; email: string; createdAt: number; expiresAt: number }[]; connectors: Connector[] }
@@ -61,12 +62,12 @@ namespace W {
 
 const iso = (s: number) => new Date(s * 1000).toISOString();
 const isoOrNull = (s: number | null) => (s === null ? null : iso(s));
-const ONLINE_WINDOW_S = 10 * 60; // hubs heartbeat every few minutes
+const ONLINE_WINDOW_S = 15 * 60; // hubs heartbeat every few minutes
 const PLAN_NAMES: Record<HeldPlan | 'none', string> = { none: 'No plan', byo: 'Bring your own', hub_mac: 'Hub for Mac', hub_nvidia: 'Hub for NVIDIA', estate: 'Estate', pilot: 'Pilot' };
 const ORDER_STATUS: Record<string, Order['status']> = { pending_fulfillment: 'processing', pending: 'processing', preparing: 'processing', shipped: 'shipped', delivered: 'delivered', cancelled_refunded: 'canceled', cancelled: 'canceled', awaiting_payment: 'processing', payment_failed: 'canceled' };
 const hub = (h: W.WireHub): Hub => ({
   id: h.id, name: h.name, edition: h.edition, version: h.version, profile: h.profile, updateChannel: h.updateChannel, remoteAccess: h.remoteAccess,
-  lastSeenAt: isoOrNull(h.lastSeen), online: h.lastSeen !== null && Date.now() / 1000 - h.lastSeen < ONLINE_WINDOW_S,
+  lastSeenAt: isoOrNull(h.lastSeen), online: h.online ?? (h.lastSeen !== null && Date.now() / 1000 - h.lastSeen < ONLINE_WINDOW_S), summary: h.summary ?? null,
   health: h.health === null ? null : h.health.ok ? 'ok' : 'degraded',
 });
 
@@ -102,6 +103,8 @@ export const api = {
   })),
   hubs: async (): Promise<Hub[]> => (await get<{ hubs: W.WireHub[] }>('/api/hubs')).hubs.map(hub),
   pairStart: async (): Promise<PairStart> => { const r = await req<{ code: string; expiresAt: number }>('POST', '/api/hubs/pair/start', {}); return { code: r.code, expiresAt: iso(r.expiresAt) }; },
+  hubDetail: async (id: string): Promise<HubDetail> => (await get<{ hub: HubDetail }>(`/api/hubs/${encodeURIComponent(id)}`)).hub,
+  hubMetrics: async (id: string, range: MetricRange): Promise<MetricPoint[]> => (await get<{ points: MetricPoint[] }>(`/api/hubs/${encodeURIComponent(id)}/metrics?range=${range}`)).points,
   hubPatch: async (id: string, patch: Partial<Pick<Hub, 'name' | 'updateChannel' | 'remoteAccess'>>): Promise<Hub> => hub((await req<{ hub: W.WireHub }>('PATCH', `/api/hubs/${encodeURIComponent(id)}`, patch)).hub),
   hubDelete: (id: string) => req<unknown>('DELETE', `/api/hubs/${encodeURIComponent(id)}`),
   release: async (edition: string): Promise<Release> => {

@@ -4,9 +4,10 @@ import { audit, requireUser } from "../auth";
 import { getEntitlement } from "../billing/entitlements";
 import { MAX_HUBS } from "../billing/plans";
 import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
+import { RANGES, type Range, isOnline, loadDetail, loadMetrics, parseStored, recordMetric, summarize } from "./stats";
 import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
-export const migrations: string[] = ["0300_hubs_init.sql"];
+export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql"];
 
 export const PAIR_TTL_S = 600;
 export const SKEW_S = 300;
@@ -87,6 +88,7 @@ const publicHub = (h: any) => ({
   id: h.id, name: h.name, edition: h.edition, profile: h.profile, version: h.version,
   updateChannel: h.update_channel, remoteAccess: !!h.remote_access,
   health: h.health_json ? JSON.parse(h.health_json) : null, lastSeen: h.last_seen, createdAt: h.created_at,
+  online: isOnline(h.last_seen), summary: summarize(parseStored(h.stats_json)),
 });
 
 export function mount(app: Hono<AppEnv>): void {
@@ -186,10 +188,29 @@ export function mount(app: Hono<AppEnv>): void {
     }
   });
 
+  // Static detail page (one page for every id; its script reads the id from the path).
+  app.get("/hubs/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/hub", c.req.url), { headers: c.req.raw.headers })));
+
   app.get("/api/hubs", requireUser, async (c) => {
     const u = c.get("user");
     const r = await c.env.DB.prepare("SELECT * FROM hubs WHERE account_id=? ORDER BY created_at").bind(u.accountId).all();
     return c.json({ hubs: (r.results ?? []).map(publicHub) });
+  });
+
+  // Detail + metrics: scoped to the caller's account (owner or member; view-as sessions are read-only members). Other accounts' Hubs answer 404.
+  app.get("/api/hubs/:id", requireUser, async (c) => {
+    const hub = await loadDetail(c.env.DB, c.req.param("id"), c.get("user").accountId);
+    if (!hub) return c.json({ error: "not found" }, 404);
+    const { accountId: _a, ...out } = hub;
+    return c.json({ hub: out });
+  });
+
+  app.get("/api/hubs/:id/metrics", requireUser, async (c) => {
+    const range = c.req.query("range") ?? "24h";
+    if (!(range in RANGES)) return c.json({ error: "bad range" }, 400);
+    const hub = await loadDetail(c.env.DB, c.req.param("id"), c.get("user").accountId);
+    if (!hub) return c.json({ error: "not found" }, 404);
+    return c.json(await loadMetrics(c.env.DB, hub.id, range as Range));
   });
 
   app.patch("/api/hubs/:id", requireUser, async (c) => {
@@ -218,6 +239,7 @@ export function mount(app: Hono<AppEnv>): void {
     const r = await c.env.DB.prepare("DELETE FROM hubs WHERE id=? AND account_id=?").bind(id, u.accountId).run();
     if (!r.meta?.changes) return c.json({ error: "not found" }, 404);
     await c.env.DB.prepare("DELETE FROM hub_nonces WHERE hub_id=?").bind(id).run();
+    await c.env.DB.prepare("DELETE FROM hub_metrics WHERE hub_id=?").bind(id).run();
     await audit(c, "hub.unpair", id);
     return c.json({ ok: true });
   });
@@ -231,8 +253,11 @@ export function mount(app: Hono<AppEnv>): void {
     const p = parseHeartbeat(body.json);
     if (!p.ok) return c.json({ error: p.error }, 400);
     const v = p.value;
-    await c.env.DB.prepare("UPDATE hubs SET version=?, profile=?, health_ok=?, health_json=?, last_seen=? WHERE id=?")
-      .bind(v.version, v.profile, v.health.ok ? 1 : 0, JSON.stringify(v.health), now(), hub.id).run();
+    const t = now();
+    // stats_json is the latest snapshot as validated (re-serialised from the parsed value, never the raw body); NULL when the Hub sent none.
+    await c.env.DB.prepare("UPDATE hubs SET version=?, profile=?, health_ok=?, health_json=?, stats_json=?, last_seen=? WHERE id=?")
+      .bind(v.version, v.profile, v.health.ok ? 1 : 0, JSON.stringify(v.health), v.stats ? JSON.stringify(v.stats) : null, t, hub.id).run();
+    if (v.stats) await recordMetric(c.env.DB, hub.id, v.stats, t);
     // server-side settings win; hub learns them here
     return c.json({ ok: true, updateChannel: hub.update_channel, remoteAccess: !!hub.remote_access });
   });

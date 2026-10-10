@@ -1,0 +1,8 @@
+---
+import Staff from '../../layouts/Staff.astro';
+---
+<!-- Served by the worker for every /support/hubs/<id>. Read-only. -->
+<Staff title="Hub" lead="Read-only Hub status and telemetry." section="customers">
+  <div id="root" aria-busy="true"><p class="loading">Loading…</p></div>
+  <script>import '../../scripts/support-hub';</script>
+</Staff>

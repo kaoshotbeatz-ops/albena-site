@@ -7,6 +7,7 @@ import { VIEWAS_COOKIE, VIEWAS_SECONDS, viewAsCookieOptions, now } from "../auth
 import { requireSupportAdmin } from "./access";
 import { mountInvites } from "./invites";
 import { mountOps } from "./ops";
+import { mountHubs } from "./hubs";
 
 export const migrations = ["0400_viewas.sql", "0500_customer_ops.sql"];
 const EXIT_URL = "https://albena.ai/admin";
@@ -49,6 +50,7 @@ export function mount(app: Hono<AppEnv>): void {
   app.get("/support/customers/:id", (c) => c.env.ASSETS.fetch(new Request(new URL("/support/customer", c.req.url), { headers: c.req.raw.headers })));
 
   mountOps(app);
+  mountHubs(app);
   mountInvites(app);
 
   // Authenticated by the view-as cookie itself (the customer UI is not behind Access). Allowed in read-only mode.

@@ -105,9 +105,9 @@ function usersPanel() {
 }
 
 function hubsPanel() {
-  const online = (s: number | null) => s !== null && Date.now() / 1000 - s < 600;
+  const online = (s: number | null) => s !== null && Date.now() / 1000 - s < 900;
   const hubs = d.hubs.length ? flush(panel('Hubs', table('Hubs', ['Name', 'Edition', 'Version', 'Health', 'Last seen', 'Paired'], d.hubs.map((x) => [
-    txt(x.name), txt(x.edition), h('span', { class: 'mono' }, x.version),
+    h('a', { href: `/support/hubs/${encodeURIComponent(x.id)}`, 'aria-label': `Open Hub ${x.name}` }, x.name), txt(x.edition), h('span', { class: 'mono' }, x.version),
     chip(x.health === null ? 'no report' : x.health.ok ? 'healthy' : 'degraded', x.health === null ? 'grey' : x.health.ok ? 'green' : 'amber'),
     txt(x.lastSeen ? `${at(x.lastSeen)}${online(x.lastSeen) ? ' (online)' : ''}` : 'never'), txt(at(x.createdAt)),
   ])))) : panel('Hubs', empty('No Hubs paired.'));
