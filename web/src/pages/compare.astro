@@ -2,39 +2,34 @@
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import { webPage } from '../data/seo';
-const title = 'Albena vs cloud assistants, Aldena and Home Assistant Assist';
-const description = 'A neutral comparison of Albena, a local-first private AI assistant, with cloud assistants, Aldena and Home Assistant Assist. Last verified October 9, 2026.';
-const cols = ['Albena', 'Cloud assistants (ChatGPT, Claude, Gemini, Copilot)', 'Aldena', 'Home Assistant Assist'];
-const rows: [string, string, string, string, string][] = [
-  ['Primary job', 'Personal and household assistant spanning home, media, work and systems you own.', 'General conversation, research, content and work productivity.', 'Cloud AI workforce for founders and agencies, organized into project and client rooms.', 'Private voice control of a smart home through Home Assistant.'],
-  ['Where it runs', 'On hardware you own (Mac or NVIDIA). Cloud models are optional and off unless you allow them.', 'Mostly provider-hosted. Apple pairs on-device processing with Private Cloud Compute.', 'Cloud service. Each room has isolated compute, credentials, integrations and memory.', 'Can run entirely on hardware you own, with local or cloud conversation models.'],
-  ['Voice', 'Core: “Hey Albena”, designed for across-the-room conversation.', 'Often polished, especially on phones and provider-supported devices.', 'Mainly a visual project interface; public materials do not present ambient voice as a core feature.', 'Core, with a fully local speech pipeline and supported voice hardware.'],
-  ['Smart home', 'Broad: Home Assistant, Hue, WiZ, Nest, TVs and cameras.', 'Varies. Alexa, Siri and Gemini have native ecosystem reach; general chat assistants are less unified.', 'Not positioned for household or smart-home control.', 'The strongest local specialist for Home Assistant.'],
-  ['Work and IT connectors', 'Cross-vendor set including Google Workspace, Teams, Slack, Jira, ServiceNow and GitHub, plus any REST API or MCP server.', 'Strong inside a vendor’s own ecosystem; cross-vendor breadth and write support vary.', 'Ten public account connectors, including GitHub, Gmail, Jira, Linear, Notion, Slack and Vercel.', 'Focused on the home rather than work systems.'],
-  ['Approval before changes', 'Every state-changing action is proposed first. Risky actions add a PIN, change record, rollback information and audit trail.', 'Product-dependent. Enterprise offerings can add substantial admin controls.', 'Per-tool allow, ask or deny policies; agents do not merge their own pull requests.', 'Depends on how the home is configured.'],
-  ['Memory control', 'Owner can inspect, correct and delete memory; stored on their hardware first.', 'Improving but variable. ChatGPT lets users review and delete memories.', 'Private per-agent memory plus shared room memory; entries are visible and correctable.', 'Depends on the conversation model and configuration chosen.'],
-  ['Pricing', 'Not published yet; early-access waitlist.', 'Commonly free plus subscription tiers.', 'Starter $99 and Business $249 per active member per month, plus prepaid usage credits (as listed October 9, 2026).', 'Home Assistant is open-source software you run yourself.'],
+const title = 'Albena vs cloud assistants and Home Assistant Assist';
+const description = 'A neutral comparison of Albena, a local-first private AI assistant, with cloud assistants and Home Assistant Assist. Last verified October 9, 2026.';
+const cols = ['Albena', 'Cloud assistants (ChatGPT, Claude, Gemini, Copilot)', 'Home Assistant Assist'];
+const rows: [string, string, string, string][] = [
+  ['Primary job', 'Personal and household assistant spanning home, media, work and systems you own.', 'General conversation, research, content and work productivity.', 'Private voice control of a smart home through Home Assistant.'],
+  ['Where it runs', 'On hardware you own (Mac or NVIDIA). Cloud models are optional and off unless you allow them.', 'Mostly provider-hosted. Apple pairs on-device processing with Private Cloud Compute.', 'Can run entirely on hardware you own, with local or cloud conversation models.'],
+  ['Voice', 'Core: “Hey Albena”, designed for across-the-room conversation.', 'Often polished, especially on phones and provider-supported devices.', 'Core, with a fully local speech pipeline and supported voice hardware.'],
+  ['Smart home', 'Broad: Home Assistant, Hue, WiZ, Nest, TVs and cameras.', 'Varies. Alexa, Siri and Gemini have native ecosystem reach; general chat assistants are less unified.', 'The strongest local specialist for Home Assistant.'],
+  ['Work and IT connectors', 'Cross-vendor set including Google Workspace, Teams, Slack, Jira, ServiceNow and GitHub, plus any REST API or MCP server.', 'Strong inside a vendor’s own ecosystem; cross-vendor breadth and write support vary.', 'Focused on the home rather than work systems.'],
+  ['Approval before changes', 'Changes follow your approval rules: low-risk ones can be pre-approved, while locks, messages and money always ask. Risky actions add a PIN, change record, rollback information and audit trail.', 'Product-dependent. Enterprise offerings can add substantial admin controls.', 'Depends on how the home is configured.'],
+  ['Memory control', 'Owner can inspect, correct and delete memory; stored on their hardware first.', 'Improving but variable. ChatGPT lets users review and delete memories.', 'Depends on the conversation model and configuration chosen.'],
+  ['Pricing', 'Not published yet; early-access waitlist.', 'Commonly free plus subscription tiers.', 'Home Assistant is open-source software you run yourself.'],
 ];
 const sources: [string, string][] = [
   ['ChatGPT memory controls (OpenAI)', 'https://help.openai.com/en/articles/8590148-memory-in-chatgpt'],
   ['ChatGPT Voice (OpenAI)', 'https://help.openai.com/en/articles/20001274/'],
   ['Apple Intelligence privacy', 'https://www.apple.com/privacy/features/'],
   ['Microsoft Copilot connectors overview', 'https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/overview'],
-  ['Aldena product', 'https://aldena.ai/'],
-  ['Aldena integrations', 'https://aldena.ai/integrations'],
-  ['Aldena approval gates', 'https://aldena.ai/features/human-in-the-loop'],
-  ['Aldena memory', 'https://aldena.ai/features/agent-memory'],
-  ['Aldena pricing', 'https://aldena.ai/pricing'],
   ['Home Assistant Assist voice control', 'https://www.home-assistant.io/voice_control/'],
   ['Home Assistant fully local voice setup', 'https://www.home-assistant.io/voice_control/voice_remote_local_assistant'],
 ];
 const page = { ...webPage('/compare', title, description), dateModified: '2026-10-09' };
 ---
-<Base title="Albena vs cloud assistants, Aldena, Assist" description={description} crumb="Compare" schema={[page]}>
+<Base title="Albena vs cloud assistants and Assist" description={description} crumb="Compare" schema={[page]}>
   <div class="wrap page">
     <header class="head">
       <p class="eyebrow">Compare</p>
-      <h1 class="h-section">Albena compared with cloud assistants, Aldena and Home Assistant Assist</h1>
+      <h1 class="h-section">Albena compared with cloud assistants and Home Assistant Assist</h1>
       <p class="sub">Albena is a private, local-first AI assistant for your home and life. Here is how she differs from other kinds of assistant, and when another choice is better. Last verified <time datetime="2026-10-09">October 9, 2026</time> against public product pages; capabilities change quickly, so follow the source links.</p>
     </header>
 
@@ -42,7 +37,7 @@ const page = { ...webPage('/compare', title, description), dateModified: '2026-1
       <h2 id="glance">How does Albena compare at a glance?</h2>
       <div class="scroll" role="region" aria-label="Comparison table" tabindex="0">
         <table>
-          <caption class="sr">Albena compared with cloud assistants, Aldena and Home Assistant Assist, last verified October 9, 2026</caption>
+          <caption class="sr">Albena compared with cloud assistants and Home Assistant Assist, last verified October 9, 2026</caption>
           <thead><tr><th scope="col"><span class="sr">Dimension</span></th>{cols.map((c) => <th scope="col">{c}</th>)}</tr></thead>
           <tbody>
             {rows.map((r) => <tr><th scope="row">{r[0]}</th>{r.slice(1).map((c) => <td>{c}</td>)}</tr>)}
@@ -57,11 +52,6 @@ const page = { ...webPage('/compare', title, description), dateModified: '2026-1
       <p>The difference is who controls the operating layer. Albena handles suitable requests on your own hardware, tells you when a request needs the cloud, keeps memory visible and deletable, and asks before sending, changing, purchasing or unlocking anything. Cloud assistants have their own privacy controls; Albena’s distinction is putting local models, optional cloud models, personal systems and change governance in one owner-controlled assistant.</p>
     </section>
 
-    <section aria-labelledby="aldena">
-      <h2 id="aldena">How is Albena different from Aldena?</h2>
-      <p>The names are similar; the products are not. Aldena describes itself as an AI workforce for founders and agencies, with agents working in isolated cloud project rooms. Albena is a personal assistant for an individual, a household or an owner-operated business, centered on natural voice, local execution, smart-home and media control, and personal memory.</p>
-      <p>Choose Aldena to staff cloud project rooms with specialist software-delivery agents. Choose Albena for one trusted assistant with governed reach across the real life and systems you own.</p>
-    </section>
 
     <section aria-labelledby="assist">
       <h2 id="assist">How is Albena different from Home Assistant Assist?</h2>
