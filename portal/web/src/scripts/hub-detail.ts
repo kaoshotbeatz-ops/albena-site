@@ -2,7 +2,8 @@
 import { api } from '../lib/api';
 import { staff } from '../lib/staff';
 import { h, must, chip, dot, ago, fmtDateTime, failInto, empty, table, panel, toast } from '../lib/ui';
-import type { HubDetail, HubStats, MetricPoint, MetricRange } from '../lib/types';
+import { connectionsPanel } from '../lib/connections';
+import type { ConnectionsView, HubDetail, HubStats, MetricPoint, MetricRange } from '../lib/types';
 
 const staffMode = location.pathname.startsWith('/support/');
 const id = decodeURIComponent(location.pathname.split('/')[staffMode ? 3 : 2] ?? '');
@@ -160,14 +161,18 @@ function internetPanel(x: HubDetail) {
   ]);
 }
 
-function render(x: HubDetail) {
+function render(x: HubDetail, conns: ConnectionsView | null) {
   document.title = `${x.name} | ${staffMode ? 'Hub (staff)' : 'Hubs'} | Albena account`;
   const head = h('div', { class: 'row' }, dot(x.online ? 'ok' : 'bad'), h('h2', { class: 'hub-title' }, x.name), staffMode ? chip('read-only', 'grey') : null,
     h('a', { class: 'btn btn-sm', href: staffMode && x.accountId ? `/support/customers/${encodeURIComponent(x.accountId)}` : '/hubs' }, staffMode ? 'Back to customer' : 'All Hubs'));
   const banner = x.online ? null : h('div', { class: 'banner is-warn', role: 'alert' }, h('span', {}, `This Hub is offline. It last reported ${x.lastSeen ? ago(iso(x.lastSeen)) : 'never'}. Numbers below are its last known state.`));
-  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), internetPanel(x), servicesPanel(x),
+  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), internetPanel(x), conns ? connectionsPanel(conns, x.id, staffMode) : null, servicesPanel(x),
     h('div', { class: 'grid-2' }, hardwarePanel(x.stats), aiPanel(x.stats)), activityPanel(x.stats), chartsPanel()));
 }
 
 if (!id) failInto(root, new Error('missing id'));
-else fetchHub().then((x) => { root.setAttribute('aria-busy', 'false'); render(x); }).catch((e) => failInto(root, e));
+else fetchHub().then(async (x) => {
+  // The Connections panel is optional: if it cannot load, the rest of the page still renders.
+  const conns = await (staffMode ? (x.accountId ? staff.connectors(x.accountId) : Promise.reject(new Error('no account'))) : api.connectors()).catch(() => null);
+  root.setAttribute('aria-busy', 'false'); render(x, conns);
+}).catch((e) => failInto(root, e));

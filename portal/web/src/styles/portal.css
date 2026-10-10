@@ -289,3 +289,21 @@ details.panel[open] > summary { border-bottom: 1px solid var(--line); }
 .lg.s1::before { background: var(--acc-hi); } .lg.s2::before { background: var(--green); }
 .chart-data summary { cursor: pointer; font-size: 12.5px; color: var(--fg-2); }
 .chart-data .tbl-wrap { max-height: 240px; overflow: auto; margin-top: 8px; }
+
+/* Connectors (visibility only) */
+.conn-filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+@media (max-width: 640px) { .conn-filters { grid-template-columns: 1fr; } }
+.conn-cat-h { font-size: 13px; font-weight: 600; color: var(--mut); letter-spacing: 0.02em; margin: 8px 0; }
+.conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.conn-card { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.conn-card .main { display: grid; gap: 2px; }
+.conn-card .name { font-weight: 560; }
+.conn-card .sub, .conn-states .sub { color: var(--mut); font-size: 12.5px; }
+.conn-states { display: grid; gap: 8px; }
+.conn-hub { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.conn-hubname { font-size: 12.5px; color: var(--fg-2); font-weight: 520; flex-basis: 100%; }
+.conn-hub > .sub:last-child { flex-basis: 100%; }
+.conn-actions { margin-top: 2px; }
+.tip { display: inline-block; cursor: not-allowed; border-radius: 8px; }
+.tip:focus-visible { outline: 2px solid var(--acc-hi); outline-offset: 2px; }
+.conn-list .sub { overflow-wrap: anywhere; }

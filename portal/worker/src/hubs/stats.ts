@@ -1,5 +1,6 @@
 // Hub telemetry: latest snapshot (hubs.stats_json), a thin time series (hub_metrics) and the read endpoints' shared queries.
 import type { HubStats } from "./schema";
+import type { ConnectorStat } from "../connectors/schema";
 
 export const ONLINE_S = 15 * 60; // a Hub is online when its last heartbeat is newer than this
 export const METRIC_GAP_S = 5 * 60; // at most one stored point per Hub per 5 minutes
@@ -15,6 +16,11 @@ const pct = (used: number | undefined, total: number | undefined) => (used !== u
 export function parseStored(json: string | null): HubStats | null {
   if (!json) return null;
   try { return JSON.parse(json) as HubStats; } catch { return null; }
+}
+
+export function parseConnectorsStored(json: string | null): ConnectorStat[] | null {
+  if (!json) return null;
+  try { return JSON.parse(json) as ConnectorStat[]; } catch { return null; }
 }
 
 /** The compact numbers shown on list cards. */
@@ -65,7 +71,7 @@ export async function loadDetail(db: D1Database, hubId: string, accountId: strin
   return {
     id: row.id, accountId: row.account_id as string, name: row.name, edition: row.edition, profile: row.profile, version: row.version,
     updateChannel: row.update_channel, remoteAccess: !!row.remote_access,
-    health: row.health_json ? JSON.parse(row.health_json) : null, stats: parseStored(row.stats_json),
+    health: row.health_json ? JSON.parse(row.health_json) : null, stats: parseStored(row.stats_json), connectors: parseConnectorsStored(row.connectors_json),
     lastSeen: row.last_seen as number | null, online: isOnline(row.last_seen), createdAt: row.created_at,
     ...(withNet ? { publicNetwork: {
       ip: row.net_ip ?? null, isp: row.net_isp ?? null, asn: row.net_asn ?? null, city: row.net_city ?? null, region: row.net_region ?? null,

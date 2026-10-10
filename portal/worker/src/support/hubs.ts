@@ -1,6 +1,7 @@
 import type { Hono } from "hono";
 import type { AppEnv } from "../types";
 import { audit } from "../auditchain";
+import { loadConnectors } from "../connectors";
 import { RANGES, loadDetail, loadMetrics, type Range } from "../hubs/stats";
 
 /** Read-only Hub telemetry for staff, any account. Mounted behind the Cloudflare Access + allowlist gate. */
@@ -20,5 +21,13 @@ export function mountHubs(app: Hono<AppEnv>): void {
     const hub = await loadDetail(c.env.DB, c.req.param("id"), null);
     if (!hub) return c.json({ error: "not_found" }, 404);
     return c.json(await loadMetrics(c.env.DB, hub.id, range as Range));
+  });
+
+  // Same merged view the customer gets, for any account; audited, read-only.
+  app.get("/api/support/accounts/:id/connectors", async (c) => {
+    const id = c.req.param("id");
+    if (!(await c.env.DB.prepare("SELECT 1 AS x FROM accounts WHERE id = ?").bind(id).first())) return c.json({ error: "not_found" }, 404);
+    await audit(c, "support.connectors.view", id);
+    return c.json(await loadConnectors(c.env.DB, id));
   });
 }

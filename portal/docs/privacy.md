@@ -8,6 +8,7 @@ The Albena customer portal (account.albena.ai) stores only account and billing i
 - Payment method information (handled by Stripe, not stored by us)
 - Account settings (plan, household members, update preferences)
 - Hub configuration (name, pairing status, update channel)
+- Connector names, on/off state, read or write access and hours since last use, as reported by your Hub (never credentials, addresses or content; see [Connectors](connectors.md))
 - Your Hub's current public IP address and approximate location (derived by our network provider), shown to the account owner and to authorized support staff to troubleshoot connectivity; we keep only the current value
 
 The portal does **not** store:
