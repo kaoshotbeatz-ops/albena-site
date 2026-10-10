@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "albena-inbound-mail",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "observability": { "enabled": false }, // message content/addresses must not land in logs
+  "routes": [{ "pattern": "mail-files.albena.ai", "custom_domain": true }],
+  "r2_buckets": [{ "binding": "MAIL", "bucket_name": "albena-inbound-mail" }],
+  // Read-only lookup of the sender's customer account.
+  "d1_databases": [{ "binding": "PORTAL_DB", "database_name": "albena_portal", "database_id": "e4fa18b9-bfa6-4d22-a310-1b6929928002" }],
+  // Every 10 min: replay messages whose ticket POST failed (raw copy is already in R2).
+  "triggers": { "crons": ["*/10 * * * *"] },
+  "vars": {
+    "OBVERA_URL": "https://ohllc-obvera.dbaomarhuertasllc.com/api/obvera/client",
+    // recipient -> source tag. Anything not listed is rejected.
+    "ROUTES": "support@albena.ai=albena-support,accounts@albena.ai=albena-support,billing@albena.ai=albena-support",
+    "LENIENT_DOMAINS": ""
+  }
+  // Secrets: OBVERA_KEY (dedicated Obvera API key), SIGNING_KEY (HMAC for attachment links)
+}
