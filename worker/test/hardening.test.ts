@@ -248,23 +248,19 @@ describe("SI-12 retention", () => {
 });
 
 describe("integrity + status endpoints", () => {
-  it("GET /api/status is public and exposes only booleans/timestamps", async () => {
-    let res = await call("/api/status");
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, lastBackupOk: false, lastVerifiedAt: null });
-    await runBackup(env);
-    await runVerify(env);
-    res = await call("/api/status");
-    const body = (await res.json()) as any;
-    expect(Object.keys(body).sort()).toEqual(["lastBackupOk", "lastVerifiedAt", "ok"]);
-    expect(body.lastBackupOk).toBe(true);
-    expect(typeof body.lastVerifiedAt).toBe("string");
+  it("GET /api/status is not public: 404 for anonymous callers (ALB-WEB-2)", async () => {
+    for (const path of ["/api/status", "/api/status/", "/api/backup", "/api/backup-status", "/api/health/backup"]) {
+      const res = await call(path);
+      expect(res.status, path).toBe(404);
+      expect(await res.text(), path).not.toMatch(/lastBackup|lastVerified/);
+    }
   });
 
-  it("GET /api/status reports false after a failed backup", async () => {
+  it("backup status is still available to admins on /api/admin/integrity", async () => {
     await runBackup(env);
-    await add("backup.failed");
-    expect(((await (await call("/api/status")).json()) as any).lastBackupOk).toBe(false);
+    await runVerify(env);
+    // Without Access the same data is denied; the admin dashboard reads it behind Access.
+    expect((await call("/api/admin/integrity")).status).toBe(403);
   });
 
   it("GET /api/admin/integrity is denied without Access", async () => {

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import RelatedLinks from '../../components/RelatedLinks.astro';
 import { controls } from '../../data/controls';
+import { APPROVAL_POLICY } from '../../data/approval';
 const count = (s: string) => controls.filter((c) => c.status === s).length;
 const frameworks = [
   { name: 'NIST SP 800-53 Moderate', tag: 'Federal control catalog', status: 'In progress', tone: 'amber', pct: 'p35',
@@ -15,7 +16,7 @@ const frameworks = [
 ];
 const principles = [
   ['Local first', 'Everyday requests, audio and memory stay on hardware in your home wherever possible.'],
-  ['Approval before action', 'Reads are instant. Changes wait for you, and high-risk changes need a change record and PIN.'],
+  ['Approval before action', APPROVAL_POLICY],
   ['Least privilege', 'Albena gets only the access you connect, with per-user permission tiers.'],
   ['Encrypted in transit', 'This site is HTTPS only, and traffic to any cloud service we call is encrypted.'],
   ['Auditable', 'A full audit log of what was asked and done, with rollback information.'],
@@ -52,25 +53,15 @@ const principles = [
   <section class="band" aria-labelledby="live-h" id="live">
     <div class="wrap live-grid">
       <div>
-        <h2 id="live-h" class="h-section">Backups, integrity &amp; your data</h2>
-        <p class="sub">Account data in our cloud portal is exported nightly to private, encrypted storage with checksums and verified weekly. A full restore drill is still on our list.</p>
+        <h2 id="live-h" class="h-section">Your data</h2>
+        <p class="sub">Our own safeguards are encrypted, monitored and recorded in an audit log. What has and has not been independently checked is shown below, control by control.</p>
       </div>
       <div>
-        <h3 class="chg-h">Recent improvements</h3>
-        <ul class="chg">
-          <li>Tamper-evident audit log: each entry is hash-chained to the one before it.</li>
-          <li>Encrypted nightly backups with checksums and weekly verification.</li>
-          <li>Automated security scans of our code and live site.</li>
-          <li>HTTPS only with HSTS preload, TLS 1.2 or newer, and a strict content security policy.</li>
-          <li>Administrative tools require strong, owner-only authentication; code changes go through required checks and a production approval step.</li>
-          <li>Customer portal at account.albena.ai with email code or passkey sign-in and an independent security review.</li>
-          <li>Outbound email signed with SPF and DKIM under a DMARC policy.</li>
-        </ul>
         <h3 class="chg-h">What lives where</h3>
         <ul class="chg">
           <li><b>On your Hub:</b> conversations, memory, connector credentials, home and device data, and the audit log of actions.</li>
           <li><b>In our cloud portal:</b> your account, license, billing and Hub registration only.</li>
-          <li><b>Support access:</b> with your request, support can open a read-only, time-limited, audited view of your portal account. It does not include anything stored on your Hub.</li>
+          <li><b>Support:</b> with your request, support can open a read-only, time-limited, audited view of your portal account. It does not include anything stored on your Hub.</li>
         </ul>
       </div>
     </div>
@@ -130,10 +121,6 @@ const principles = [
   .reviewed { margin-top: 12px; color: var(--mut); font-size: 13.5px; }
   .live-grid { display: grid; gap: 32px; }
   @media (min-width: 900px) { .live-grid { grid-template-columns: 1.2fr 1fr; } }
-  .bk { margin-top: 20px; display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line-2); border-radius: 12px; font-size: 14.5px; color: var(--fg-2); }
-  .bk .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mut); }
-  .bk[data-state="ok"] .dot { background: #4ade80; }
-  .bk[data-state="warn"] .dot { background: #f4d675; }
   .fine { margin-top: 12px; color: var(--mut); font-size: 13.5px; max-width: 60ch; }
   .chg-h { font-size: 17px; margin-bottom: 10px; }
   .chg { display: grid; gap: 8px; color: var(--mut); font-size: 14.5px; padding-left: 18px; list-style: disc; }

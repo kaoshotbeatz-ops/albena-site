@@ -1,4 +1,5 @@
 ---
+import { APPROVAL_POLICY } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import { categories } from '../data/connectors';
@@ -10,18 +11,18 @@ const users = [
   { k: 'Business & IT', t: 'Tickets, cloud and identity', ask: 'Hey Albena, who still has admin access in Azure?', d: 'Read across cloud, identity and ticketing instantly. Changes go to you, with a change record and PIN when risk is high.', tags: ['Cloud', 'Identity & IT'] },
 ];
 ---
-<Base title="Connectors: Home Assistant, Hue, Slack and more" description="Albena connects Home Assistant, Hue, Google Workspace, Slack, Jira, GitHub, AWS and more. Reads are instant; every change needs your approval.">
+<Base title="Connectors: Home Assistant, Hue, Slack and more" description="Albena connects Home Assistant, Hue, Google Workspace, Slack, Jira, GitHub, AWS and more. Reads run freely; risky actions need approval.">
   <section class="top">
     <div class="wrap top-grid">
       <div>
         <p class="eyebrow">Connectors</p>
         <h1 class="h-display">Your AI,<br /> your systems.</h1>
-        <p class="lead">Albena plugs into the tools you already run, at home and at work. She reads them instantly, and anything that changes something goes to you for approval first.</p>
+        <p class="lead">Albena plugs into the tools you already run, at home and at work. She reads them instantly. {APPROVAL_POLICY}</p>
         <p class="status"><span class="chip green">Available in early access</span> <span class="count">{total} connectors in {categories.length} categories, plus your own</span></p>
       </div>
       <aside class="legend" aria-label="How access works">
         <div><b>Read</b><span>Instant. Ask about anything connected.</span></div>
-        <div><b>Change</b><span>Proposed to you. Nothing happens until you approve.</span></div>
+        <div><b>Change</b><span>Low-risk actions follow your rules. Messages, purchases, locks and anything risky wait for your approval.</span></div>
         <div><b>High risk</b><span>Needs a change record and your PIN.</span></div>
       </aside>
     </div>

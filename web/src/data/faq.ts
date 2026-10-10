@@ -1,3 +1,4 @@
+import { APPROVAL_POLICY } from './approval';
 // Single source for the /faq page, its FAQPage schema and llms-full.txt.
 // Answer-first: the first sentence answers the question. Facts only; every
 // claim here is also stated on the product pages it links to.
@@ -9,7 +10,7 @@ export const faqGroups: FaqGroup[] = [
     id: 'basics',
     title: 'The basics',
     items: [
-      { q: 'What is Albena?', a: 'Albena is a private, local-first AI assistant for your home and life, built by Omar Huertas LLC. You say “Hey Albena” and she can help with your home, calendar, mail, media and work tools. She runs on hardware you own, uses local models first, and asks for your approval before she changes anything.', more: ['See what she does', '/features'] },
+      { q: 'What is Albena?', a: 'Albena is a private, local-first AI assistant for your home and life, built by Omar Huertas LLC. You say “Hey Albena” and she can help with your home, calendar, mail, media and work tools. She runs on hardware you own, uses local models first, and asks before anything that matters.', more: ['See what she does', '/features'] },
       { q: 'What is a private home AI assistant?', a: 'A private home AI assistant is an assistant that handles your requests on equipment in your home instead of sending everything to a provider’s servers. Albena is built this way: everyday requests, audio, device data and memory are processed on hardware you own wherever possible, and a cloud model is used only if a task needs it and you allow it.', more: ['How it works', '/how-it-works'] },
       { q: 'What does local-first mean for Albena?', a: 'Local-first means Albena tries to handle each request on your own hardware before anything else. She uses local models and, on a Mac, Apple on-device intelligence. That keeps requests fast and private, and everyday requests keep working when the internet is down.', more: ['How it works', '/how-it-works'] },
       { q: 'Is Albena available now?', a: 'Albena is in early access and is not yet generally available. We invite people from the waitlist in small groups and email waitlist members before anything changes for them. There is no fixed public launch date yet.', more: ['Join the waitlist', '/waitlist'] },
@@ -31,18 +32,18 @@ export const faqGroups: FaqGroup[] = [
     id: 'home',
     title: 'Smart home and connectors',
     items: [
-      { q: 'Can Albena control Home Assistant?', a: 'Yes. Home Assistant is one of Albena’s connectors, for devices and scenes. Albena also connects to Philips Hue, WiZ, Google Nest thermostats, LG and other smart TVs, and cameras, and any change she proposes still needs your approval.', more: ['All connectors', '/connectors'] },
+      { q: 'Can Albena control Home Assistant?', a: 'Yes. Home Assistant is one of Albena’s connectors, for devices and scenes. Albena also connects to Philips Hue, WiZ, Google Nest thermostats, LG and other smart TVs, and cameras, and the same approval policy applies: ' + APPROVAL_POLICY, more: ['All connectors', '/connectors'] },
       { q: 'How is Albena different from Home Assistant Assist?', a: 'Home Assistant Assist is an excellent local voice interface focused on Home Assistant, while Albena is a broader assistant that treats Home Assistant as one connector among many. Albena also covers calendars, mail, collaboration tools, media libraries, cloud and IT systems and personal memory under one approval and audit model. Choose Assist if your goal is an open, local voice interface for Home Assistant.', more: ['Compare Albena with alternatives', '/compare'] },
       { q: 'What can Albena connect to besides the smart home?', a: 'Albena connects to media (Jellyfin, Navidrome, Immich, YouTube), work tools (Google Workspace, Microsoft Teams, Slack, Jira, ServiceNow, GitHub, LinkedIn, Meta pages) and cloud and IT systems (AWS, Azure, Cloudflare, VMware, Docker, Kubernetes, Tailscale, AdGuard, Active Directory and LDAP).', more: ['Connector catalog', '/connectors'] },
-      { q: 'Can I connect my own tools to Albena?', a: 'Yes. You can add any REST API or MCP server as your own connector. Connected tools follow the same rules as built-in ones: reads are instant and changes need your approval.', more: ['Connectors', '/connectors'] },
+      { q: 'Can I connect my own tools to Albena?', a: 'Yes. You can add any REST API or MCP server as your own connector. Connected tools follow the same rules as built-in ones: the same approval policy applies: ' + APPROVAL_POLICY, more: ['Connectors', '/connectors'] },
     ],
   },
   {
     id: 'control',
     title: 'Approvals, memory and privacy',
     items: [
-      { q: 'Does Albena ask before taking actions?', a: 'Yes. Reads are instant, but anything that changes something is proposed to you first, shown exactly as it will run, and runs only once you approve. Approval applies to the specific action in front of you, not to future changes.', more: ['Approval architecture', '/how-it-works'] },
-      { q: 'What extra protection do risky actions get?', a: 'High-risk actions also need a change record and your PIN, and Albena saves rollback information and writes everything to an audit log. The log records what was asked, what was approved and what was done.', more: ['Controls and evidence', '/trust/controls'] },
+      { q: 'Does Albena ask before taking actions?', a: 'Yes. ' + APPROVAL_POLICY + ' Approval applies to the specific action in front of you, not to future changes.', more: ['Approval architecture', '/how-it-works'] },
+      { q: 'What extra protection do risky actions get?', a: 'The highest-risk actions need your PIN and a change record, and Albena saves rollback information and writes everything to an audit log. The log records what was asked, what was approved and what was done.', more: ['Controls and evidence', '/trust/controls'] },
       { q: 'Can I see and delete what Albena remembers?', a: 'Yes. Albena remembers your people, routines and preferences so you do not repeat yourself, and every memory can be viewed, corrected or deleted, one item or all of it. Memory is stored on your hardware first.', more: ['Privacy policy', '/privacy'] },
       { q: 'Does Albena sell my data or use it for advertising?', a: 'No. We never sell your data and never use conversations for advertising. The albena.ai website sets no cookies of its own and runs no analytics or advertising trackers.', more: ['Privacy policy', '/privacy'] },
       { q: 'When does Albena use a cloud AI model?', a: 'Only when a task needs a larger model and you allow it. Cloud models are off by default, Albena tells you when she reaches for one, and when allowed they are billed at cost.', more: ['How it works', '/how-it-works'] },

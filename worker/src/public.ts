@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "./types";
 import { json } from "./security";
-import { statusSummary } from "./maintenance";
 import { sealAudit } from "./auditchain";
 import { audit, clean, clientIp, hashIp, normalizeEmail, notify, verifyTurnstile } from "./util";
 
@@ -153,8 +152,4 @@ publicApi.post("/support", async (c) => {
   return json({ ok: true, id }, 201);
 });
 
-/** AU-6/SI-4: public, PII-free health of backups. No counts. */
-publicApi.get("/status", async (c) => {
-  const s = await statusSummary(c.env);
-  return json({ ok: true, lastBackupOk: s.lastBackupOk, lastVerifiedAt: s.lastVerifiedAt });
-});
+// Backup/integrity status is internal only: GET /api/admin/integrity (Cloudflare Access). There is no public status endpoint.

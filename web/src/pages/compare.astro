@@ -1,4 +1,5 @@
 ---
+import { APPROVAL_POLICY } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
 import { webPage } from '../data/seo';
@@ -11,7 +12,7 @@ const rows: [string, string, string, string][] = [
   ['Voice', 'Core: “Hey Albena”, designed for across-the-room conversation.', 'Often polished, especially on phones and provider-supported devices.', 'Core, with a fully local speech pipeline and supported voice hardware.'],
   ['Smart home', 'Broad: Home Assistant, Hue, WiZ, Nest, TVs and cameras.', 'Varies. Alexa, Siri and Gemini have native ecosystem reach; general chat assistants are less unified.', 'The strongest local specialist for Home Assistant.'],
   ['Work and IT connectors', 'Cross-vendor set including Google Workspace, Teams, Slack, Jira, ServiceNow and GitHub, plus any REST API or MCP server.', 'Strong inside a vendor’s own ecosystem; cross-vendor breadth and write support vary.', 'Focused on the home rather than work systems.'],
-  ['Approval before changes', 'Changes follow your approval rules: low-risk ones can be pre-approved, while locks, messages and money always ask. Risky actions add a PIN, change record, rollback information and audit trail.', 'Product-dependent. Enterprise offerings can add substantial admin controls.', 'Depends on how the home is configured.'],
+  ['Approval before changes', APPROVAL_POLICY, 'Product-dependent. Enterprise offerings can add substantial admin controls.', 'Depends on how the home is configured.'],
   ['Memory control', 'Owner can inspect, correct and delete memory; stored on their hardware first.', 'Improving but variable. ChatGPT lets users review and delete memories.', 'Depends on the conversation model and configuration chosen.'],
   ['Pricing', 'Not published yet; early-access waitlist.', 'Commonly free plus subscription tiers.', 'Home Assistant is open-source software you run yourself.'],
 ];
@@ -66,7 +67,7 @@ const page = { ...webPage('/compare', title, description), dateModified: '2026-1
 
     <section aria-labelledby="gaps">
       <h2 id="gaps">Where is Albena still growing?</h2>
-      <p>Albena is in early access. Native iPhone and Mac apps, mobile notifications and approvals, published pricing, more first-party connectors, complete control evidence and independent security and accessibility assessments are still in progress. No certification is claimed. See the <a class="ul" href="/roadmap">roadmap</a>, the <a class="ul" href="/trust">trust center</a> and the <a class="ul" href="/changelog">changelog</a>.</p>
+      <p>Albena is in early access. Native iPhone and Mac apps, mobile notifications and approvals, published pricing, more first-party connectors, complete control evidence and independent security and accessibility assessments are still in progress. No certification is claimed. See the <a class="ul" href="/roadmap">roadmap</a> and the <a class="ul" href="/trust">trust center</a>.</p>
     </section>
 
     <section aria-labelledby="choose">
