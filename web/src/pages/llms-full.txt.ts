@@ -43,7 +43,7 @@ ${faq}
 
 ## Comparisons
 
-Albena vs cloud assistants (ChatGPT, Claude, Gemini, Copilot), Aldena and Home Assistant Assist, with sources and a last-verified date: ${abs('/compare')}
+Albena vs cloud assistants (ChatGPT, Claude, Gemini, Copilot) and Home Assistant Assist, with sources and a last-verified date: ${abs('/compare')}
 
 ## Recent changelog entries
 

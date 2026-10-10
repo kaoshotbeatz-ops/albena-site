@@ -22,7 +22,7 @@ Facts, stated plainly:
 
 ## Answers and comparisons
 - [FAQ](https://albena.ai/faq): short answers, including running Albena on a Mac or NVIDIA hardware, Home Assistant, approvals and privacy
-- [Compare](https://albena.ai/compare): Albena vs cloud assistants, Aldena and Home Assistant Assist (last verified 2026-10-09, with sources)
+- [Compare](https://albena.ai/compare): Albena vs cloud assistants and Home Assistant Assist (last verified 2026-10-09, with sources)
 - [Support](https://albena.ai/support): help center and contact
 
 ## Trust and policies
