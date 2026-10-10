@@ -1,6 +1,6 @@
 // Shared app shell: js flag, session (me), drawer, workspace menu, search palette, mock link carrying.
 import { api, MOCK } from '../lib/api';
-import { h, $ } from '../lib/ui';
+import { h, $, panel, run, toast } from '../lib/ui';
 
 document.documentElement.classList.add('js');
 
@@ -82,7 +82,7 @@ export const meP = api.me().then((me) => {
   document.querySelectorAll('[data-ws-name],[data-ws-name2]').forEach((n) => { n.textContent = name; });
   const ico = $('.ws-ico'); if (ico) ico.textContent = name.slice(0, 1).toUpperCase();
   const who = $('[data-who]'); if (who) who.textContent = me.email;
-  if (me.viewAs) enterViewAs(me.email);
+  if (me.viewAs) enterViewAs(me.email); else void offerInvitations();
   return me;
 });
 meP.catch(() => undefined);
@@ -108,4 +108,28 @@ function enterViewAs(email: string) {
   });
   lock();
   new MutationObserver(lock).observe($('main')!, { childList: true, subtree: true });
+}
+
+// Household invitations never apply at sign-in: the person chooses here (accept is a CSRF-protected POST).
+async function offerInvitations() {
+  const main = $('main'); if (!main) return;
+  let invitations: Awaited<ReturnType<typeof api.invitations>>;
+  try { invitations = await api.invitations(); } catch { return; }
+  for (const inv of invitations) {
+    const accept = h('button', { class: 'btn btn-primary btn-sm', type: 'button' }, 'Accept');
+    const decline = h('button', { class: 'btn btn-sm', type: 'button' }, 'Decline');
+    const box = panel(`Join ${inv.inviterEmail}'s household?`, [
+      h('p', { class: 'mut' }, 'Accepting adds you as a member of their household. You can only join if your own account is still empty.'),
+      h('div', { class: 'row' }, accept, decline),
+    ]);
+    box.setAttribute('role', 'region');
+    accept.addEventListener('click', async () => {
+      const ok = await run(accept, async () => { await api.acceptInvitation(inv.id); return true; });
+      if (ok) { toast('You joined the household.'); location.reload(); }
+    });
+    decline.addEventListener('click', async () => {
+      if (await run(decline, async () => { await api.declineInvitation(inv.id); return true; }, 'Invitation declined.')) box.remove();
+    });
+    main.prepend(box);
+  }
 }

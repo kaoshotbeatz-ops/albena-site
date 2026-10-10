@@ -113,6 +113,10 @@ export const api = {
   },
   account: async (): Promise<Account> => { const r = await get<W.Account>('/api/account'); return { id: r.account.id, members: r.members, invites: (r.invites ?? []).map((i) => ({ id: i.id, email: i.email, expiresAt: iso(i.expiresAt) })), connectors: r.connectors }; },
   connectors: () => get<ConnectionsView>('/api/connectors'),
+  /** Household invitations addressed to the signed-in user; joining happens only through acceptInvitation. */
+  invitations: async () => (await get<{ invitations: { id: string; inviterEmail: string; expiresAt: number }[] }>('/api/account/invitations')).invitations,
+  acceptInvitation: (id: string) => req<unknown>('POST', `/api/account/invitations/${encodeURIComponent(id)}/accept`, {}),
+  declineInvitation: (id: string) => req<unknown>('POST', `/api/account/invitations/${encodeURIComponent(id)}/decline`, {}),
   inviteMember: (email: string) => req<unknown>('POST', '/api/account/members/invite', { email }),
   revokeMemberInvite: (id: string) => req<unknown>('DELETE', `/api/account/members/invites/${encodeURIComponent(id)}`),
   removeMember: (id: string) => req<unknown>('DELETE', `/api/account/members/${encodeURIComponent(id)}`),

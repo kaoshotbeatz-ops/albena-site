@@ -55,7 +55,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   mailbox = []; ipN++;
   await clearPortalTables();
-  await e.DB.batch(["entitlement_history", "invites", "reserved_hubs", "license_keys", "member_invites", "magic_tokens"].map((t) => e.DB.prepare(`DELETE FROM ${t}`)));
+  await e.DB.batch(["entitlement_history", "invites", "reserved_hubs", "license_keys", "member_invites", "magic_tokens", "magic_code_failures"].map((t) => e.DB.prepare(`DELETE FROM ${t}`)));
   await e.DB.prepare("DELETE FROM sessions WHERE view_as = 1").run();
 });
 
@@ -63,8 +63,15 @@ async function keypair() {
   const kp = (await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"])) as CryptoKeyPair;
   return b64encode(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey) as ArrayBuffer));
 }
+/** Staff must pin the Hub's key when reserving a serial, so the helper remembers each serial's key and pair() presents it. */
+const serialKeys = new Map<string, string>();
+const reserveHub = async (acct: string, b: Record<string, unknown>) => {
+  const publicKey = (b.publicKey as string | undefined) ?? await keypair();
+  if (typeof b.serial === "string") serialKeys.set(b.serial.trim().toUpperCase(), publicKey);
+  return staff("POST", `/api/support/accounts/${acct}/reserved-hubs`, { edition: "mac", ...b, publicKey });
+};
 const pair = async (cred: Record<string, string>, edition = "mac") =>
-  pub("POST", "/api/hubs/pair/complete", { ...cred, hubPublicKey: await keypair(), edition, profile: "home", version: "1.0.0" });
+  pub("POST", "/api/hubs/pair/complete", { ...cred, hubPublicKey: (cred.serial && serialKeys.get(cred.serial.trim().toUpperCase())) || await keypair(), edition, profile: "home", version: "1.0.0" });
 const hubCount = async (acct: string) => (await e.DB.prepare("SELECT COUNT(*) n FROM hubs WHERE account_id = ?").bind(acct).first<{ n: number }>())!.n;
 const newCustomer = async (email: string, extra: Record<string, unknown> = {}) => (await staff("POST", "/api/support/accounts", { email, ...extra })).json.accountId as string;
 
@@ -84,7 +91,7 @@ describe("staff authorization", () => {
     ["PATCH", "/api/support/orders/x"], ["POST", "/api/support/accounts/x/reserved-hubs"], ["DELETE", "/api/support/reserved-hubs/x"],
     ["POST", "/api/support/accounts/x/license-keys"], ["DELETE", "/api/support/license-keys/x"],
     ["GET", "/api/support/accounts/x/connectors"], ["GET", "/api/support/hubs/x"], ["GET", "/api/support/hubs/x/metrics"],
-    ["GET", "/api/support/invites"], ["POST", "/api/support/invites"], ["POST", "/api/support/invites/bulk"], ["POST", "/api/support/invites/x/resend"], ["DELETE", "/api/support/invites/x"],
+    ["POST", "/api/support/view-as/start"], ["GET", "/api/support/invites"], ["POST", "/api/support/invites"], ["POST", "/api/support/invites/bulk"], ["POST", "/api/support/invites/x/resend"], ["DELETE", "/api/support/invites/x"],
   ];
   it("every staff route is registered in this list (so a new one cannot skip the gate tests)", () => {
     const routes = app.routes.filter((r) => r.path.startsWith("/api/support/") && r.method !== "ALL" && r.path !== "/api/support/view-as/end")
@@ -103,7 +110,7 @@ describe("staff authorization", () => {
   });
   it("a read-only support view-as session cannot call staff endpoints", async () => {
     const u = await seedOwner("co-v1");
-    const start = await app.request(ORIGIN + "/support/view-as?account=co-v1", { headers: { "Cf-Access-Jwt-Assertion": await jwt() }, redirect: "manual" }, env());
+    const start = await app.request(ORIGIN + "/api/support/view-as/start", { method: "POST", body: JSON.stringify({ account: "co-v1" }), headers: { "X-Requested-With": "albena-portal", Origin: ORIGIN, "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": await jwt() } }, env());
     const cookie = (start.headers.get("set-cookie") ?? "").split(";")[0];
     expect(cookie.startsWith(VIEWAS_COOKIE)).toBe(true);
     const c = client(cookie, env());
@@ -466,7 +473,7 @@ describe("manual orders", () => {
 });
 
 describe("pre-provisioned Hubs (serial)", () => {
-  const reserve = (acct: string, b: Record<string, unknown>) => staff("POST", `/api/support/accounts/${acct}/reserved-hubs`, { edition: "mac", ...b });
+  const reserve = reserveHub;
   it("binds the Hub that presents the serial and its key, once, with no code", async () => {
     const acct = await newCustomer("res@example.com", { plan: "hub_mac" });
     const r = await reserve(acct, { serial: " alb-0001 ", name: "Kitchen Hub" });
@@ -494,7 +501,7 @@ describe("pre-provisioned Hubs (serial)", () => {
     expect(good.status).toBe(200);
     expect((await reserve(acct, { serial: "ALB-PIN-2", publicKey: "not-base64" })).json.error).toBe("invalid_public_key");
     // an already registered key cannot bind a second reservation (UNIQUE key), and the reservation stays usable
-    await reserve(acct, { serial: "ALB-DUP-1" });
+    await reserve(acct, { serial: "ALB-DUP-1", publicKey: pinned });
     const dup = await pub("POST", "/api/hubs/pair/complete", { serial: "ALB-DUP-1", hubPublicKey: pinned, edition: "mac", profile: "home", version: "1.0.0" });
     expect(dup.status).toBe(409);
     expect((await e.DB.prepare("SELECT used_at FROM reserved_hubs WHERE serial = 'ALB-DUP-1'").first<any>()).used_at).toBeNull();
@@ -507,16 +514,50 @@ describe("pre-provisioned Hubs (serial)", () => {
     await e.DB.prepare("UPDATE reserved_hubs SET expires_at = unixepoch() - 1 WHERE serial = 'ALB-EXP-1'").run();
     expect((await pair({ serial: "ALB-EXP-1" })).status).toBe(400);
     await staff("POST", `/api/support/accounts/${acct}/entitlement`, { status: "suspended" });
-    expect((await pair({ serial: "ALB-ED-1" })).status).toBe(402);
+    expect((await pair({ serial: "ALB-ED-1" })).status).toBe(400); // same answer as an unknown serial: a serial is guessable
     expect((await e.DB.prepare("SELECT used_at FROM reserved_hubs WHERE serial = 'ALB-ED-1'").first<any>()).used_at).toBeNull();
     await staff("POST", `/api/support/accounts/${acct}/entitlement`, { status: "active" });
     expect((await pair({ serial: "ALB-ED-1" })).status).toBe(200);
     await reserve(acct, { serial: "ALB-SLOT-2" });
-    expect((await pair({ serial: "ALB-SLOT-2" })).status).toBe(402); // hub_mac allows one Hub
+    expect(await pair({ serial: "ALB-SLOT-2" })).toMatchObject({ status: 400, json: { error: "invalid or expired code" } }); // hub_mac allows one Hub
     expect(await hubCount(acct)).toBe(1);
     const noPlan = await newCustomer("res4@example.com");
     await reserve(noPlan, { serial: "ALB-NOPLAN" });
-    expect((await pair({ serial: "ALB-NOPLAN" })).status).toBe(402);
+    expect((await pair({ serial: "ALB-NOPLAN" })).status).toBe(400);
+  });
+  it("pairing rate limits count an IPv6 /64 as one client", async () => {
+    const results = [];
+    for (let i = 0; i < 12; i++) results.push((await pub("POST", "/api/hubs/pair/complete", { licenseKey: "ALB-AAAAA-AAAAA-AAAAA-AAAAA", hubPublicKey: await keypair(), edition: "mac", profile: "home", version: "1.0.0" }, { "cf-connecting-ip": `2001:db8:77:88:${i}::${i + 1}` })).status);
+    expect(results.slice(0, 10).every((s) => s === 400)).toBe(true);
+    expect(results.slice(10)).toEqual([429, 429]);
+  });
+  it("requires the Hub's public key to reserve a serial", async () => {
+    const acct = await newCustomer("res-nokey@example.com", { plan: "hub_mac" });
+    const nokey = await staff("POST", `/api/support/accounts/${acct}/reserved-hubs`, { serial: "ALB-NOKEY-1", edition: "mac" });
+    expect(nokey).toMatchObject({ status: 400, json: { error: "public_key_required" } });
+    expect((await staff("POST", `/api/support/accounts/${acct}/reserved-hubs`, { serial: "ALB-NOKEY-1", edition: "mac", publicKey: null })).status).toBe(400);
+    expect((await e.DB.prepare("SELECT COUNT(*) n FROM reserved_hubs WHERE serial = 'ALB-NOKEY-1'").first<any>()).n).toBe(0);
+    expect((await reserve(acct, { serial: "ALB-NOKEY-1" })).status).toBe(201);
+  });
+  it("serial pairing: a live reservation without a free slot is the same 400 as an invalid serial, and the failure slot is not refunded", async () => {
+    const acct = await newCustomer("res-slot@example.com", { plan: "hub_mac" });
+    await reserve(acct, { serial: "ALB-FILL-1" });
+    expect((await pair({ serial: "ALB-FILL-1" })).status).toBe(200);
+    await reserve(acct, { serial: "ALB-FULL-1" });
+    const ip = "10.77.0.1", failBucket = async () => (await e.DB.prepare("SELECT count FROM hub_rate WHERE bucket = ?").bind(`pairfail:${ip}`).first<{ count: number }>())?.count ?? 0;
+    const body = async (serial: string) => ({ serial, hubPublicKey: serialKeys.get(serial) ?? await keypair(), edition: "mac", profile: "home", version: "1.0.0" });
+    const full = await pub("POST", "/api/hubs/pair/complete", await body("ALB-FULL-1"), { "cf-connecting-ip": ip });
+    expect(await failBucket()).toBe(1);
+    const unknown = await pub("POST", "/api/hubs/pair/complete", await body("ALB-NOPE-1"), { "cf-connecting-ip": ip });
+    expect(await failBucket()).toBe(2);
+    expect([full.status, full.json]).toEqual([unknown.status, unknown.json]);
+    expect(full.status).toBe(400);
+  });
+  it("a reservation pinned to a key never binds another key (legacy unpinned rows are inert)", async () => {
+    const acct = await newCustomer("res-legacy@example.com", { plan: "hub_mac" });
+    await e.DB.prepare("INSERT INTO reserved_hubs (id, account_id, serial, edition, name, public_key, created_by, created_at, expires_at) VALUES ('legacy-1', ?, 'ALB-LEGACY-1', 'mac', NULL, NULL, 'x', unixepoch(), unixepoch() + 600)").bind(acct).run();
+    expect((await pair({ serial: "ALB-LEGACY-1" })).status).toBe(400);
+    expect(await hubCount(acct)).toBe(0);
   });
   it("validates serials, rejects duplicates, can be cancelled while unused, and the normal code flow still works", async () => {
     const acct = await newCustomer("res5@example.com", { plan: "hub_mac" });
@@ -606,7 +647,10 @@ describe("household invites", () => {
     const session = await signInWithCode(start, email);
     return { session, me: ((await (await client(session, env()).request("/api/me")).json()) as any).user };
   };
-  it("owner invites an email, the person signs in, and joins as a member (not as an owner of a second account)", async () => {
+  const pendingFor = async (session: string) => ((await (await client(session, env()).request("/api/account/invitations")).json()) as any).invitations as { id: string; inviterEmail: string }[];
+  const accept = async (session: string, id?: string) => client(session, env()).request(`/api/account/invitations/${id ?? (await pendingFor(session))[0].id}/accept`, { method: "POST" });
+  const meOf = async (session: string) => ((await (await client(session, env()).request("/api/me")).json()) as any).user;
+  it("owner invites an email, the person signs in, and joins as a member only after explicitly accepting", async () => {
     const owner = await ownerSession("hh-o1");
     const r = await owner.request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "Kid@Example.com" }) });
     expect(r.status).toBe(201);
@@ -614,7 +658,19 @@ describe("household invites", () => {
     expect(last("kid@example.com").subject).toBe("You're invited to an Albena household");
     const pending = ((await (await owner.request("/api/account")).json()) as any).invites;
     expect(pending).toEqual([expect.objectContaining({ email: "kid@example.com" })]);
-    const { me, session } = await memberSignIn("kid@example.com");
+    const signedIn = await memberSignIn("kid@example.com");
+    const { session } = signedIn;
+    // signing in alone joins nothing and deletes nothing: they have their own account and a pending prompt
+    expect(signedIn.me.accountId).not.toBe("hh-o1");
+    expect(await e.DB.prepare("SELECT COUNT(*) n FROM accounts WHERE owner = ?").bind(signedIn.me.id).first<any>()).toEqual({ n: 1 });
+    expect(await pendingFor(session)).toEqual([expect.objectContaining({ inviterEmail: "hh-o1@example.com" })]);
+    expect(await e.DB.prepare("SELECT accepted_at FROM member_invites WHERE email = 'kid@example.com'").first()).toEqual({ accepted_at: null });
+    // accepting needs a session and the CSRF header
+    const id = (await pendingFor(session))[0].id;
+    expect((await client(undefined, env()).request(`/api/account/invitations/${id}/accept`, { method: "POST" })).status).toBe(401);
+    expect((await client(session, env()).request(`/api/account/invitations/${id}/accept`, { method: "POST", headers: { "X-Requested-With": "" } })).status).toBe(403);
+    expect((await accept(session)).status).toBe(200);
+    const me = await meOf(session);
     expect(me).toMatchObject({ accountId: "hh-o1", role: "member", email: "kid@example.com" });
     expect(await e.DB.prepare("SELECT COUNT(*) n FROM accounts WHERE owner = ?").bind(me.id).first<any>()).toEqual({ n: 0 });
     const acct = ((await (await owner.request("/api/account")).json()) as any);
@@ -626,7 +682,33 @@ describe("household invites", () => {
     expect(((await (await asMember.request("/api/account")).json()) as any).invites).toEqual([]);
     // signing in again keeps them in the household
     expect((await memberSignIn("kid@example.com")).me.accountId).toBe("hh-o1");
+    expect(await pendingFor((await memberSignIn("kid@example.com")).session)).toEqual([]);
     expect((await e.DB.prepare("SELECT action FROM audit_log WHERE action = 'household.invite.accepted'").first())).toBeTruthy();
+  });
+  it("declining ends the invitation; one person cannot accept or decline another's; view-as cannot accept", async () => {
+    const owner = await ownerSession("hh-d1");
+    await owner.request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "decl@example.com" }) });
+    const { session } = await memberSignIn("decl@example.com");
+    const id = (await pendingFor(session))[0].id;
+    const stranger = (await memberSignIn("stranger@example.com")).session;
+    expect((await accept(stranger, id)).status).toBe(404);
+    expect((await client(stranger, env()).request(`/api/account/invitations/${id}/decline`, { method: "POST" })).status).toBe(404);
+    expect((await client(session, env()).request(`/api/account/invitations/${id}/decline`, { method: "POST" })).status).toBe(200);
+    expect(await pendingFor(session)).toEqual([]);
+    expect((await accept(session, id)).status).toBe(404);
+    expect((await meOf(session)).accountId).not.toBe("hh-d1");
+    expect(((await (await owner.request("/api/account")).json()) as any).members).toHaveLength(1);
+  });
+  it("accepting merges only an empty account; the user's other sessions follow them", async () => {
+    const owner = await ownerSession("hh-m1");
+    await owner.request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "mover@example.com" }) });
+    const first = await memberSignIn("mover@example.com"), second = await memberSignIn("mover@example.com");
+    const oldAccount = first.me.accountId;
+    expect((await accept(first.session)).status).toBe(200);
+    expect(await e.DB.prepare("SELECT COUNT(*) n FROM accounts WHERE id = ?").bind(oldAccount).first<any>()).toEqual({ n: 0 });
+    expect((await meOf(second.session)).accountId).toBe("hh-m1");
+    expect((await accept(first.session, "nope")).status).toBe(404);
+    expect(await e.DB.prepare("SELECT action FROM audit_log WHERE action = 'household.invite.accepted' AND target = 'hh-m1'").first()).toBeTruthy();
   });
   it("validates: owners only, valid email, no duplicates, existing members, and pending limit", async () => {
     const owner = await ownerSession("hh-o2");
@@ -658,13 +740,19 @@ describe("household invites", () => {
     const owner = await ownerSession("hh-o4");
     const busy = await newCustomer("busy@example.com", { plan: "hub_mac" });
     await owner.request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "busy@example.com" }) });
-    expect((await memberSignIn("busy@example.com")).me.accountId).toBe(busy);
+    const { session, me } = await memberSignIn("busy@example.com");
+    expect(me.accountId).toBe(busy);
     expect(await e.DB.prepare("SELECT accepted_at FROM member_invites WHERE email = 'busy@example.com'").first()).toEqual({ accepted_at: null });
+    // even an explicit accept never deletes an account that holds real data
+    expect(await accept(session)).toMatchObject({ status: 409 });
+    expect((await meOf(session)).accountId).toBe(busy);
+    expect(await e.DB.prepare("SELECT COUNT(*) n FROM accounts WHERE id = ?").bind(busy).first<any>()).toEqual({ n: 1 });
   });
   it("owner removes a member: access ends at once, and the owner cannot be removed", async () => {
     const owner = await ownerSession("hh-o5");
     await owner.request("/api/account/members/invite", { method: "POST", body: JSON.stringify({ email: "leave@example.com" }) });
     const { session, me } = await memberSignIn("leave@example.com");
+    expect((await accept(session)).status).toBe(200);
     const asMember = client(session, env());
     expect((await asMember.request("/api/me")).status).toBe(200);
     expect((await owner.request("/api/account/members/hh-o5", { method: "DELETE" })).status).toBe(404);
@@ -691,7 +779,7 @@ describe("customer detail", () => {
     const acct = await newCustomer("detail@example.com", { plan: "pilot", name: "Dee" });
     await staff("POST", `/api/support/accounts/${acct}/notes`, { body: "first call" });
     await staff("POST", `/api/support/accounts/${acct}/orders`, { edition: "mac" });
-    await staff("POST", `/api/support/accounts/${acct}/reserved-hubs`, { serial: "ALB-DET-1", edition: "mac" });
+    await reserveHub(acct, { serial: "ALB-DET-1" });
     const paired = await pair({ serial: "ALB-DET-1" });
     await e.DB.prepare("UPDATE hubs SET version = '2.1.0', health_json = ?, last_seen = ? WHERE id = ?").bind(JSON.stringify({ ok: true, services: [["voice", "ok"]] }), 1234567, paired.json.hubId).run();
     const { status, json } = await staff("GET", `/api/support/accounts/${acct}`);

@@ -149,12 +149,11 @@ export function mountOps(app: Hono<AppEnv>): void {
     if (b.edition !== "mac" && b.edition !== "nvidia") return c.json({ error: "invalid_edition" }, 400);
     const name = b.name === undefined ? null : text(b.name, 60);
     if (b.name !== undefined && name === null) return c.json({ error: "invalid_name" }, 400);
-    let publicKey: string | null = null;
-    if (b.publicKey !== undefined) {
-      const k = b64decodeStrict(b.publicKey);
-      if (!k || k.length !== 32) return c.json({ error: "invalid_public_key" }, 400);
-      publicKey = b64encode(k);
-    }
+    // The serial is only an identifier, so the Hub's key must be pinned: pairing succeeds only for that key.
+    if (b.publicKey === undefined) return c.json({ error: "public_key_required" }, 400);
+    const k = b64decodeStrict(b.publicKey);
+    if (!k || k.length !== 32) return c.json({ error: "invalid_public_key" }, 400);
+    const publicKey = b64encode(k);
     const days = b.days === undefined ? 60 : b.days;
     if (typeof days !== "number" || !Number.isInteger(days) || days < 1 || days > 365) return c.json({ error: "invalid_days" }, 400);
     const rid = crypto.randomUUID(), ts = now();
@@ -165,7 +164,7 @@ export function mountOps(app: Hono<AppEnv>): void {
       if (/UNIQUE/i.test(String((e as Error)?.message))) return c.json({ error: "serial_taken" }, 409);
       throw e;
     }
-    await audit(c, "support.hub.reserve", rid, { accountId: id, edition: b.edition, keyPinned: publicKey !== null });
+    await audit(c, "support.hub.reserve", rid, { accountId: id, edition: b.edition, keyPinned: true });
     return c.json({ reservedHub: { id: rid, serial, edition: b.edition, expiresAt: ts + days * DAY } }, 201);
   });
 

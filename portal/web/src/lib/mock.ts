@@ -71,6 +71,7 @@ export function handle(method: string, path: string, body: unknown): unknown {
   if (p === '/api/account/members/invite') { pending = [...pending, { id: `i${pending.length + 2}`, email: String(b.email), createdAt: now, expiresAt: now + 14 * D }]; return { invite: pending.at(-1) }; }
   const mi = /^\/api\/account\/members\/invites\/([^/]+)$/.exec(p);
   if (mi) { pending = pending.filter((i) => i.id !== mi[1]); return { ok: true }; }
+  if (p === '/api/account/invitations') return { invitations: [] };
   if (p === '/api/invite/accept') return { ok: true };
   if (p === '/api/account/export') return { exportedAt: new Date().toISOString(), account: { id: 'a1' }, members, hubs };
   if (p === '/api/account/delete') return { ok: true };

@@ -1,6 +1,7 @@
 import type { Context, Hono } from "hono";
 import type { AppEnv } from "../types";
 import { audit, requireUser } from "../auth";
+import { ipBucket } from "../auth/limits";
 import { getEntitlement } from "../billing/entitlements";
 import { MAX_HUBS } from "../billing/plans";
 import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
@@ -119,7 +120,7 @@ export function mount(app: Hono<AppEnv>): void {
   });
 
   app.post("/api/hubs/pair/complete", async (c) => {
-    const ip = c.req.header("cf-connecting-ip") ?? "unknown";
+    const ip = ipBucket(c.req.header("cf-connecting-ip") ?? "unknown");
     const db = c.env.DB;
     if (!(await rateHit(db, `pair:${ip}`, PAIR_RATE)).ok) return c.json({ error: "rate limited" }, 429);
     // Reserve a failure slot up front (atomic); it is given back below if the attempt succeeds.
@@ -138,7 +139,7 @@ export function mount(app: Hono<AppEnv>): void {
       const { edition, profile, version } = p.value;
       // One transaction: the hub is inserted only if the credential is live AND the account's entitlement is active AND
       // it still has a free slot; the credential is consumed (code, serial) or counted (license key) only if that insert happened.
-      let insert: D1PreparedStatement, consume: D1PreparedStatement, live: D1PreparedStatement, via: "code" | "serial" | "license_key";
+      let insert: D1PreparedStatement, consume: D1PreparedStatement, live: D1PreparedStatement | null, via: "code" | "serial" | "license_key";
       const head = `INSERT INTO hubs(id,account_id,name,public_key,edition,profile,version,created_at)`;
       if (p.value.code !== undefined) {
         const code = normalizeCode(p.value.code);
@@ -158,11 +159,11 @@ export function mount(app: Hono<AppEnv>): void {
         // The serial is an identifier, not a secret: it binds only the key staff expected (when recorded), only once, only before it expires.
         insert = db.prepare(
           `${head} SELECT ?1, rh.account_id, COALESCE(rh.name, 'My Hub'), ?2, ?3, ?4, ?5, ?6 FROM reserved_hubs rh
-           WHERE rh.serial = ?7 AND rh.used_at IS NULL AND rh.expires_at >= ?6 AND rh.edition = ?3 AND (rh.public_key IS NULL OR rh.public_key = ?2)
+           WHERE rh.serial = ?7 AND rh.used_at IS NULL AND rh.expires_at >= ?6 AND rh.edition = ?3 AND rh.public_key = ?2
              AND ${entitledSql("rh.account_id", "?6")}`,
         ).bind(hubId, publicKey, edition, profile, version, t, serial);
         consume = db.prepare("UPDATE reserved_hubs SET used_at=?1, hub_id=?3 WHERE serial=?2 AND used_at IS NULL AND EXISTS (SELECT 1 FROM hubs WHERE id=?3)").bind(t, serial, hubId);
-        live = db.prepare("SELECT 1 AS x FROM reserved_hubs WHERE serial=? AND used_at IS NULL AND expires_at>=? AND edition=? AND (public_key IS NULL OR public_key=?)").bind(serial, t, edition, publicKey);
+        live = null; // a serial is guessable: every failure looks the same (400) and keeps its failure slot, even when the reservation is live but has no free slot
       } else {
         const key = normalizeLicenseKey(p.value.licenseKey);
         if (!key) return c.json({ error: "invalid request" }, 400);
@@ -186,7 +187,7 @@ export function mount(app: Hono<AppEnv>): void {
         throw err;
       }
       if (!results[0].meta?.changes || !results[1].meta?.changes) {
-        if (await live.first()) { success = true; return c.json({ error: "plan does not allow another hub" }, 402); } // not a guess: refund the slot // live credential, but no active entitlement or no free slot
+        if (live && await live.first()) { success = true; return c.json({ error: "plan does not allow another hub" }, 402); } // not a guess: refund the slot // live credential, but no active entitlement or no free slot
         return c.json({ error: "invalid or expired code" }, 400);
       }
       const acct = (await db.prepare("SELECT account_id FROM hubs WHERE id=?").bind(hubId).first<{ account_id: string }>())!.account_id;

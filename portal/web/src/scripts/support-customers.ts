@@ -1,7 +1,7 @@
 // Staff-only list (Cloudflare Access gates this page and /api/support/*). No customer session needed.
 import { h, must, chip, fmtDate, failInto, empty, table, run, toast } from '../lib/ui';
 import { field, planFields, PLAN_NAMES } from '../lib/forms';
-import { staff, type AccountRow } from '../lib/staff';
+import { staff, startViewAs, type AccountRow } from '../lib/staff';
 
 document.documentElement.classList.add('js');
 const root = must('#root');
@@ -42,7 +42,7 @@ staff.accounts().then(({ me, accounts }) => {
       document.createTextNode(planLabel(a)), chip(a.status, tone(a.status)), chip(a.source, a.source === 'manual' ? 'indigo' : 'grey'),
       document.createTextNode(a.endsAt ? fmtDate(new Date(a.endsAt * 1000).toISOString()) : ''),
       h('span', { class: 'num' }, String(a.hubs)), document.createTextNode(fmtDate(new Date(a.created * 1000).toISOString())),
-      h('a', { class: 'btn btn-sm', href: `/support/view-as?account=${encodeURIComponent(a.id)}`, 'aria-label': `View as ${a.email}` }, 'View as'),
+      viewAsButton(a.id, `View as ${a.email}`),
     ]));
     t.querySelectorAll('tbody tr').forEach((tr, i) => { if (rows[i].email.toLowerCase() === me) tr.classList.add('cust-me'); });
     root.replaceChildren(t);
@@ -51,3 +51,9 @@ staff.accounts().then(({ me, accounts }) => {
   render();
   buildNewForm();
 }).catch((e) => { failInto(root, e); toast('Could not load customers.', true); });
+
+function viewAsButton(accountId: string, label: string) {
+  const b = h('button', { class: 'btn btn-sm', type: 'button', 'aria-label': label }, 'View as');
+  b.addEventListener('click', () => void run(b, () => startViewAs(accountId)));
+  return b;
+}

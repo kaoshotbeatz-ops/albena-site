@@ -15,6 +15,10 @@ async function jwt(o: { email?: string; aud?: string; iss?: string; key?: Crypto
 const asAdmin = async (path: string, token?: string | null, b = env()) => app.request("https://account.albena.ai" + path,
   { headers: { ...(token === null ? {} : { "Cf-Access-Jwt-Assertion": token ?? await jwt() }) }, redirect: "manual" }, b);
 
+/** View-as start is a POST to the Access-gated API with the browser CSRF headers. */
+const startAs = async (account: string, token?: string | null, b = env()) => app.request("https://account.albena.ai/api/support/view-as/start",
+  { method: "POST", body: JSON.stringify({ account }), headers: { "X-Requested-With": "albena-portal", Origin: "https://account.albena.ai", "Content-Type": "application/json", ...(token === null ? {} : { "Cf-Access-Jwt-Assertion": token ?? await jwt() }) } }, b);
+
 beforeAll(async () => {
   keys = await generateKeyPair("RS256", { extractable: true });
   other = await generateKeyPair("RS256");
@@ -31,7 +35,7 @@ describe("Access gate", () => {
   it("denies a missing, invalid, wrong-audience, wrong-issuer or wrong-key token", async () => {
     await seedOwner("va-t1");
     for (const t of [null, "garbage", await jwt({ aud: "other" }), await jwt({ iss: "https://evil.example" }), await jwt({ key: other.privateKey })]) {
-      expect((await asAdmin("/support/view-as?account=va-t1", t)).status).toBe(403);
+      expect((await startAs("va-t1", t)).status).toBe(403);
       expect((await asAdmin("/api/support/accounts", t)).status).toBe(403);
       expect((await asAdmin("/support/customers", t)).status).toBe(403);
     }
@@ -39,14 +43,14 @@ describe("Access gate", () => {
   it("denies a valid token whose email is not allowlisted, and everything when unconfigured", async () => {
     await seedOwner("va-t2");
     const t = await jwt({ email: "intruder@example.com" });
-    expect((await asAdmin("/support/view-as?account=va-t2", t)).status).toBe(403);
+    expect((await startAs("va-t2", t)).status).toBe(403);
     expect((await asAdmin("/api/support/accounts", await jwt(), testBindings())).status).toBe(403);
     expect((await asAdmin("/api/support/accounts", await jwt(), testBindings({ TEAM_DOMAIN: TEAM, ADMIN_AUD: AUD, SUPPORT_ADMIN_EMAILS: "" }))).status).toBe(403);
   });
   it("a customer session cannot reach /support or /api/support; the customer /support page stays public", async () => {
     const u = await seedOwner("va-t3");
     const c = client(await login(u), env());
-    expect((await c.request("/support/view-as?account=va-t3")).status).toBe(403);
+    expect((await c.request("/api/support/view-as/start", { method: "POST", body: JSON.stringify({ account: "va-t3" }) })).status).toBe(403);
     expect((await c.request("/support/customers")).status).toBe(403);
     expect((await c.request("/api/support/accounts")).status).toBe(403);
     expect((await c.request("/api/support/other")).status).toBe(403);
@@ -67,8 +71,8 @@ describe("view-as session", () => {
   async function start(id: string) {
     const u = await seedOwner(id);
     const before = await lastAuditId();
-    const res = await asAdmin(`/support/view-as?account=${id}`);
-    expect(res.status).toBe(302);
+    const res = await startAs(id);
+    expect(res.status).toBe(200);
     const sc = res.headers.get("set-cookie")!;
     expect(sc).toContain(VIEWAS_COOKIE);
     expect(sc).toMatch(/HttpOnly/i);
@@ -87,8 +91,27 @@ describe("view-as session", () => {
     const actor = (await e.DB.prepare("SELECT actor FROM audit_log WHERE action = 'support.view_as.start' ORDER BY id DESC LIMIT 1").first<{ actor: string }>())!.actor;
     expect(actor).toBe(`support:${ADMIN}`);
   });
+  it("start is POST-only behind Access and CSRF: a GET cannot start a session", async () => {
+    await seedOwner("va-p1");
+    expect((await asAdmin("/support/view-as?account=va-p1")).status).not.toBe(302);
+    expect((await asAdmin("/api/support/view-as/start?account=va-p1")).status).toBe(404);
+    const noCsrf = await app.request("https://account.albena.ai/api/support/view-as/start", { method: "POST", body: JSON.stringify({ account: "va-p1" }), headers: { "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": await jwt() } }, env());
+    expect(noCsrf.status).toBe(403);
+    expect((await startAs("va-p1", null)).status).toBe(403); // no Access token
+    expect(await e.DB.prepare("SELECT COUNT(*) n FROM sessions WHERE view_as = 1 AND account_id = 'va-p1'").first<any>()).toEqual({ n: 0 });
+  });
+  it("audits every /api GET made during a view-as session with its path", async () => {
+    const { u, before, cookie } = await start("va-r1");
+    const c = client(cookie, env());
+    expect((await c.request("/api/me")).status).toBe(200);
+    expect((await c.request("/api/account")).status).toBe(200);
+    expect((await c.request("/api/security/sessions")).status).toBe(403); // denied reads are not "read" events
+    const reads = (await e.DB.prepare("SELECT target, meta, actor FROM audit_log WHERE id > ? AND action = 'support.view_as.read' ORDER BY id").bind(before).all<any>()).results;
+    expect(reads.map(r => JSON.parse(r.meta).path)).toEqual(["/api/me", "/api/account"]);
+    expect(reads.every(r => r.target === u.accountId && r.actor === `support:${ADMIN}`)).toBe(true);
+  });
   it("404s an unknown account and does not set a cookie", async () => {
-    const res = await asAdmin("/support/view-as?account=nope");
+    const res = await startAs("nope");
     expect(res.status).toBe(404);
     expect(res.headers.get("set-cookie")).toBeNull();
   });
