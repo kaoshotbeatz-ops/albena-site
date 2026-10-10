@@ -26,7 +26,9 @@
     // Stripe Price IDs (test mode). Placeholders: empty means "plan not configured" and checkout answers 503.
     "PRICE_BYO_MONTHLY": "", "PRICE_BYO_ANNUAL": "",
     "PRICE_HUB_MAC_MONTHLY": "", "PRICE_HUB_MAC_ANNUAL": "", "PRICE_HUB_MAC_HARDWARE": "",
-    "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": ""
+    "PRICE_HUB_NVIDIA_MONTHLY": "", "PRICE_HUB_NVIDIA_ANNUAL": "", "PRICE_HUB_NVIDIA_HARDWARE": "",
+    // ALB-SEC-1: chain-break alerts to Obvera Event Management. Secret OBVERA_EVENTS_KEY (scope events.ingest only).
+    "OBVERA_EVENTS_URL": "https://ohllc-obvera.dbaomarhuertasllc.com/api/obvera/client/eventhub/ingest"
   }
   ,
   // STAGING (deploy.yml deploy-staging). Separate worker + separate D1 so migrations and tests never touch production data.

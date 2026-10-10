@@ -52,3 +52,10 @@ export const staff = {
   resendInvite: (id: string) => send<unknown>('POST', `/api/support/invites/${encodeURIComponent(id)}/resend`),
   revokeInvite: (id: string) => send<unknown>('DELETE', `/api/support/invites/${encodeURIComponent(id)}`, undefined),
 };
+
+/** ALB-SEC-1 audit-chain status and owner acknowledgement (lifts the high-risk hold; the ack is itself audited). */
+export interface Integrity { chain: { ok: boolean; rows: number; reason?: string; brokenAtId?: number }; integrity: { status: string; broken_sig: string | null; acked_sig: string | null; acked_by: string | null; last_run_at: string | null } }
+export const integrity = {
+  get: () => get<Integrity>('/api/support/integrity'),
+  ack: (sig: string, note: string) => send<{ ok: true }>('POST', '/api/support/integrity/ack', { sig, note }),
+};

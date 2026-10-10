@@ -1,6 +1,7 @@
 import type { Env } from "./types";
 import { audit, verifyChain } from "./auditchain";
 import { sha256Hex } from "./util";
+import { runChainCheck } from "./chainguard";
 
 export const KEEP_BACKUPS = 35;
 export const RETENTION_DAYS = 365;
@@ -140,6 +141,11 @@ export async function runScheduled(env: Env, now = new Date()): Promise<void> {
   }
   try { await runRetention(env, now); } catch (e) {
     console.error("retention failed", e instanceof Error ? e.message : "unknown");
+  }
+  // ALB-SEC-1: the cron is daily, so the full-chain verifier runs daily.
+  try { await runChainCheck(env, "cron", now); } catch (e) {
+    console.error("chain check failed", e instanceof Error ? e.message : "unknown");
+    await sys(env, "audit.chain.check_failed").catch(() => {});
   }
   if (now.getUTCDay() === 0) await runVerify(env);
 }

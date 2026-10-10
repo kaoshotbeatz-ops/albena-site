@@ -59,5 +59,6 @@ export interface AuditRow { id: number; ts: string; actor: string; action: strin
 export interface AuditPage { items: AuditRow[]; limit: number; next_before: number | null }
 export interface Integrity {
   chain: { ok: boolean; rows: number; sealed: number; unsealed: number; headHash: string | null; brokenAtId?: number; reason?: string };
+  integrity?: { status: 'ok' | 'broken' | 'unknown'; broken_sig: string | null; acked_sig: string | null; acked_by: string | null; acked_at: string | null; last_run_at: string | null; last_alert: string | null };
   lastBackupOk: boolean; lastBackupAt: string | null; lastVerifiedAt: string | null;
 }

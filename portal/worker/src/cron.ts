@@ -3,6 +3,7 @@ import { auditSystem, sealAudit } from "./auditchain";
 import { dropCodesIfInactive, recordHistory } from "./billing/entitlements";
 import { METRIC_RETAIN_S } from "./hubs/stats";
 import { IDLE_SECONDS } from "./auth/sessions";
+import { maybeRunDaily } from "./integrity";
 
 /** Hub rate windows are at most 10 minutes; keep a margin before deleting the counter. */
 const RATE_RETAIN_S = 3600;
@@ -39,8 +40,13 @@ export async function prune(env: Bindings, ts = Math.floor(Date.now() / 1000)): 
   return Object.fromEntries(out);
 }
 
-export async function scheduled(_event: ScheduledController, env: Bindings): Promise<void> {
+export async function scheduled(event: ScheduledController, env: Bindings): Promise<void> {
   await prune(env);
   await expireManualGrants(env);
   await sealAudit(env); // seal any rows left unsealed by a request that died mid-audit
+  // ALB-SEC-1: full audit-chain verify once a day (04:23 UTC run, or any run if the last one is >26 h old).
+  try { await maybeRunDaily(env, new Date(event.scheduledTime)); } catch (e) {
+    console.error("chain check failed", e instanceof Error ? e.message : "unknown");
+    await auditSystem(env, "system:cron", "audit.chain.check_failed", "error").catch(() => {});
+  }
 }

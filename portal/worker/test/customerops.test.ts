@@ -91,7 +91,7 @@ describe("staff authorization", () => {
     ["PATCH", "/api/support/orders/x"], ["POST", "/api/support/accounts/x/reserved-hubs"], ["DELETE", "/api/support/reserved-hubs/x"],
     ["POST", "/api/support/accounts/x/license-keys"], ["DELETE", "/api/support/license-keys/x"],
     ["GET", "/api/support/accounts/x/connectors"], ["GET", "/api/support/hubs/x"], ["GET", "/api/support/hubs/x/metrics"], ["GET", "/api/support/hubs/x/modules"],
-    ["POST", "/api/support/view-as/start"], ["GET", "/api/support/invites"], ["POST", "/api/support/invites"], ["POST", "/api/support/invites/bulk"], ["POST", "/api/support/invites/x/resend"], ["DELETE", "/api/support/invites/x"],
+    ["POST", "/api/support/view-as/start"], ["GET", "/api/support/integrity"], ["POST", "/api/support/integrity/verify"], ["POST", "/api/support/integrity/ack"], ["GET", "/api/support/invites"], ["POST", "/api/support/invites"], ["POST", "/api/support/invites/bulk"], ["POST", "/api/support/invites/x/resend"], ["DELETE", "/api/support/invites/x"],
   ];
   it("every staff route is registered in this list (so a new one cannot skip the gate tests)", () => {
     const routes = app.routes.filter((r) => r.path.startsWith("/api/support/") && r.method !== "ALL" && r.path !== "/api/support/view-as/end")

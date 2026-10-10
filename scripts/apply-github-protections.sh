@@ -16,8 +16,12 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Job names from .github/workflows/ci.yml that must pass before merge.
-CHECKS=("Controls data" "Build web" "Worker tests" "Secret scan (gitleaks)" "npm audit (high)" "Semgrep (p/default)" "Accessibility (Lighthouse >= 95)")
+# Required checks = the live set (2026-10-10). They bind the owner too (enforce_admins, ALB-SEC-1);
+# the only bypass is scripts/break-glass.sh (PIN + GitHub re-auth, audited, auto-restores).
+case "$REPO" in
+  */albena) CHECKS=("lint" "tests" "secrets-scan") ;;
+  *) CHECKS=("Build web" "Worker tests" "Secret scan (gitleaks)" "Portal worker (typecheck + tests + dry-run)" "Portal web build") ;;
+esac
 
 run() { # method path [json-body]
   local method="$1" path="$2" body="${3:-}"
@@ -36,12 +40,11 @@ contexts="$(printf '%s\n' "${CHECKS[@]}" | jq -R . | jq -sc .)"
 echo "== Branch protection: $REPO@$BRANCH"
 protection="$(jq -nc --argjson c "$contexts" '{
   required_status_checks: {strict: true, contexts: $c},
-  enforce_admins: false,
-  required_pull_request_reviews: {
-    required_approving_review_count: 1,
-    require_code_owner_reviews: true,
-    dismiss_stale_reviews: true
-  },
+  enforce_admins: true,
+  # No required approving review: there is one human maintainer and GitHub never lets an author approve
+  # their own PR, so with enforce_admins a required review would block every merge. Add it (count 1) once a
+  # second reviewer exists (white paper: "required review that also binds the owner").
+  required_pull_request_reviews: null,
   restrictions: null,
   required_linear_history: true,
   allow_force_pushes: false,
