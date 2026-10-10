@@ -4,6 +4,7 @@ import { audit, requireUser } from "../auth";
 import { EMAIL_RE } from "../auth/magic";
 import { allowed } from "../auth/limits";
 import { sendNotice } from "../auth/mail";
+import { composeHousehold } from "../auth/compose";
 
 export const MEMBER_INVITE_TTL_S = 14 * 24 * 3600;
 const MAX_PENDING = 10;
@@ -69,10 +70,7 @@ export function mountHousehold(app: Hono<AppEnv>): void {
     await db.prepare("INSERT INTO member_invites (id, account_id, email, invited_by, created_at, expires_at) VALUES (?,?,?,?,?,?)")
       .bind(id, u.accountId, email, u.id, ts, ts + MEMBER_INVITE_TTL_S).run();
     try {
-      await sendNotice(c.env, {
-        to: email, subject: "You're invited to an Albena household",
-        text: `${u.email} invited you to join their Albena household.\n\nSign in with this email address (${email}) at ${c.env.PORTAL_ORIGIN}/login and you will be added to their account. The invitation expires in 14 days. If you were not expecting this, ignore this email.`,
-      });
+      await sendNotice(c.env, { to: email, ...composeHousehold(u.email, email, `${c.env.PORTAL_ORIGIN}/login`) });
     } catch {
       await db.prepare("DELETE FROM member_invites WHERE id = ?").bind(id).run();
       return c.json({ error: "mail_failed" }, 502);

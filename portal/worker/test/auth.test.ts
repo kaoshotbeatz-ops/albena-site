@@ -205,7 +205,7 @@ describe("magic email code", () => {
     const send = vi.fn(); await cloudflareMailer({ ...e, EMAIL: { send } as never }).send({ to: "a@example.com", url: "https://x/y", code: "123456" });
     const msg = send.mock.calls[0][0];
     expect(msg.subject).not.toMatch(/\d{3}/); expect(msg.text).toContain("Your code: 123 456"); expect(msg.text).toContain("https://x/y");
-    expect(msg.text).toContain("enter the code on the page where you requested it");
+    expect(msg.text).toContain("enter the code on the page where you requested it"); expect(msg.html).toContain("https://x/y");
   });
 });
 
