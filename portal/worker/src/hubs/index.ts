@@ -7,7 +7,7 @@ import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, pa
 import { RANGES, type Range, isOnline, loadDetail, loadMetrics, parseStored, recordMetric, summarize } from "./stats";
 import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
-export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql"];
+export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql", "0700_hub_public_net.sql"];
 
 export const PAIR_TTL_S = 600;
 export const SKEW_S = 300;
@@ -90,6 +90,16 @@ const publicHub = (h: any) => ({
   health: h.health_json ? JSON.parse(h.health_json) : null, lastSeen: h.last_seen, createdAt: h.created_at,
   online: isOnline(h.last_seen), summary: summarize(parseStored(h.stats_json)),
 });
+
+/** Public network info for the heartbeat's caller, from Cloudflare (CF-Connecting-IP and request.cf). Null when there is no usable IP. */
+function publicNet(c: C) {
+  const ip = (c.req.header("cf-connecting-ip") ?? "").trim().slice(0, 45);
+  if (!ip) return null;
+  const cf = ((c.req.raw as { cf?: Record<string, unknown> }).cf ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" && v ? v.slice(0, 100) : null);
+  const asn = typeof cf.asn === "number" && Number.isInteger(cf.asn) ? cf.asn : null;
+  return { ip, isp: str(cf.asOrganization), asn, city: str(cf.city), region: str(cf.region), country: str(cf.country), tz: str(cf.timezone) };
+}
 
 export function mount(app: Hono<AppEnv>): void {
   // ---- user-facing ----
@@ -199,7 +209,9 @@ export function mount(app: Hono<AppEnv>): void {
 
   // Detail + metrics: scoped to the caller's account (owner or member; view-as sessions are read-only members). Other accounts' Hubs answer 404.
   app.get("/api/hubs/:id", requireUser, async (c) => {
-    const hub = await loadDetail(c.env.DB, c.req.param("id"), c.get("user").accountId);
+    // The public IP is for the owner (and read-only view-as sessions); members never get the object.
+    const u = c.get("user");
+    const hub = await loadDetail(c.env.DB, c.req.param("id"), u.accountId, u.role === "owner" || !!c.get("viewAs"));
     if (!hub) return c.json({ error: "not found" }, 404);
     const { accountId: _a, ...out } = hub;
     return c.json({ hub: out });
@@ -254,9 +266,17 @@ export function mount(app: Hono<AppEnv>): void {
     if (!p.ok) return c.json({ error: p.error }, 400);
     const v = p.value;
     const t = now();
+    const net = publicNet(c);
     // stats_json is the latest snapshot as validated (re-serialised from the parsed value, never the raw body); NULL when the Hub sent none.
     await c.env.DB.prepare("UPDATE hubs SET version=?, profile=?, health_ok=?, health_json=?, stats_json=?, last_seen=? WHERE id=?")
       .bind(v.version, v.profile, v.health.ok ? 1 : 0, JSON.stringify(v.health), v.stats ? JSON.stringify(v.stats) : null, t, hub.id).run();
+    if (net) {
+      // Current values only. net_changed_at moves only when the IP differs from what is stored.
+      const changed = net.ip !== hub.net_ip;
+      await c.env.DB.prepare("UPDATE hubs SET net_ip=?, net_isp=?, net_asn=?, net_city=?, net_region=?, net_country=?, net_tz=?, net_changed_at=CASE WHEN ? THEN ? ELSE net_changed_at END WHERE id=?")
+        .bind(net.ip, net.isp, net.asn, net.city, net.region, net.country, net.tz, changed ? 1 : 0, t, hub.id).run();
+      if (changed && hub.net_ip) await audit(c, "hub.public_ip_changed", hub.id); // hub id only: the address itself is never written to the audit log
+    }
     if (v.stats) await recordMetric(c.env.DB, hub.id, v.stats, t);
     // server-side settings win; hub learns them here
     return c.json({ ok: true, updateChannel: hub.update_channel, remoteAccess: !!hub.remote_access });

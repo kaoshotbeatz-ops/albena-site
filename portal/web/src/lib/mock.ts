@@ -38,7 +38,7 @@ export function handle(method: string, path: string, body: unknown): unknown {
   if (dm && method === 'GET') {
     const hub = hubs.find((x) => x.id === dm[1]);
     if (!hub) throw new ApiError(404, 'not_found');
-    return { hub: { ...hub, online: now - hub.lastSeen < 900, stats: { uptime_s: 400000, cpu_pct: 34, mem_used_mb: 21000, mem_total_mb: 65536, services: [['voice', 'ok', 86000]], activity: { requests_24h: 120 }, updates: { latest_known: hub.version } } } };
+    return { hub: { ...hub, publicNetwork: { ip: '203.0.113.9', isp: 'Example Fiber', asn: 64500, city: 'Charlotte', region: 'North Carolina', country: 'US', timezone: 'America/New_York', changedAt: now - 3 * D }, online: now - hub.lastSeen < 900, stats: { uptime_s: 400000, cpu_pct: 34, mem_used_mb: 21000, mem_total_mb: 65536, services: [['voice', 'ok', 86000]], activity: { requests_24h: 120 }, updates: { latest_known: hub.version } } } };
   }
   const hm = /^\/api\/hubs\/([^/]+)$/.exec(p);
   if (hm) {

@@ -40,6 +40,8 @@ export interface HubStats {
 export interface HubDetail {
   id: string; accountId?: string; name: string; edition: 'mac' | 'nvidia'; profile: string; version: string; updateChannel: 'stable' | 'beta'; remoteAccess: boolean;
   health: { ok: boolean; services: ([string, string] | [string, string, number])[] } | null; stats: HubStats | null; lastSeen: number | null; online: boolean; createdAt: number;
+  /** Only present for the account owner, view-as sessions and staff. */
+  publicNetwork?: { ip: string | null; isp: string | null; asn: number | null; city: string | null; region: string | null; country: string | null; timezone: string | null; changedAt: number | null };
 }
 export interface MetricPoint { ts: number; cpu: number | null; mem_pct: number | null; gpu_util: number | null; gpu_mem_pct: number | null; latency_ms: number | null }
 export type MetricRange = '24h' | '7d';
