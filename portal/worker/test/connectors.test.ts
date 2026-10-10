@@ -64,6 +64,12 @@ describe("connectors schema (strict)", () => {
     expect(parseConnectors("x").ok).toBe(false);
     expect(parseHeartbeat(hb(good(), { extra: 1 })).ok).toBe(false);
   });
+  it("accepts optional verified boolean only, stores and passes it through", () => {
+    const r = parseConnectors([{ id: "slack", state: "connected", access: "read", kind: "builtin", verified: false }, { id: "jellyfin", state: "connected", access: "read", kind: "builtin", verified: true }]);
+    expect(r.ok && r.value.map((x) => x.verified)).toEqual([false, true]);
+    for (const v of ["false", 0, 1, null, "yes", {}]) expect(mut((a: any[]) => { a[0].verified = v; }).ok).toBe(false);
+    expect(parseConnectors([{ id: "slack", state: "connected", access: "read", kind: "builtin", verified: true, extra: 1 }]).ok).toBe(false);
+  });
   it("allows a catalog id over mcp with a label, and write on write-capable entries only", () => {
     expect(parseConnectors([{ id: "github", label: "GitHub MCP", state: "connected", access: "write", kind: "mcp" }]).ok).toBe(true);
     expect(parseConnectors([{ id: "cameras", state: "connected", access: "write", kind: "builtin" }]).ok).toBe(false);
@@ -103,6 +109,15 @@ describe("connectors API", () => {
     await applyEntitlement(e.DB, "cn-acc1", { plan: "estate", status: "active" }, ++seq);
     ipN++;
     hub = await pair(OWNER);
+  });
+
+  it("verified passes through heartbeat -> storage -> API; bad value is 400", async () => {
+    const list = [{ id: "slack", state: "connected", access: "read", kind: "builtin", verified: false }, { id: "custom", label: "Garage sensors", state: "connected", access: "read", kind: "mcp", verified: true }];
+    expect((await heartbeat(hub, hb(list))).status).toBe(200);
+    const m = await get("/api/connectors", OWNER);
+    expect(m.catalog.find((c: any) => c.id === "slack").hubs[0].verified).toBe(false);
+    expect(m.custom[0].verified).toBe(true);
+    expect((await heartbeat(hub, hb([{ id: "slack", state: "connected", access: "read", kind: "builtin", verified: "no" }]))).status).toBe(400);
   });
 
   it("heartbeat stores the snapshot; merged catalog shows per-hub state; custom is listed separately", async () => {

@@ -10,7 +10,7 @@ export const CUSTOM_ID = "custom";
 
 export type ConnectorStat = {
   id: string; state: (typeof CONNECTOR_STATES)[number]; access: (typeof CONNECTOR_ACCESS)[number]; kind: (typeof CONNECTOR_KINDS)[number];
-  label?: string; last_used_h?: number;
+  label?: string; last_used_h?: number; verified?: boolean;
 };
 
 const LABEL_CHARS = /^[A-Za-z0-9][A-Za-z0-9 _()+&'-]{0,46}[A-Za-z0-9)]$|^[A-Za-z0-9]$/;
@@ -33,7 +33,7 @@ export function parseConnectors(v: unknown): { ok: true; value: ConnectorStat[] 
   const seen = new Set<string>();
   for (const x of v) {
     if (!isObj(x)) return bad("bad entry");
-    for (const k of Object.keys(x)) if (!["id", "label", "state", "access", "last_used_h", "kind"].includes(k)) return bad(`unknown field: ${k.slice(0, 32)}`);
+    for (const k of Object.keys(x)) if (!["id", "label", "state", "access", "last_used_h", "kind", "verified"].includes(k)) return bad(`unknown field: ${k.slice(0, 32)}`);
     if (typeof x.id !== "string") return bad("bad id");
     if (!oneOf(CONNECTOR_STATES, x.state)) return bad("bad state");
     if (!oneOf(CONNECTOR_ACCESS, x.access)) return bad("bad access");
@@ -53,6 +53,10 @@ export function parseConnectors(v: unknown): { ok: true; value: ConnectorStat[] 
     if ("last_used_h" in x) {
       if (typeof x.last_used_h !== "number" || !Number.isInteger(x.last_used_h) || x.last_used_h < 0 || x.last_used_h > MAX_LAST_USED_H) return bad("bad last_used_h");
       e.last_used_h = x.last_used_h;
+    }
+    if ("verified" in x) {
+      if (typeof x.verified !== "boolean") return bad("bad verified");
+      e.verified = x.verified;
     }
     const key = custom ? `custom:${e.label!.toLowerCase()}` : x.id;
     if (seen.has(key)) return bad("duplicate entry");

@@ -28,6 +28,7 @@ A "Connect" button in the portal is planned for a later phase. It will keep the 
 ## What the states mean
 
 - **Connected**: the Hub reached the service on its last check.
+- **Connected — not yet verified**: the connection is set up, but Albena hasn't health-checked it yet, so it is not proven to work. It clears on its own after the first successful check.
 - **Needs attention**: the sign-in expired or the service did not answer. Open your Hub and reconnect it.
 - **Off**: set up, but turned off.
 - **Not set up**: this Hub has not reported this connector.

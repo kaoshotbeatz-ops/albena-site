@@ -22,13 +22,21 @@ export function lastUsed(hours: number | undefined): string {
   return `Last used ${Math.round(hours / 24)} d ago`;
 }
 
-export const stateChip = (s: Shown) => h('span', { class: 'row' }, dot(stateDot(s)), chip(STATE_TEXT[s], stateTone(s)));
+export const stateChip = (s: Shown, verified?: boolean) => h('span', { class: 'row' }, dot(stateDot(s)), chip(STATE_TEXT[s], stateTone(s)), unverifiedBadge(s, verified));
+
+export const UNVERIFIED_TEXT = 'Connected \u2014 not yet verified';
+export const UNVERIFIED_HELP = "Albena hasn't health-checked this connection yet.";
+/** Neutral/amber outline badge: only when the Hub explicitly says verified === false on a connected entry (absent = older Hub, no badge). */
+export function unverifiedBadge(s: Shown, verified?: boolean): HTMLElement | null {
+  if (s !== 'connected' || verified !== false) return null;
+  return h('span', { class: 'chip chip-outline amber', title: UNVERIFIED_HELP, tabindex: '0', 'aria-label': `${UNVERIFIED_TEXT}. ${UNVERIFIED_HELP}` }, UNVERIFIED_TEXT);
+}
 
 /** The summary rows for one Hub: only what that Hub reported. */
 export function hubRows(view: ConnectionsView, hubId: string) {
-  const rows: { name: string; sub: string; state: ConnState; access: 'read' | 'write'; used?: number }[] = [];
-  for (const c of view.catalog) for (const x of c.hubs) if (x.hubId === hubId) rows.push({ name: c.name, sub: x.kind === 'builtin' ? c.description : `via ${x.kind.toUpperCase()}`, state: x.state, access: x.access, used: x.last_used_h });
-  for (const x of view.custom) if (x.hubId === hubId) rows.push({ name: x.label, sub: `Your own ${x.kind.toUpperCase()} connection`, state: x.state, access: x.access, used: x.last_used_h });
+  const rows: { name: string; sub: string; state: ConnState; access: 'read' | 'write'; used?: number; verified?: boolean }[] = [];
+  for (const c of view.catalog) for (const x of c.hubs) if (x.hubId === hubId) rows.push({ name: c.name, sub: x.kind === 'builtin' ? c.description : `via ${x.kind.toUpperCase()}`, state: x.state, access: x.access, used: x.last_used_h, verified: x.verified });
+  for (const x of view.custom) if (x.hubId === hubId) rows.push({ name: x.label, sub: `Your own ${x.kind.toUpperCase()} connection`, state: x.state, access: x.access, used: x.last_used_h, verified: x.verified });
   return rows;
 }
 
@@ -45,7 +53,7 @@ export function connectionsPanel(view: ConnectionsView, hubId: string, staffMode
   const list = rows.length
     ? h('ul', { class: 'list conn-list' }, ...rows.map((r) => h('li', {},
       h('div', { class: 'main' }, h('span', { class: 'name' }, dot(stateDot(r.state)), r.name), h('span', { class: 'sub' }, `${r.sub}. ${lastUsed(r.used)}`)),
-      h('span', { class: 'row' }, chip(ACCESS_TEXT[r.access], r.access === 'write' ? 'indigo' : 'grey'), chip(STATE_TEXT[r.state], stateTone(r.state))))))
+      h('span', { class: 'row' }, chip(ACCESS_TEXT[r.access], r.access === 'write' ? 'indigo' : 'grey'), chip(STATE_TEXT[r.state], stateTone(r.state)), unverifiedBadge(r.state, r.verified)))))
     : empty('No connectors set up on this Hub yet.');
   const p = panel(title, [rows.length ? summary : null, list, h('p', { class: 'note' }, 'Names and status only, as reported by the Hub. Credentials never leave the Hub.')], link ?? undefined);
   return p;
