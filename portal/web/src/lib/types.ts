@@ -37,13 +37,18 @@ export interface ConnectionsView {
 }
 export interface Account { id: string; members: Member[]; invites: PendingInvite[]; connectors: Connector[] }
 
+/** Per-module usage counters (counts and latency only). Every field optional. */
+export interface ModuleStat { requests_24h?: number; requests_7d?: number; errors_24h?: number; p50_ms?: number }
+export interface ModulePoint { ts: number; requests_24h: number | null; errors_24h: number | null; p50_ms: number | null }
+export interface ModuleSeries { module: string; points: ModulePoint[] }
+
 /** Telemetry snapshot: every field is optional (a Hub reports only what it knows). Missing renders as an em dash, never 0. */
 export interface HubStats {
   uptime_s?: number; cpu_pct?: number; load1?: number; mem_used_mb?: number; mem_total_mb?: number; disk_used_gb?: number; disk_total_gb?: number; temp_c?: number;
   gpu?: { name: string; util_pct: number; mem_used_mb: number; mem_total_mb: number; temp_c?: number }[];
   services?: ([string, string] | [string, string, number])[];
   ai?: { mode?: 'local' | 'local+cloud'; models?: { lane: string; name: string; loaded: boolean }[]; avg_latency_ms?: number };
-  activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number };
+  activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number; modules?: Record<string, ModuleStat> };
   updates?: { latest_known?: string; last_result?: string; last_at?: number };
 }
 export interface HubDetail {

@@ -1,5 +1,5 @@
 // Same-origin portal API client (see portal/CONTRACT.md). Session cookie is HttpOnly; no tokens in JS.
-import type { HubDetail, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member, ConnectionsView } from './types';
+import type { HubDetail, ModuleSeries, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member, ConnectionsView } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
@@ -105,6 +105,7 @@ export const api = {
   pairStart: async (): Promise<PairStart> => { const r = await req<{ code: string; expiresAt: number }>('POST', '/api/hubs/pair/start', {}); return { code: r.code, expiresAt: iso(r.expiresAt) }; },
   hubDetail: async (id: string): Promise<HubDetail> => (await get<{ hub: HubDetail }>(`/api/hubs/${encodeURIComponent(id)}`)).hub,
   hubMetrics: async (id: string, range: MetricRange): Promise<MetricPoint[]> => (await get<{ points: MetricPoint[] }>(`/api/hubs/${encodeURIComponent(id)}/metrics?range=${range}`)).points,
+  hubModules: async (id: string, range: MetricRange): Promise<ModuleSeries[]> => (await get<{ modules: ModuleSeries[] }>(`/api/hubs/${encodeURIComponent(id)}/modules?range=${range}`)).modules,
   hubPatch: async (id: string, patch: Partial<Pick<Hub, 'name' | 'updateChannel' | 'remoteAccess'>>): Promise<Hub> => hub((await req<{ hub: W.WireHub }>('PATCH', `/api/hubs/${encodeURIComponent(id)}`, patch)).hub),
   hubDelete: (id: string) => req<unknown>('DELETE', `/api/hubs/${encodeURIComponent(id)}`),
   release: async (edition: string): Promise<Release> => {

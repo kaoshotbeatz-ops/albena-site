@@ -1,6 +1,6 @@
 // Staff API (Cloudflare Access gates /support/* and /api/support/*). Shapes match portal/worker/src/support/*.ts.
 import { req } from './api';
-import type { ConnectionsView, HubDetail, MetricPoint, MetricRange } from './types';
+import type { ConnectionsView, HubDetail, ModuleSeries, MetricPoint, MetricRange } from './types';
 
 const opt = { noRedirect: true };
 const get = <T>(p: string) => req<T>('GET', p, undefined, opt);
@@ -33,6 +33,7 @@ export async function startViewAs(account: string): Promise<void> {
 export const staff = {
   hub: async (id: string): Promise<HubDetail> => (await get<{ hub: HubDetail }>(`/api/support/hubs/${encodeURIComponent(id)}`)).hub,
   hubMetrics: async (id: string, range: MetricRange): Promise<MetricPoint[]> => (await get<{ points: MetricPoint[] }>(`/api/support/hubs/${encodeURIComponent(id)}/metrics?range=${range}`)).points,
+  hubModules: async (id: string, range: MetricRange): Promise<ModuleSeries[]> => (await get<{ modules: ModuleSeries[] }>(`/api/support/hubs/${encodeURIComponent(id)}/modules?range=${range}`)).modules,
   connectors: (accountId: string) => get<ConnectionsView>(`/api/support/accounts/${encodeURIComponent(accountId)}/connectors`),
   accounts: () => get<{ me: string; accounts: AccountRow[] }>('/api/support/accounts'),
   account: (id: string) => get<Detail>(`/api/support/accounts/${encodeURIComponent(id)}`),

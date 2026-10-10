@@ -80,6 +80,7 @@ export function mount(app: Hono<AppEnv>): void {
       db.prepare("DELETE FROM passkeys WHERE user_id = ?").bind(id),
       db.prepare("DELETE FROM hub_nonces WHERE hub_id IN (SELECT id FROM hubs WHERE account_id = ?)").bind(a),
       db.prepare("DELETE FROM hub_metrics WHERE hub_id IN (SELECT id FROM hubs WHERE account_id = ?)").bind(a),
+      db.prepare("DELETE FROM hub_module_metrics WHERE hub_id IN (SELECT id FROM hubs WHERE account_id = ?)").bind(a),
       db.prepare("DELETE FROM hubs WHERE account_id = ?").bind(a),
       db.prepare("DELETE FROM hub_pair_codes WHERE account_id = ?").bind(a),
       db.prepare("DELETE FROM reserved_hubs WHERE account_id = ?").bind(a),

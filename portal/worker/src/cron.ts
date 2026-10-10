@@ -34,6 +34,7 @@ export async function prune(env: Bindings, ts = Math.floor(Date.now() / 1000)): 
     run("hubNonces", "DELETE FROM hub_nonces WHERE expires_at <= ?", ts),
     run("hubRate", "DELETE FROM hub_rate WHERE window_start <= ?", ts - RATE_RETAIN_S),
     run("hubMetrics", "DELETE FROM hub_metrics WHERE ts < ?", ts - METRIC_RETAIN_S),
+    run("hubModuleMetrics", "DELETE FROM hub_module_metrics WHERE ts < ?", ts - METRIC_RETAIN_S),
   ]);
   return Object.fromEntries(out);
 }
