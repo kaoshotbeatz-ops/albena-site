@@ -21,6 +21,12 @@ const prof = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9_-]{
 export const STAT_STATUS = ["ok", "down", "degraded"] as const;
 export const AI_LANES = ["fast", "general", "brain", "code", "vision", "embed", "other"] as const;
 export const UPDATE_RESULTS = ["ok", "rolled_back", "failed", "none"] as const;
+/** Albena modules a Hub may report usage for. Derived from the groups the Hub routes requests to (tool_select groups + the quick-chat lane); anything else is "other". */
+export const HUB_MODULES = ["music", "home", "cameras", "media", "calendar", "email", "search", "memory", "approvals", "money", "network", "desk", "fleet", "chat", "other"] as const;
+export const MAX_MODULES = 16;
+export const MODULE_KEYS = ["requests_24h", "requests_7d", "errors_24h", "p50_ms"] as const;
+export type ModuleStat = { requests_24h?: number; requests_7d?: number; errors_24h?: number; p50_ms?: number };
+const MAX_P50_MS = 3_600_000;
 const SVC_NAME = /^[A-Za-z0-9._-]{1,32}$/;
 const LABEL = /^[A-Za-z0-9 ._:+()\/-]{1,64}$/; // hardware / model names such as "NVIDIA GeForce RTX 5080" or "nvidia/nemotron-3:q4"
 const MAX_UPTIME_S = 10 * 365 * 86400;
@@ -36,7 +42,7 @@ export type HubStats = {
   uptime_s?: number; cpu_pct?: number; load1?: number; mem_used_mb?: number; mem_total_mb?: number; disk_used_gb?: number; disk_total_gb?: number;
   temp_c?: number; gpu?: GpuStat[]; services?: Service[];
   ai?: { mode?: "local" | "local+cloud"; models?: ModelStat[]; avg_latency_ms?: number };
-  activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number };
+  activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number; modules?: Record<string, ModuleStat> };
   updates?: { latest_known?: string; last_result?: (typeof UPDATE_RESULTS)[number]; last_at?: number };
   /** Names and status of connections only (see ../connectors/schema.ts). Split off into hubs.connectors_json on heartbeat. */
   connectors?: ConnectorStat[];
@@ -120,10 +126,33 @@ export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: fa
     const a = v.activity;
     const keys = ["requests_24h", "requests_7d", "wakes_24h", "approvals_pending", "approvals_24h"] as const;
     if (!isObj(a)) return bad("bad activity");
-    const ae = onlyKeys(a, [...keys]);
+    const ae = onlyKeys(a, [...keys, "modules"]);
     if (ae) return bad(`activity: ${ae}`);
     out.activity = {};
     for (const k of keys) if (k in a) { if (!int(a[k], 0, MAX_COUNT)) return bad(`bad activity.${k}`); out.activity[k] = a[k] as number; }
+    if ("modules" in a) {
+      // Counts only, keyed by an allowlisted module name; no content, no free text.
+      const mods = a.modules;
+      if (!isObj(mods)) return bad("bad activity.modules");
+      const names = Object.keys(mods);
+      if (names.length > MAX_MODULES) return bad("too many activity.modules");
+      const res: Record<string, ModuleStat> = {};
+      for (const name of names) {
+        if (!oneOf(HUB_MODULES, name)) return bad(`unknown module: ${name.slice(0, 32)}`);
+        const m = mods[name];
+        if (!isObj(m)) return bad(`bad module ${name}`);
+        const me = onlyKeys(m, [...MODULE_KEYS]);
+        if (me) return bad(`module ${name}: ${me}`);
+        const one: ModuleStat = {};
+        for (const k of MODULE_KEYS) {
+          if (!(k in m)) continue;
+          if (!int(m[k], 0, k === "p50_ms" ? MAX_P50_MS : MAX_COUNT)) return bad(`bad module ${name}.${k}`);
+          one[k] = m[k] as number;
+        }
+        res[name] = one;
+      }
+      out.activity.modules = res;
+    }
   }
 
   if ("updates" in v) {

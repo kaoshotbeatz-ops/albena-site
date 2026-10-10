@@ -32,13 +32,14 @@ export function handle(method: string, path: string, body: unknown): unknown {
   ] };
   if (p === '/api/hubs/pair/start') return { code: 'K7QM4XRD', expiresAt: now + 600 };
   if (p === '/api/hubs' && method === 'GET') return { hubs };
+  if (/^\/api\/hubs\/([^/]+)\/modules$/.test(p)) return { range: '24h', modules: ['music', 'home', 'cameras'].map((module, k) => ({ module, points: Array.from({ length: 48 }, (_, i) => ({ ts: now - (48 - i) * 1800, requests_24h: 10 + k * 8 + Math.round(6 * Math.sin(i / 6 + k)), errors_24h: k, p50_ms: 200 + k * 90 })) })) };
   const mm = /^\/api\/hubs\/([^/]+)\/metrics$/.exec(p);
   if (mm) return { range: '24h', points: Array.from({ length: 96 }, (_, i) => ({ ts: now - (96 - i) * 900, cpu: 30 + 20 * Math.sin(i / 8), mem_pct: 40 + i / 10, gpu_util: null, gpu_mem_pct: null, latency_ms: 800 + (i % 7) * 20 })) };
   const dm = /^\/api\/hubs\/([^/]+)$/.exec(p);
   if (dm && method === 'GET') {
     const hub = hubs.find((x) => x.id === dm[1]);
     if (!hub) throw new ApiError(404, 'not_found');
-    return { hub: { ...hub, publicNetwork: { ip: '203.0.113.9', isp: 'Example Fiber', asn: 64500, city: 'Charlotte', region: 'North Carolina', country: 'US', timezone: 'America/New_York', changedAt: now - 3 * D }, online: now - hub.lastSeen < 900, stats: { uptime_s: 400000, cpu_pct: 34, mem_used_mb: 21000, mem_total_mb: 65536, services: [['voice', 'ok', 86000]], activity: { requests_24h: 120 }, updates: { latest_known: hub.version } } } };
+    return { hub: { ...hub, publicNetwork: { ip: '203.0.113.9', isp: 'Example Fiber', asn: 64500, city: 'Charlotte', region: 'North Carolina', country: 'US', timezone: 'America/New_York', changedAt: now - 3 * D }, online: now - hub.lastSeen < 900, stats: { uptime_s: 400000, cpu_pct: 34, mem_used_mb: 21000, mem_total_mb: 65536, services: [['voice', 'ok', 86000]], activity: { requests_24h: 120, requests_7d: 800, modules: { music: { requests_24h: 12, requests_7d: 80, errors_24h: 0, p50_ms: 200 }, home: { requests_24h: 40, requests_7d: 300, errors_24h: 1, p50_ms: 290 }, cameras: { requests_24h: 22, requests_7d: 150, errors_24h: 2, p50_ms: 380 } } }, updates: { latest_known: hub.version } } } };
   }
   const hm = /^\/api\/hubs\/([^/]+)$/.exec(p);
   if (hm) {

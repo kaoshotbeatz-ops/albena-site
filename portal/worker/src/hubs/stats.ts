@@ -1,5 +1,5 @@
 // Hub telemetry: latest snapshot (hubs.stats_json), a thin time series (hub_metrics) and the read endpoints' shared queries.
-import type { HubStats } from "./schema";
+import type { HubStats, ModuleStat } from "./schema";
 import type { ConnectorStat } from "../connectors/schema";
 
 export const ONLINE_S = 15 * 60; // a Hub is online when its last heartbeat is newer than this
@@ -29,15 +29,56 @@ export function summarize(s: HubStats | null) {
 }
 
 /** Stores one point unless this Hub already has one in the last 5 minutes (a single atomic INSERT ... WHERE NOT EXISTS). */
-export async function recordMetric(db: D1Database, hubId: string, s: HubStats, ts: number): Promise<void> {
+export async function recordMetric(db: D1Database, hubId: string, s: HubStats, ts: number): Promise<boolean> {
   const gpus = s.gpu ?? [];
   const gpuUtil = gpus.length ? Math.max(...gpus.map((g) => g.util_pct)) : null;
   const gpuMem = gpus.length ? Math.max(...gpus.map((g) => pct(g.mem_used_mb, g.mem_total_mb) ?? 0)) : null;
-  await db.prepare(
+  const r = await db.prepare(
     `INSERT INTO hub_metrics(hub_id, ts, cpu, mem_pct, gpu_util, gpu_mem_pct, latency_ms)
      SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7
      WHERE NOT EXISTS (SELECT 1 FROM hub_metrics WHERE hub_id = ?1 AND ts > ?2 - ?8)`,
   ).bind(hubId, ts, s.cpu_pct ?? null, pct(s.mem_used_mb, s.mem_total_mb), gpuUtil, gpuMem, s.ai?.avg_latency_ms ?? null, METRIC_GAP_S).run();
+  return (r.meta?.changes ?? 0) > 0; // true when a point was stored (the caller stores the module series at the same ts)
+}
+
+/** Stores one row per reported module at `ts` (call only when recordMetric stored a point, so module rows follow the same 5-minute spacing). */
+export async function recordModuleMetrics(db: D1Database, hubId: string, modules: Record<string, ModuleStat> | undefined, ts: number): Promise<void> {
+  const entries = Object.entries(modules ?? {});
+  if (!entries.length) return;
+  await db.batch(entries.map(([m, v]) => db.prepare(
+    "INSERT OR IGNORE INTO hub_module_metrics(hub_id, ts, module, requests_24h, requests_7d, errors_24h, p50_ms) VALUES(?,?,?,?,?,?,?)",
+  ).bind(hubId, ts, m, v.requests_24h ?? null, v.requests_7d ?? null, v.errors_24h ?? null, v.p50_ms ?? null)));
+}
+
+export type ModulePoint = { ts: number; requests_24h: number | null; errors_24h: number | null; p50_ms: number | null };
+export const MODULE_POINTS = 96; // per module per response: 7 days of 5-minute points would be 2016 x modules
+
+/** Per-module series over `range` (rolling 24h request count, errors and p50 latency at each stored point), downsampled per module. */
+export async function loadModuleMetrics(db: D1Database, hubId: string, range: Range, t = Math.floor(Date.now() / 1000)) {
+  const from = t - RANGES[range];
+  const rows = (await db.prepare("SELECT module, ts, requests_24h, errors_24h, p50_ms FROM hub_module_metrics WHERE hub_id = ? AND ts >= ? ORDER BY module, ts").bind(hubId, from).all<ModulePoint & { module: string }>()).results ?? [];
+  const by = new Map<string, ModulePoint[]>();
+  for (const { module, ...p } of rows) { let l = by.get(module); if (!l) by.set(module, (l = [])); l.push(p); }
+  const modules = [...by.entries()].map(([module, pts]) => ({ module, points: downsampleModule(pts, from, t) }));
+  return { range, from, to: t, modules };
+}
+
+/** Averages a module's points into at most `max` equal time buckets (null-aware); counts and latency are rounded to integers. */
+export function downsampleModule(points: ModulePoint[], from: number, to: number, max = MODULE_POINTS): ModulePoint[] {
+  if (points.length <= max) return points;
+  const size = Math.max(1, Math.ceil((to - from) / max));
+  const keys = ["requests_24h", "errors_24h", "p50_ms"] as const;
+  const buckets = new Map<number, { sums: number[]; counts: number[] }>();
+  for (const p of points) {
+    const i = Math.min(max - 1, Math.max(0, Math.floor((p.ts - from) / size)));
+    let b = buckets.get(i);
+    if (!b) buckets.set(i, (b = { sums: keys.map(() => 0), counts: keys.map(() => 0) }));
+    keys.forEach((k, j) => { const v = p[k]; if (v !== null) { b!.sums[j] += v; b!.counts[j]++; } });
+  }
+  return [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([i, b]) => {
+    const avg = (j: number) => (b.counts[j] ? Math.round(b.sums[j] / b.counts[j]) : null);
+    return { ts: from + i * size, requests_24h: avg(0), errors_24h: avg(1), p50_ms: avg(2) };
+  });
 }
 
 /** Averages points into at most `max` equal time buckets over [from, to]. A bucket's ts is its start; null columns stay null. */

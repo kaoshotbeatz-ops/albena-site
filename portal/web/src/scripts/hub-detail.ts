@@ -3,12 +3,13 @@ import { api } from '../lib/api';
 import { staff } from '../lib/staff';
 import { h, must, chip, dot, ago, fmtDateTime, failInto, empty, table, panel, toast } from '../lib/ui';
 import { connectionsPanel } from '../lib/connections';
-import type { ConnectionsView, HubDetail, HubStats, MetricPoint, MetricRange } from '../lib/types';
+import type { ConnectionsView, HubDetail, HubStats, MetricPoint, MetricRange, ModuleSeries } from '../lib/types';
 
 const staffMode = location.pathname.startsWith('/support/');
 const id = decodeURIComponent(location.pathname.split('/')[staffMode ? 3 : 2] ?? '');
 const fetchHub = (): Promise<HubDetail> => (staffMode ? staff.hub(id) : api.hubDetail(id));
 const fetchMetrics = (r: MetricRange): Promise<MetricPoint[]> => (staffMode ? staff.hubMetrics(id, r) : api.hubMetrics(id, r));
+const fetchModules = (r: MetricRange): Promise<ModuleSeries[]> => (staffMode ? staff.hubModules(id, r) : api.hubModules(id, r));
 
 const root = must('#root');
 const DASH = '—';
@@ -133,6 +134,59 @@ function activityPanel(s: HubStats | null) {
     h('p', { class: 'note' }, 'Counts only. Albena never sends conversation content.'),
   ]);
 }
+// ---- usage by module: 24h/7d bars from the latest snapshot, trend sparkline from the stored series ----
+const MODULE_LABEL: Record<string, string> = { music: 'Music', home: 'Home', cameras: 'Cameras', media: 'Media', calendar: 'Calendar', email: 'Email', search: 'Search', memory: 'Memory', approvals: 'Approvals', money: 'Money', network: 'Network', desk: 'Service desk', fleet: 'Fleet and agents', chat: 'Chat', other: 'Other' };
+const modLabel = (m: string) => MODULE_LABEL[m] ?? m;
+function bar(label: string, v: number | undefined, max: number) {
+  const w = v === undefined || max <= 0 ? 0 : Math.max(v > 0 ? 2 : 0, Math.round((v / max) * 100));
+  const fill = h('span', { class: 'mbar-f' });
+  fill.style.width = `${w}%`; // CSSOM, not a style attribute: the portal CSP forbids inline styles
+  return h('div', { class: 'mbar', role: 'img', 'aria-label': `${label}: ${n(v)}` }, h('span', { class: 'mbar-l' }, label), h('span', { class: 'mbar-t' }, fill), h('span', { class: 'num mbar-n' }, n(v)));
+}
+function spark(label: string, pts: ModuleSeries['points']): Node {
+  const vals = pts.map((p) => p.requests_24h).filter((v): v is number => v !== null);
+  if (pts.length < 2 || vals.length < 2) return h('span', { class: 'mut' }, 'Not enough data');
+  const W = 120, H = 28, P = 2, max = Math.max(1, ...vals), t0 = pts[0].ts, t1 = pts[pts.length - 1].ts || t0 + 1;
+  const coords = pts.filter((p) => p.requests_24h !== null).map((p) => `${(P + ((p.ts - t0) / Math.max(1, t1 - t0)) * (W - 2 * P)).toFixed(1)},${(H - P - ((p.requests_24h as number) / max) * (H - 2 * P)).toFixed(1)}`).join(' ');
+  const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'spark', role: 'img', 'aria-label': `${label} trend: rolling 24 hour requests from ${Math.min(...vals)} to ${Math.max(...vals)}`, preserveAspectRatio: 'none' });
+  svg.append(sv('polyline', { points: coords, class: 'ch-line s1', fill: 'none' }));
+  return svg;
+}
+let modRange: MetricRange = '24h';
+let modBox: HTMLElement;
+async function loadModuleTrends(snap: Record<string, NonNullable<NonNullable<HubStats['activity']>['modules']>[string]>) {
+  modBox.setAttribute('aria-busy', 'true');
+  let series: ModuleSeries[] = [];
+  let failed = false;
+  try { series = await fetchModules(modRange); } catch { failed = true; } // the bars still render from the snapshot
+  const byMod = new Map(series.map((s) => [s.module, s.points]));
+  const names = Object.keys(snap).sort((a, b) => (snap[b].requests_7d ?? snap[b].requests_24h ?? 0) - (snap[a].requests_7d ?? snap[a].requests_24h ?? 0));
+  const max = Math.max(0, ...names.flatMap((m) => [snap[m].requests_7d ?? 0, snap[m].requests_24h ?? 0]));
+  const rows = names.map((m) => {
+    const s = snap[m];
+    return h('li', { class: 'mrow' },
+      h('div', { class: 'mrow-h' }, h('strong', {}, modLabel(m)), h('span', { class: 'mut' }, `errors ${n(s.errors_24h)} (24 h) · median ${n(s.p50_ms, (v) => `${v} ms`)}`)),
+      h('div', { class: 'mrow-b' }, bar('24 hours', s.requests_24h, max), bar('7 days', s.requests_7d, max)),
+      h('div', { class: 'mrow-t' }, spark(modLabel(m), byMod.get(m) ?? [])));
+  });
+  const trs = names.map((m) => [h('span', {}, modLabel(m)), h('span', { class: 'num' }, n(snap[m].requests_24h)), h('span', { class: 'num' }, n(snap[m].requests_7d)), h('span', { class: 'num' }, n(snap[m].errors_24h)), h('span', { class: 'num' }, n(snap[m].p50_ms))]);
+  modBox.replaceChildren(h('ul', { class: 'mlist' }, ...rows), ...(failed ? [h('p', { class: 'note' }, 'Trend lines could not be loaded.')] : []),
+    h('details', { class: 'chart-data' }, h('summary', {}, 'Show as table'), table('Usage by module', ['Module', 'Requests 24 h', 'Requests 7 d', 'Errors 24 h', 'Median ms'], trs)));
+  modBox.setAttribute('aria-busy', 'false');
+}
+function modulesPanel(s: HubStats | null) {
+  const snap = s?.activity?.modules;
+  if (!snap || !Object.keys(snap).length) return panel('Usage by module', none('This Hub does not report usage by module yet. It appears after the Hub updates to a version that sends it.'));
+  modBox = h('div', { class: 'modules', 'aria-live': 'polite' });
+  const group = h('div', { class: 'row', role: 'group', 'aria-label': 'Trend range' });
+  for (const r of ['24h', '7d'] as const) {
+    const b = h('button', { class: 'btn btn-sm', type: 'button', 'aria-pressed': String(r === modRange) }, r === '24h' ? 'Trend, 24 hours' : 'Trend, 7 days');
+    b.addEventListener('click', () => { modRange = r; group.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); void loadModuleTrends(snap); });
+    group.append(b);
+  }
+  void loadModuleTrends(snap);
+  return panel('Usage by module', [group, modBox, h('p', { class: 'note' }, 'Request counts and median response time per module. Counts only; what was said or asked never leaves the Hub.')]);
+}
 const resultText: Record<string, string> = { ok: 'Succeeded', rolled_back: 'Rolled back', failed: 'Failed', none: 'No update yet' };
 function updatesPanel(x: HubDetail) {
   const u = x.stats?.updates ?? {};
@@ -167,7 +221,7 @@ function render(x: HubDetail, conns: ConnectionsView | null) {
     h('a', { class: 'btn btn-sm', href: staffMode && x.accountId ? `/support/customers/${encodeURIComponent(x.accountId)}` : '/hubs' }, staffMode ? 'Back to customer' : 'All Hubs'));
   const banner = x.online ? null : h('div', { class: 'banner is-warn', role: 'alert' }, h('span', {}, `This Hub is offline. It last reported ${x.lastSeen ? ago(iso(x.lastSeen)) : 'never'}. Numbers below are its last known state.`));
   root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), internetPanel(x), conns ? connectionsPanel(conns, x.id, staffMode) : null, servicesPanel(x),
-    h('div', { class: 'grid-2' }, hardwarePanel(x.stats), aiPanel(x.stats)), activityPanel(x.stats), chartsPanel()));
+    h('div', { class: 'grid-2' }, hardwarePanel(x.stats), aiPanel(x.stats)), activityPanel(x.stats), modulesPanel(x.stats), chartsPanel()));
 }
 
 if (!id) failInto(root, new Error('missing id'));

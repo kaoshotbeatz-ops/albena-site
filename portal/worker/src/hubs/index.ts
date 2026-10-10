@@ -5,10 +5,10 @@ import { ipBucket } from "../auth/limits";
 import { getEntitlement } from "../billing/entitlements";
 import { MAX_HUBS } from "../billing/plans";
 import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
-import { RANGES, type Range, isOnline, loadDetail, loadMetrics, parseStored, recordMetric, summarize } from "./stats";
+import { RANGES, type Range, isOnline, loadDetail, loadMetrics, loadModuleMetrics, parseStored, recordMetric, recordModuleMetrics, summarize } from "./stats";
 import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
-export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql", "0700_hub_public_net.sql", "0800_hub_connectors.sql"];
+export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql", "0700_hub_public_net.sql", "0800_hub_connectors.sql", "0900_hub_module_metrics.sql"];
 
 export const PAIR_TTL_S = 600;
 export const SKEW_S = 300;
@@ -226,6 +226,15 @@ export function mount(app: Hono<AppEnv>): void {
     return c.json(await loadMetrics(c.env.DB, hub.id, range as Range));
   });
 
+  // Per-module usage series ("Usage by module"). Same scoping as /metrics: the caller's account, other accounts answer 404.
+  app.get("/api/hubs/:id/modules", requireUser, async (c) => {
+    const range = c.req.query("range") ?? "24h";
+    if (!(range in RANGES)) return c.json({ error: "bad range" }, 400);
+    const hub = await loadDetail(c.env.DB, c.req.param("id"), c.get("user").accountId);
+    if (!hub) return c.json({ error: "not found" }, 404);
+    return c.json(await loadModuleMetrics(c.env.DB, hub.id, range as Range));
+  });
+
   app.patch("/api/hubs/:id", requireUser, async (c) => {
     const u = c.get("user");
     if (!CSRF(c)) return c.json({ error: "csrf" }, 403);
@@ -253,6 +262,7 @@ export function mount(app: Hono<AppEnv>): void {
     if (!r.meta?.changes) return c.json({ error: "not found" }, 404);
     await c.env.DB.prepare("DELETE FROM hub_nonces WHERE hub_id=?").bind(id).run();
     await c.env.DB.prepare("DELETE FROM hub_metrics WHERE hub_id=?").bind(id).run();
+    await c.env.DB.prepare("DELETE FROM hub_module_metrics WHERE hub_id=?").bind(id).run();
     await audit(c, "hub.unpair", id);
     return c.json({ ok: true });
   });
@@ -280,7 +290,7 @@ export function mount(app: Hono<AppEnv>): void {
         .bind(net.ip, net.isp, net.asn, net.city, net.region, net.country, net.tz, changed ? 1 : 0, t, hub.id).run();
       if (changed && hub.net_ip) await audit(c, "hub.public_ip_changed", hub.id); // hub id only: the address itself is never written to the audit log
     }
-    if (v.stats) await recordMetric(c.env.DB, hub.id, stats, t);
+    if (v.stats && (await recordMetric(c.env.DB, hub.id, stats, t))) await recordModuleMetrics(c.env.DB, hub.id, stats.activity?.modules, t);
     // server-side settings win; hub learns them here
     return c.json({ ok: true, updateChannel: hub.update_channel, remoteAccess: !!hub.remote_access });
   });
