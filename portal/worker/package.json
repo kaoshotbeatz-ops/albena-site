@@ -6,7 +6,12 @@
     "dev": "wrangler dev --local",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "migrate:local": "wrangler d1 migrations apply albena_portal --local"
+    "migrate:local": "wrangler d1 migrations apply albena_portal --local",
+    "predeploy": "node ../scripts/check-portal-build.mjs deploy",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "node ../scripts/check-portal-build.mjs deploy && wrangler deploy --env staging",
+    "migrate:staging": "wrangler d1 migrations apply albena_portal_staging --env staging --remote",
+    "migrate:prod": "wrangler d1 migrations apply albena_portal --remote"
   },
   "dependencies": {
     "@simplewebauthn/server": "13.3.3",
