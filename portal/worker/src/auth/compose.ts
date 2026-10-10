@@ -2,7 +2,7 @@
 export interface Composed { subject: string; text: string; html: string }
 
 /** Mailing identity (CAN-SPAM friendly). TODO(Omar): replace the placeholder city/state/ZIP with the real mailing address. */
-export const SENDER_IDENTITY = "Omar Huertas LLC, [City, ST ZIP]";
+export const SENDER_IDENTITY = "Omar Huertas LLC, 506 Holt Ave, Greensboro, NC 27405";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
