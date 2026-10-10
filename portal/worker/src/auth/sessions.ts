@@ -47,6 +47,7 @@ async function viewAsSession(c: Context<AppEnv>, vtoken: string): Promise<Respon
     await audit(c, "support.view_as.denied_write", user.accountId, { method: c.req.method, path: c.req.path });
     return c.json({ error: "read_only_support_view" }, 403);
   }
+  if (c.req.path.startsWith("/api/") && (c.req.method === "GET" || c.req.method === "HEAD")) await audit(c, "support.view_as.read", user.accountId, { path: c.req.path });
   return "next";
 }
 export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {

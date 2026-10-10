@@ -203,8 +203,8 @@ describe("hub telemetry end to end", () => {
     const staff = (path: string, token: string | null = jwt) => app.request(ORIGIN + path, { headers: token ? { "Cf-Access-Jwt-Assertion": token } : {}, redirect: "manual" }, env());
     await heartbeat(hub, hbBody(sample()));
 
-    const va = await staff("/support/view-as?account=hs-acc1");
-    expect(va.status).toBe(302);
+    const va = await app.request(ORIGIN + "/api/support/view-as/start", { method: "POST", body: JSON.stringify({ account: "hs-acc1" }), headers: { "X-Requested-With": "albena-portal", Origin: ORIGIN, "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": jwt } }, env());
+    expect(va.status).toBe(200);
     const cookie = (va.headers.get("set-cookie") ?? "").split(";")[0];
     for (const p of [`/api/hubs/${hub.id}`, `/api/hubs/${hub.id}/metrics?range=7d`]) expect([p, (await call(p, cookie)).status]).toEqual([p, 200]);
     expect((await call(`/api/hubs/${hub.id}`, cookie, { method: "PATCH", body: JSON.stringify({ name: "x" }) })).status).toBe(403);
@@ -305,7 +305,7 @@ describe("hub telemetry end to end", () => {
       const staff = (path: string) => app.request(ORIGIN + path, { headers: { "Cf-Access-Jwt-Assertion": jwt }, redirect: "manual" }, env());
       const s = (await (await staff(`/api/support/hubs/${hub.id}`)).json()) as any;
       expect(s.hub.publicNetwork.ip).toBe("203.0.113.9");
-      const va = await staff("/support/view-as?account=hs-acc1");
+      const va = await app.request(ORIGIN + "/api/support/view-as/start", { method: "POST", body: JSON.stringify({ account: "hs-acc1" }), headers: { "X-Requested-With": "albena-portal", Origin: ORIGIN, "Content-Type": "application/json", "Cf-Access-Jwt-Assertion": jwt } }, env());
       const cookie = (va.headers.get("set-cookie") ?? "").split(";")[0];
       expect((await detail(cookie)).publicNetwork.ip).toBe("203.0.113.9");
     });

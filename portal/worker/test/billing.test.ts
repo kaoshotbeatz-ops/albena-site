@@ -92,6 +92,19 @@ describe("webhook processing", () => {
     expect((await postEvent(app, env, evCheckout())).status).toBe(200);
     expect((await db.prepare("SELECT status FROM stripe_events WHERE id='evt_co'").first<any>()).status).toBe("processed");
   });
+  it("a live 'processing' event is not taken over (409); a failed or stale (over 60s) one is", async () => {
+    const row = () => db.prepare("SELECT status FROM stripe_events WHERE id='evt_co'").first<any>();
+    await db.prepare("INSERT INTO stripe_events (id, type, status, received_at) VALUES ('evt_co','checkout.session.completed','processing',?)").bind(Math.floor(Date.now() / 1000) - 10).run();
+    const busy = await postEvent(app, env, evCheckout());
+    expect(busy.status).toBe(409);
+    expect(await busy.json()).toEqual({ error: "event_in_progress" });
+    expect((await row()).status).toBe("processing");
+    expect((await db.prepare("SELECT COUNT(*) AS n FROM hardware_orders").first<any>()).n).toBe(0);
+    await db.prepare("UPDATE stripe_events SET received_at = ? WHERE id='evt_co'").bind(Math.floor(Date.now() / 1000) - 61).run();
+    expect((await postEvent(app, env, evCheckout())).status).toBe(200);
+    expect((await row()).status).toBe("processed");
+    expect((await (await postEvent(app, env, evCheckout())).json() as any).duplicate).toBe(true);
+  });
   it("checkout creates entitlement from the fetched subscription, customer map and a pending_fulfillment order", async () => {
     await postEvent(app, env, evCheckout());
     expect(await getEntitlement(db, "acct_1")).toMatchObject({ plan: "hub_mac", status: "active", active: true, stripeSubscriptionId: "sub_1", billingInterval: "monthly", maxHubs: 1 });

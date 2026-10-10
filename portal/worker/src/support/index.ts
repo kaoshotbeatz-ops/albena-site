@@ -20,8 +20,10 @@ export function mount(app: Hono<AppEnv>): void {
   app.use("/support/*", async (c, next) => (/^\/support\/?$/.test(c.req.path) ? next() : requireSupportAdmin(c, next)));
   app.use("/api/support/*", async (c, next) => (c.req.path === "/api/support/view-as/end" ? next() : requireSupportAdmin(c, next)));
 
-  app.get("/support/view-as", async (c) => {
-    const id = c.req.query("account") ?? "";
+  // POST only (state change): behind the Access/allowlist middleware above and the global CSRF check. The staff UI navigates to "/" afterwards.
+  app.post("/api/support/view-as/start", async (c) => {
+    const body = await c.req.json<{ account?: unknown }>().catch(() => ({} as { account?: unknown }));
+    const id = typeof body.account === "string" ? body.account : "";
     const acct = await c.env.DB.prepare("SELECT a.id, a.owner FROM accounts a WHERE a.id = ?").bind(id).first<{ id: string; owner: string }>();
     if (!acct) return c.json({ error: "not_found" }, 404);
     const token = randomToken(), ts = now(), actor = c.get("supportActor")!;
@@ -33,7 +35,7 @@ export function mount(app: Hono<AppEnv>): void {
     await c.env.DB.batch(stmts);
     await audit(c, "support.view_as.start", acct.id);
     setCookie(c, VIEWAS_COOKIE, token, { ...viewAsCookieOptions, maxAge: VIEWAS_SECONDS });
-    return c.redirect("/", 302);
+    return c.json({ ok: true, redirect: "/" });
   });
 
   app.get("/api/support/accounts", async (c) => {

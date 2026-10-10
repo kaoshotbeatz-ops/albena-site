@@ -7,7 +7,7 @@ import { requireUser, clearSession, now, IDLE_SECONDS } from "./sessions";
 export { requireUser } from "./sessions";
 export { audit } from "../auditchain";
 export type { AppEnv } from "../types";
-export const migrations = ["0100_auth_core.sql", "0101_auth_audit_actor.sql"];
+export const migrations = ["0100_auth_core.sql", "0101_auth_audit_actor.sql", "0102_magic_code.sql", "0103_magic_code_failures.sql"];
 
 export function mount(app: Hono<AppEnv>): void {
   mountMagic(app);
@@ -51,6 +51,8 @@ export function mount(app: Hono<AppEnv>): void {
     const id = c.req.param("id");
     const deleted = await c.env.DB.prepare("DELETE FROM passkeys WHERE id = ? AND user_id = ? RETURNING id").bind(id, c.get("user").id).first();
     if (!deleted) return c.json({ error: "not_found" }, 404);
+    // A removed credential may have been the attacker's: end every other session, keep this one.
+    await c.env.DB.prepare("DELETE FROM sessions WHERE user_id = ? AND id <> ?").bind(c.get("user").id, c.get("sessionId")).run();
     await audit(c, "auth.passkey.remove", c.get("user").id);
     return c.json({ ok: true });
   });

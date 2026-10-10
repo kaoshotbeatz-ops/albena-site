@@ -1,7 +1,7 @@
 // Staff customer detail: /support/customers/<id>. All data via /api/support/accounts/:id; every action is audited server side.
 import { h, must, chip, fmtDateTime, failInto, empty, table, panel, run, confirmDialog, toast, money } from '../lib/ui';
 import { field, formDialog, planFields, secretDialog, PLAN_NAMES } from '../lib/forms';
-import { staff, type Detail } from '../lib/staff';
+import { staff, startViewAs, type Detail } from '../lib/staff';
 import { connectionsPanel } from '../lib/connections';
 import type { ConnectionsView } from '../lib/types';
 
@@ -77,7 +77,7 @@ async function shipDialog(orderId: string) {
 function head() {
   const e = d.entitlement, owner = d.users.find((u) => u.role === 'owner');
   const actions = h('div', { class: 'row' },
-    h('a', { class: 'btn btn-sm', href: `/support/view-as?account=${encodeURIComponent(id)}` }, 'View as'),
+    btn('View as', (b) => run(b, () => startViewAs(id)), 'btn btn-sm'),
     btn('Grant / extend plan', () => void grantDialog(), 'btn btn-sm btn-primary'),
     e.source === 'manual' && e.plan !== 'none' && (e.status === 'active'
       ? btn('Suspend', async (b) => { if (await confirmDialog('Suspend this plan?', 'Access stops now and pending pairing codes are dropped. Hubs already paired stay registered.', 'Suspend', { danger: true })) await act(b, () => staff.grant(id, { status: 'suspended' }), 'Plan suspended.'); }, 'btn btn-sm btn-danger')

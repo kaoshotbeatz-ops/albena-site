@@ -2,21 +2,25 @@ import type { Context, Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import type { AppEnv } from "../types";
 import { audit } from "../auditchain";
-import { randomToken, sha256, equalHash, randomCode } from "./crypto";
+import { randomToken, sha256, equalHash, randomCode, privacyHash } from "./crypto";
 import { allowed, turnstile } from "./limits";
 import { sendMail } from "./mail";
 import { createSession, now, userById } from "./sessions";
-import { joinHousehold } from "../account/household";
 
 const COOKIE = "__Host-albena_magic";
 const cookieOptions = { httpOnly: true, secure: true, sameSite: "Lax" as const, path: "/", maxAge: 900 };
 const MAX_ATTEMPTS = 5;
+export const MAX_CODE_FAILURES = 10, CODE_FAILURE_WINDOW_S = 24 * 3600;
 const accepted = { ok: true, message: "If this address can receive mail, a sign-in link will arrive shortly." };
 /** Issues a magic token bound to this browser (cookie) and emails the link and code. Delivery failure deletes the token. */
 export async function startMagic(c: Context<AppEnv>, email: string): Promise<void> {
   const secret = randomToken(), id = crypto.randomUUID(), browser = randomToken(), code = randomCode();
-  await c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at, code_hash) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(id, await sha256(secret), await sha256(browser), email, now() + 900, await sha256(`${id}:${code}`)).run();
+  // One live token per email: issuing a new one invalidates every older outstanding token for the address.
+  await c.env.DB.batch([
+    c.env.DB.prepare("DELETE FROM magic_tokens WHERE email = ?").bind(email),
+    c.env.DB.prepare("INSERT INTO magic_tokens (id, token_hash, browser_hash, email, expires_at, code_hash) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(id, await sha256(secret), await sha256(browser), email, now() + 900, await sha256(`${id}:${code}`)),
+  ]);
   setCookie(c, COOKIE, browser, cookieOptions);
   try {
     await sendMail(c.env, { to: email, url: `${c.env.PORTAL_ORIGIN}/api/auth/magic/verify?token=${id}.${secret}`, code });
@@ -67,6 +71,15 @@ export function mountMagic(app: Hono<AppEnv>): void {
     const browser = getCookie(c, COOKIE) ?? "";
     if (!/^[a-f0-9]{64}$/.test(browser)) return bad();
     const browserHash = await sha256(browser), ts = now();
+    // Per-email lockout across tokens: after too many wrong codes in 24h only the emailed link works. Checked before any comparison.
+    const live = await c.env.DB.prepare("SELECT email FROM magic_tokens WHERE browser_hash = ? AND code_hash IS NOT NULL AND expires_at > ? ORDER BY created_at DESC LIMIT 1")
+      .bind(browserHash, ts).first<{ email: string }>();
+    const emailHash = live ? await privacyHash(c.env.PORTAL_SECRETS, `magiccode:${live.email}`) : "";
+    if (live) {
+      const failed = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM magic_code_failures WHERE email_hash = ? AND failed_at > ?")
+        .bind(emailHash, ts - CODE_FAILURE_WINDOW_S).first<{ n: number }>();
+      if ((failed?.n ?? 0) >= MAX_CODE_FAILURES) return c.json({ error: "code_locked_use_link" }, 429);
+    }
     // Cookie-bound lookup: the code alone is useless. Attempts are counted atomically before comparing.
     const row = await c.env.DB.prepare(
       "UPDATE magic_tokens SET attempts = attempts + 1 WHERE id = (SELECT id FROM magic_tokens WHERE browser_hash = ? AND code_hash IS NOT NULL AND expires_at > ? AND attempts < ? ORDER BY created_at DESC LIMIT 1) AND attempts < ? RETURNING id, code_hash, attempts")
@@ -74,6 +87,10 @@ export function mountMagic(app: Hono<AppEnv>): void {
     if (!row || (typeof body?.id === "string" && body.id !== row.id)) return bad();
     const hash = await sha256(`${row.id}:${code}`);
     if (!equalHash(hash, row.code_hash)) {
+      if (emailHash) await c.env.DB.batch([
+        c.env.DB.prepare("DELETE FROM magic_code_failures WHERE failed_at <= ?").bind(ts - CODE_FAILURE_WINDOW_S),
+        c.env.DB.prepare("INSERT INTO magic_code_failures (email_hash, failed_at) VALUES (?, ?)").bind(emailHash, ts),
+      ]);
       if (row.attempts >= MAX_ATTEMPTS) {
         await c.env.DB.prepare("DELETE FROM magic_tokens WHERE id = ?").bind(row.id).run();
         await audit(c, "auth.magic.code_locked", row.id);
@@ -92,9 +109,7 @@ export function mountMagic(app: Hono<AppEnv>): void {
 /** Shared by link verify and code entry: create the user/account on first login, then the session. */
 async function finishLogin(c: Context<AppEnv>, email: string): Promise<void> {
     await c.env.DB.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").bind(crypto.randomUUID(), email).run();
-    const made = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<{ id: string }>();
-    // A pending household invite for this email makes them a member of that account instead of getting an account of their own.
-    if (made) await joinHousehold(c, made.id, email);
+    // A pending household invite is never applied here: the signed-in user must accept it explicitly (see account/household.ts).
     await c.env.DB.batch([
       // Own account only for someone with no membership at all (a household member keeps just the household).
       c.env.DB.prepare("INSERT OR IGNORE INTO accounts (id, owner) SELECT id, id FROM users WHERE email = ? AND NOT EXISTS (SELECT 1 FROM members WHERE user_id = users.id)").bind(email),

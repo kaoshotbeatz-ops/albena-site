@@ -35,7 +35,7 @@ function invitePanel() {
   const err = h('p', { class: 'err', id: 'inv-err', role: 'alert' });
   const go = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Send invitation');
   const form = h('form', { class: 'stack', novalidate: true },
-    h('p', { class: 'mut' }, 'They get an email. When they sign in with that address they join your household as a member.'),
+    h('p', { class: 'mut' }, 'They get an email. After signing in with that address they are asked to accept, and then join your household as a member.'),
     h('div', { class: 'field' }, h('label', { for: 'inv-email' }, 'Email address'), input), err, h('div', { class: 'row' }, go));
   form.addEventListener('submit', async (ev) => {
     ev.preventDefault();

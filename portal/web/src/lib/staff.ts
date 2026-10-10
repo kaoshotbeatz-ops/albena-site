@@ -24,6 +24,12 @@ export interface Detail {
 }
 export interface Invite { id: string; email: string; plan: string | null; days: number | null; note: string | null; invitedBy: string; createdAt: number; expiresAt: number; acceptedAt: number | null; revokedAt: number | null; accountId: string | null; sendCount: number; status: 'pending' | 'accepted' | 'revoked' | 'expired' }
 
+/** Starts a read-only support view as the account's owner (POST: it changes state), then opens the customer portal. */
+export async function startViewAs(account: string): Promise<void> {
+  await send<{ ok: true }>('POST', '/api/support/view-as/start', { account });
+  location.assign('/');
+}
+
 export const staff = {
   hub: async (id: string): Promise<HubDetail> => (await get<{ hub: HubDetail }>(`/api/support/hubs/${encodeURIComponent(id)}`)).hub,
   hubMetrics: async (id: string, range: MetricRange): Promise<MetricPoint[]> => (await get<{ points: MetricPoint[] }>(`/api/support/hubs/${encodeURIComponent(id)}/metrics?range=${range}`)).points,

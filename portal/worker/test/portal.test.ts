@@ -26,6 +26,20 @@ describe("security endpoints", () => {
     expect((await e.DB.prepare("SELECT COUNT(*) n FROM passkeys WHERE user_id=?").bind(b.id).first<{ n: number }>())!.n).toBe(1);
     expect((await client(undefined, env).request("/api/security/passkeys")).status).toBe(401);
   });
+  it("removing a passkey ends the user's other sessions but keeps the current one", async () => {
+    const a = await seedOwner("ps-a"), b = await seedOwner("ps-b");
+    const current = await login(a), other = await login(a), bystander = await login(b);
+    await e.DB.prepare("INSERT INTO passkeys (id,user_id,public_key,counter) VALUES ('pk-ps',?,?,0)").bind(a.id, new Uint8Array([1])).run();
+    expect((await client(other, env).request("/api/me")).status).toBe(200);
+    expect((await client(current, env).request("/api/security/passkeys/pk-ps", { method: "DELETE" })).status).toBe(200);
+    expect((await client(current, env).request("/api/me")).status).toBe(200);
+    expect((await client(other, env).request("/api/me")).status).toBe(401);
+    expect((await client(bystander, env).request("/api/me")).status).toBe(200);
+    // a failed removal (not found) revokes nothing
+    const third = await login(a);
+    expect((await client(current, env).request("/api/security/passkeys/nope", { method: "DELETE" })).status).toBe(404);
+    expect((await client(third, env).request("/api/me")).status).toBe(200);
+  });
   it("sign-in history comes from the audit chain for this user only", async () => {
     const a = await seedOwner("ha"), b = await seedOwner("hb");
     const mk = (actor: string, action: string) => e.DB.prepare("INSERT INTO audit_log (actor,action,target,request_id) VALUES (?,?,?,?)").bind(actor, action, actor, "r").run();

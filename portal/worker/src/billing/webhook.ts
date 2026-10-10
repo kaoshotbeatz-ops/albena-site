@@ -126,6 +126,7 @@ async function handle(env: Bindings, ev: any): Promise<Handled> {
   }
 }
 
+const RECLAIM_AFTER_S = 60;
 export async function stripeWebhook(c: Context<AppEnv>): Promise<Response> {
   const raw = await c.req.text();
   const ok = await verifyStripeSignature(raw, c.req.header("Stripe-Signature"), c.env.STRIPE_WEBHOOK_SECRET);
@@ -137,9 +138,15 @@ export async function stripeWebhook(c: Context<AppEnv>): Promise<Response> {
   const db = c.env.DB;
   const ins = await db.prepare("INSERT OR IGNORE INTO stripe_events (id, type, status, received_at) VALUES (?,?, 'processing', ?)").bind(ev.id, ev.type, now()).run();
   if ((ins.meta?.changes ?? 0) === 0) {
-    const prev = await db.prepare("SELECT status FROM stripe_events WHERE id = ?").bind(ev.id).first<{ status: string }>();
-    if (prev?.status === "processed") return c.json({ received: true, duplicate: true });
-    await db.prepare("UPDATE stripe_events SET status='processing' WHERE id = ?").bind(ev.id).run(); // retry of failed/stuck
+    // Only a failed event, or one stuck in 'processing' for over a minute, may be taken over; a live concurrent delivery gets 409 (Stripe retries).
+    const t = now();
+    const taken = await db.prepare("UPDATE stripe_events SET status='processing', received_at=? WHERE id = ? AND (status='failed' OR (status='processing' AND received_at <= ?))")
+      .bind(t, ev.id, t - RECLAIM_AFTER_S).run();
+    if ((taken.meta?.changes ?? 0) === 0) {
+      const prev = await db.prepare("SELECT status FROM stripe_events WHERE id = ?").bind(ev.id).first<{ status: string }>();
+      if (prev?.status === "processed") return c.json({ received: true, duplicate: true });
+      return c.json({ error: "event_in_progress" }, 409);
+    }
   }
   try {
     const res = await handle(c.env, ev);

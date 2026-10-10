@@ -146,6 +146,27 @@ describe("magic links", () => {
   });
 });
 
+describe("IPv6 rate-limit keys", () => {
+  it("collapses IPv6 to its /64 and leaves IPv4 alone", async () => {
+    const { ipBucket } = await import("../src/auth/limits");
+    expect(ipBucket("203.0.113.9")).toBe("203.0.113.9");
+    expect(ipBucket("2001:db8:1:2:aaaa:bbbb:cccc:dddd")).toBe("2001:db8:1:2::/64");
+    expect(ipBucket("2001:DB8:1:2::1")).toBe("2001:db8:1:2::/64");
+    expect(ipBucket("2001:db8:1:2:ffff::")).toBe("2001:db8:1:2::/64");
+    expect(ipBucket("2001:db8::5")).toBe("2001:db8:0:0::/64");
+    expect(ipBucket("::1")).toBe("0:0:0:0::/64");
+    expect(ipBucket("::ffff:203.0.113.9")).toBe("203.0.113.9");
+    expect(ipBucket("unknown")).toBe("unknown");
+  });
+  it("the auth limiter gets the same key for every address in one /64", async () => {
+    const keys: string[] = [];
+    vi.mocked(bindings.AUTH_IP_LIMITER.limit).mockImplementation(async ({ key }) => { keys.push(key); return { success: true }; });
+    for (const ip of ["2001:db8:5:6::1", "2001:db8:5:6:1234:5678:9abc:def0", "2001:db8:5:7::1"])
+      await request("/api/auth/magic/code", "POST", { code: "123456" }, "", { "CF-Connecting-IP": ip });
+    expect(keys[0]).toBe(keys[1]);
+    expect(keys[2]).not.toBe(keys[0]);
+  });
+});
 describe("magic email code", () => {
   const post = (code: string, cookieHeader?: string) => request("/api/auth/magic/code", "POST", { code }, cookieHeader);
   const wrong = (c: string) => (c === "000000" ? "111111" : "000000");
@@ -179,6 +200,37 @@ describe("magic email code", () => {
     const sixth = await post(m.code, m.cookie);
     expect(sixth.status).toBe(400); expect(sixth.headers.getSetCookie().join(" ")).not.toContain(SESSION_COOKIE);
     expect((await request(m.path, "GET", undefined, m.cookie)).status).toBe(400);
+  });
+  it("locks the code path per email after 10 wrong codes in 24h (across tokens); the link still works", async () => {
+    const email = `${crypto.randomUUID()}@example.com`;
+    await e.DB.prepare("DELETE FROM magic_code_failures").run();
+    let m = await magic(email);
+    for (let round = 0; round < 2; round++) {
+      for (let i = 0; i < 5; i++) await post(wrong(m.code), m.cookie);
+      if (round === 0) m = await magic(email);
+    }
+    const stored = await e.DB.prepare("SELECT email_hash FROM magic_code_failures").all<{ email_hash: string }>();
+    expect(stored.results.length).toBe(10);
+    expect(stored.results.some(r => JSON.stringify(r).includes(email))).toBe(false); // hashed, never the address
+    m = await magic(email);
+    const locked = await post(m.code, m.cookie); // even the correct code is refused, before any comparison
+    expect(locked.status).toBe(429); expect(await locked.json()).toEqual({ error: "code_locked_use_link" });
+    expect(await e.DB.prepare("SELECT attempts FROM magic_tokens WHERE email=?").bind(email).first()).toEqual({ attempts: 0 });
+    expect((await request(m.path, "GET", undefined, m.cookie)).status).toBe(303);
+    // another address is unaffected, and failures older than 24h stop counting
+    const other = await magic();
+    expect((await post(other.code, other.cookie)).status).toBe(200);
+    await e.DB.prepare("UPDATE magic_code_failures SET failed_at = failed_at - 90000").run();
+    const again = await magic(email);
+    expect((await post(again.code, again.cookie)).status).toBe(200);
+  });
+  it("one live token per email: a new start invalidates older outstanding links and codes", async () => {
+    const email = `${crypto.randomUUID()}@example.com`;
+    const first = await magic(email), second = await magic(email);
+    expect((await e.DB.prepare("SELECT COUNT(*) n FROM magic_tokens WHERE email=?").bind(email).first<{ n: number }>())!.n).toBe(1);
+    expect((await request(first.path, "GET", undefined, first.cookie)).status).toBe(400);
+    expect((await post(first.code, first.cookie)).status).toBe(400);
+    expect((await request(second.path, "GET", undefined, second.cookie)).status).toBe(303);
   });
   it("is useless without the browser-binding cookie", async () => {
     const m = await magic();
