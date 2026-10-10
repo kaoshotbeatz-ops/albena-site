@@ -34,7 +34,7 @@
   // CP-9 backups (daily NDJSON.gz + manifest). Staging uses the same bucket under "staging/".
   "r2_buckets": [{ "binding": "BACKUPS", "bucket_name": "albena-backups" }],
 
-  // Daily 03:17 UTC: backup, retention purge; Sundays also restore-verification.
+  // Daily 03:17 UTC: backup, retention purge, full audit-chain verify (ALB-SEC-1); Sundays also restore-verification.
   "triggers": { "crons": ["17 3 * * *"] },
 
   // ~5 requests / 60 s per key (we key on client IP + route) for POST endpoints.
@@ -49,7 +49,9 @@
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFSUNDjjscz5JA0K",
     "NOTIFY_FROM": "notifications@albena.ai",
     "ENVIRONMENT": "production",
-    "BACKUP_PREFIX": ""
+    "BACKUP_PREFIX": "",
+    // ALB-SEC-1: chain-break alerts go to Obvera Event Management (house rule: all alerts via Obvera).
+    "OBVERA_EVENTS_URL": "https://ohllc-obvera.dbaomarhuertasllc.com/api/obvera/client/eventhub/ingest"
   },
 
   // Secrets (set with `wrangler secret put`, never in this file):
@@ -57,6 +59,7 @@
   //   IP_SALT               random string, salt for SHA-256 IP hashing
   //   ADMIN_AUD             Cloudflare Access application AUD tag
   //   TEAM_DOMAIN           e.g. yourteam.cloudflareaccess.com
+  //   OBVERA_EVENTS_KEY     Obvera API key, scope events.ingest only (source albena-site)
   "env": {
     "staging": {
       "name": "albena-site-staging",

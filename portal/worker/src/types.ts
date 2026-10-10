@@ -22,6 +22,8 @@ export interface Bindings {
   // Stripe Price IDs (vars). Empty = plan not configured (checkout answers 503).
   PRICE_BYO_MONTHLY?: string; PRICE_BYO_ANNUAL?: string;
   PRICE_HUB_MAC_MONTHLY?: string; PRICE_HUB_MAC_ANNUAL?: string; PRICE_HUB_MAC_HARDWARE?: string;
+  // ALB-SEC-1 chain-break alerts to Obvera Event Management (key: secret, scope events.ingest only).
+  OBVERA_EVENTS_URL?: string; OBVERA_EVENTS_KEY?: string;
   PRICE_HUB_NVIDIA_MONTHLY?: string; PRICE_HUB_NVIDIA_ANNUAL?: string; PRICE_HUB_NVIDIA_HARDWARE?: string;
 }
 export type AppEnv = {

@@ -3,6 +3,7 @@ import Staff from '../../layouts/Staff.astro';
 ---
 <Staff title="Customers" lead="Create customers, set plans by hand and open the portal exactly as a customer sees it (read only, 30 minutes, every view is logged)." section="customers">
   <a slot="actions" class="btn" href="/support/invite">Invite people</a>
+  <div id="integrity" hidden></div>
   <details class="panel" id="new">
     <summary>New customer without an invite</summary>
     <div class="panel-body" id="new-body"></div>

@@ -4,6 +4,9 @@ import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import worker from "../src/index";
+import { runChainCheck, getState, isHeld } from "../src/chainguard";
+import { audit as addAudit } from "../src/auditchain";
+import { runScheduled } from "../src/maintenance";
 
 const env = rawEnv as unknown as Env;
 let ipCounter = 0;
@@ -379,5 +382,97 @@ describe("admin audit list", () => {
     for (const bad of ["limit=0", "limit=201", "before=abc", "before=0"]) {
       expect((await call(`/api/admin/audit?${bad}`, { headers: h })).status, bad).toBe(400);
     }
+  });
+});
+
+describe("ALB-SEC-1 chain verifier and R3 hold", () => {
+  async function accessHeaders() {
+    const { privateKey, jwk } = await accessKey();
+    const jwt = await new SignJWT({ email: "omar@dbaomarhuertasllc.com" })
+      .setProtectedHeader({ alg: "RS256", kid: "k1" })
+      .setIssuer(`https://${env.TEAM_DOMAIN}`).setAudience(env.ADMIN_AUD).setSubject("u1").setExpirationTime("5m").sign(privateKey);
+    const realFetch = globalThis.fetch;
+    const alerts: any[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.endsWith("/cdn-cgi/access/certs")) return Response.json({ keys: [jwk] });
+      if (url.includes("/eventhub/ingest")) { alerts.push({ auth: (init?.headers as any)?.Authorization, body: JSON.parse(String(init?.body)) }); return Response.json({ accepted: 1 }); }
+      return realFetch(input, init);
+    });
+    return { h: { "Cf-Access-Jwt-Assertion": jwt, "X-Requested-With": "albena-admin" }, alerts };
+  }
+  const actions = async () => ((await env.DB.prepare("SELECT action, target FROM audit_log ORDER BY id").all()).results as any[]);
+
+  beforeEach(async () => {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM audit_log"),
+      env.DB.prepare("UPDATE chain_state SET status='unknown', broken_sig=NULL, broken_reason=NULL, broken_at_id=NULL, detected_at=NULL, acked_sig=NULL, acked_by=NULL, acked_at=NULL, ack_note=NULL, last_alert=NULL WHERE id=1"),
+    ]);
+  });
+
+  it("green run records audit.chain.verified and does not hold R3", async () => {
+    for (let i = 0; i < 3; i++) await addAudit(env, { actor: "t", action: `e${i}`, requestId: crypto.randomUUID() });
+    const r = await runChainCheck(env, "test");
+    expect(r.chain.ok).toBe(true);
+    expect(r.state.status).toBe("ok");
+    expect(isHeld(r.state)).toBe(false);
+    expect((await actions()).at(-1).action).toBe("audit.chain.verified");
+  });
+
+  it("tamper -> verifier catches it, alerts Obvera, R3 blocked; ack unblocks with an audit entry", async () => {
+    const { h, alerts } = await accessHeaders();
+    for (let i = 0; i < 5; i++) await addAudit(env, { actor: "t", action: `e${i}`, requestId: crypto.randomUUID() });
+    const victim = (await env.DB.prepare("SELECT id FROM audit_log ORDER BY id LIMIT 1 OFFSET 2").first<{ id: number }>())!.id;
+    await env.DB.prepare("UPDATE audit_log SET target = 'tampered' WHERE id = ?").bind(victim).run();
+
+    // verifier (with the alert key configured)
+    const r = await runChainCheck({ ...env, OBVERA_EVENTS_KEY: "test-key" } as Env, "test");
+    expect(r.chain).toMatchObject({ ok: false, reason: "hash_mismatch", brokenAtId: victim });
+    expect(r.state.status).toBe("broken");
+    expect(isHeld(r.state)).toBe(true);
+    expect(r.alert).toBe("sent");
+    expect(alerts[0].auth).toBe("Bearer test-key");
+    expect(alerts[0].body).toMatchObject({ source: "albena-site", type: "audit.chain_break", severity: "critical" });
+    expect((await actions()).some((a) => a.action === "audit.chain.broken")).toBe(true);
+
+    // R3 (bulk export) refused with 423 and the refusal is audited; non-R3 still works
+    const blocked = await call("/api/admin/export/waitlist.csv", { headers: h });
+    expect(blocked.status).toBe(423);
+    expect((await call("/api/admin/waitlist", { headers: h })).status).toBe(200);
+    expect((await actions()).some((a) => a.action === "integrity.hold.refused")).toBe(true);
+
+    // ack needs the exact signature and a note
+    const ack = (body: unknown) => call("/api/admin/audit/ack", { method: "POST", headers: { ...h, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    expect((await ack({ sig: "hash_mismatch@999999", note: "looked at it" })).status).toBe(409);
+    expect((await ack({ sig: r.state.broken_sig, note: "" })).status).toBe(400);
+    const ok = await ack({ sig: r.state.broken_sig, note: "tamper test; investigating" });
+    expect(ok.status).toBe(200);
+    const ackRow = (await actions()).find((a) => a.action === "audit.chain.ack");
+    expect(ackRow.target).toContain(r.state.broken_sig);
+    expect(isHeld(await getState(env))).toBe(false);
+    expect((await call("/api/admin/export/waitlist.csv", { headers: h })).status).toBe(200);
+    expect((await ack({ sig: r.state.broken_sig, note: "again please" })).status).toBe(409);
+
+    // same break on the next daily run stays acknowledged (warning, not a new hold)
+    const again = await runChainCheck({ ...env, OBVERA_EVENTS_KEY: "test-key" } as Env, "test");
+    expect(isHeld(again.state)).toBe(false);
+    expect(alerts.at(-1).body.severity).toBe("warning");
+
+    // a different, earlier break blocks again
+    const first = (await env.DB.prepare("SELECT id FROM audit_log ORDER BY id LIMIT 1").first<{ id: number }>())!.id;
+    await env.DB.prepare("UPDATE audit_log SET actor = 'mallory' WHERE id = ?").bind(first).run();
+    const third = await runChainCheck(env, "test");
+    expect(third.state.broken_sig).toBe(`hash_mismatch@${first}`);
+    expect(isHeld(third.state)).toBe(true);
+    expect((await call("/api/admin/export/tickets.csv", { headers: h })).status).toBe(423);
+  });
+
+  it("the daily cron runs the verifier", async () => {
+    await addAudit(env, { actor: "t", action: "x", requestId: crypto.randomUUID() });
+    await runScheduled(env, new Date("2026-10-07T03:17:00Z")); // a Wednesday
+    const s = await getState(env);
+    expect(s.status).toBe("ok");
+    expect(s.last_run_at).toBe("2026-10-07T03:17:00.000Z");
+    expect((await actions()).some((a) => a.action === "audit.chain.verified" && a.target.includes("trigger cron"))).toBe(true);
   });
 });

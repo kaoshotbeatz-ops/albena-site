@@ -6,6 +6,7 @@ import { audit } from "./util";
 import { repairChain, verifyChain } from "./auditchain";
 import { runBackup, runVerify, statusSummary } from "./maintenance";
 import { json } from "./security";
+import { acknowledge, getState, isHeld, isR3, runChainCheck } from "./chainguard";
 
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
@@ -93,6 +94,15 @@ export const adminApi = new Hono<AppEnv>();
 adminApi.use("*", requireAccess);
 adminApi.use("*", requireCsrfHeader);
 
+/** ALB-SEC-1: R3 routes are refused while an audit-chain break is unacknowledged. */
+adminApi.use("*", async (c, next) => {
+  if (isR3(c.req.method, new URL(c.req.url).pathname) && isHeld(await getState(c.env))) {
+    await audit(c.env, { actor: c.get("actor"), action: "integrity.hold.refused", target: new URL(c.req.url).pathname, requestId: c.get("requestId"), ipHash: c.get("ipHash") });
+    return json({ error: "integrity_hold", detail: "Audit chain verification failed. High-risk actions are paused until the owner acknowledges the break." }, 423);
+  }
+  await next();
+});
+
 adminApi.get("/waitlist", async (c) => {
   const q = pageSchema.safeParse(c.req.query());
   if (!q.success) return json({ error: "invalid_query" }, 400);
@@ -159,7 +169,7 @@ adminApi.get("/integrity", async (c) => {
   const chain = await verifyChain(c.env);
   const s = await statusSummary(c.env);
   await audit(c.env, { actor: c.get("actor"), action: "admin.integrity", requestId: c.get("requestId"), ipHash: c.get("ipHash") });
-  return json({ chain, lastBackupOk: s.lastBackupOk, lastBackupAt: s.lastBackupAt, lastVerifiedAt: s.lastVerifiedAt });
+  return json({ chain, integrity: await getState(c.env), lastBackupOk: s.lastBackupOk, lastBackupAt: s.lastBackupAt, lastVerifiedAt: s.lastVerifiedAt });
 });
 
 /** Read-only audit trail, newest first, keyset-paginated by id. ip_hash and full hashes are never returned. */
@@ -202,7 +212,27 @@ adminApi.post("/backup/verify", async (c) => {
 adminApi.post("/audit/repair", async (c) => {
   const r = await repairChain(c.env, c.get("actor"), c.get("requestId"));
   if ("error" in r) return json(r, 409);
-  return json({ ok: true, ...r, chain: await verifyChain(c.env) });
+  const check = await runChainCheck(c.env, `repair:${c.get("actor")}`);
+  return json({ ok: true, ...r, chain: check.chain });
+});
+
+/** ALB-SEC-1: run the verifier now (same function as the daily cron). */
+adminApi.post("/audit/verify", async (c) => {
+  const r = await runChainCheck(c.env, `manual:${c.get("actor")}`);
+  return json({ ok: r.chain.ok, chain: r.chain, integrity: r.state, alert: r.alert });
+});
+
+const ackSchema = z.object({ sig: z.string().min(3).max(200), note: z.string().trim().min(5).max(400) });
+
+/** ALB-SEC-1: owner acknowledges the current break (by signature); lifts the R3 hold and writes audit.chain.ack. */
+adminApi.post("/audit/ack", async (c) => {
+  let body: unknown;
+  try { body = await c.req.json(); } catch { return json({ error: "invalid_json" }, 400); }
+  const p = ackSchema.safeParse(body);
+  if (!p.success) return json({ error: "validation_failed" }, 400);
+  const r = await acknowledge(c.env, { actor: c.get("actor"), sig: p.data.sig, note: p.data.note, requestId: c.get("requestId"), ipHash: c.get("ipHash") });
+  if ("error" in r) return json(r, 409);
+  return json({ ok: true, integrity: r.state });
 });
 
 adminApi.all("*", () => json({ error: "not_found" }, 404));

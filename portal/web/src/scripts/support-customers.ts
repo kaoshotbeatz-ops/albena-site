@@ -1,7 +1,7 @@
 // Staff-only list (Cloudflare Access gates this page and /api/support/*). No customer session needed.
 import { h, must, chip, fmtDate, failInto, empty, table, run, toast } from '../lib/ui';
 import { field, planFields, PLAN_NAMES } from '../lib/forms';
-import { staff, startViewAs, type AccountRow } from '../lib/staff';
+import { staff, startViewAs, integrity, type AccountRow } from '../lib/staff';
 
 document.documentElement.classList.add('js');
 const root = must('#root');
@@ -57,3 +57,21 @@ function viewAsButton(accountId: string, label: string) {
   b.addEventListener('click', () => void run(b, () => startViewAs(accountId)));
   return b;
 }
+
+// ALB-SEC-1: show the high-risk hold (audit chain break) with an Acknowledge action. Nothing is shown while the chain is intact.
+integrity.get().then(({ chain, integrity: g }) => {
+  const held = g.status === 'broken' && g.acked_sig !== g.broken_sig;
+  if (!held) return;
+  const box = must('#integrity');
+  const note = h('input', { class: 'input', placeholder: 'What you checked (required)', 'aria-label': 'Acknowledgement note' }) as HTMLInputElement;
+  const go = h('button', { class: 'btn btn-primary', type: 'button' }, 'Acknowledge break');
+  go.addEventListener('click', async () => {
+    if (note.value.trim().length < 5) { toast('Add a short note first.', true); return; }
+    const r = await run(go, () => integrity.ack(g.broken_sig ?? '', note.value.trim()), 'Acknowledged; high-risk actions are allowed again.');
+    if (r) box.hidden = true;
+  });
+  box.replaceChildren(h('section', { class: 'panel' }, h('div', { class: 'panel-body stack' },
+    h('p', {}, chip('Audit chain broken', 'red'), ` ${chain.reason ?? g.broken_sig} at entry #${chain.brokenAtId ?? '?'}. High-risk actions (deletes, billing, licences, view-as) are paused until you acknowledge. Acknowledging is logged; it does not repair the chain.`),
+    h('div', { class: 'row' }, note, go))));
+  box.hidden = false;
+}).catch(() => {});

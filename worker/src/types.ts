@@ -14,6 +14,9 @@ export interface Env {
   NOTIFY_FROM?: string;
   ENVIRONMENT?: string;
   EXTRA_TURNSTILE_HOSTS?: string;
+  /** Obvera Event Management ingest (ALB-SEC-1 chain alerts). Key is a secret with scope events.ingest. */
+  OBVERA_EVENTS_URL?: string;
+  OBVERA_EVENTS_KEY?: string;
 }
 
 export type Vars = {
