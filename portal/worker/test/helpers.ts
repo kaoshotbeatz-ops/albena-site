@@ -54,10 +54,10 @@ export async function removeUser(id: string, accountId = id) {
 }
 
 /** Creates a real session row and returns the Cookie header value. */
-export async function login(u: TestUser): Promise<string> {
+export async function login(u: TestUser, method: "passkey" | "magic" | null = null): Promise<string> {
   const token = randomToken(), ts = now();
-  await e.DB.prepare("INSERT INTO sessions (id,token_hash,user_id,account_id,created_at,last_seen,expires_at) VALUES (?,?,?,?,?,?,?)")
-    .bind(crypto.randomUUID(), await sha256(token), u.id, u.accountId, ts, ts, ts + ABSOLUTE_SECONDS).run();
+  await e.DB.prepare("INSERT INTO sessions (id,token_hash,user_id,account_id,created_at,last_seen,expires_at,login_method) VALUES (?,?,?,?,?,?,?,?)")
+    .bind(crypto.randomUUID(), await sha256(token), u.id, u.accountId, ts, ts, ts + ABSOLUTE_SECONDS, method).run();
   return `${SESSION_COOKIE}=${token}`;
 }
 
@@ -78,7 +78,7 @@ export async function auditSince(id: number): Promise<{ action: string; target: 
   return (await e.DB.prepare("SELECT action, target FROM audit_log WHERE id > ? ORDER BY id").bind(id).all<{ action: string; target: string | null }>()).results;
 }
 export async function clearPortalTables() {
-  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_metrics", "hub_module_metrics", "hub_rate", "releases", "refunds", "checkout_pending"]
+  await e.DB.batch(["stripe_events", "entitlements", "billing_customers", "hardware_orders", "hubs", "hub_pair_codes", "hub_nonces", "hub_metrics", "hub_module_metrics", "hub_rate", "hub_security_commands", "releases", "refunds", "checkout_pending"]
     .map(t => e.DB.prepare(`DELETE FROM ${t}`)));
 }
 

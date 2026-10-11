@@ -49,7 +49,49 @@ export type HubStats = {
   connectors?: ConnectorStat[];
   /** Hosts in this Hub and the Albena parts on each (see ./mesh.ts). Split off into hubs.mesh_json on heartbeat. */
   mesh?: MeshHost[];
+  /** Security posture counters and recent event kinds (no household content). */
+  security?: SecurityStat;
 };
+
+// ---- stats.security (counters, enums and hex signatures only; events carry a kind and a tool NAME, never arguments) ----
+export const CHAIN_STATES = ["verified", "broken", "absent", "unreadable"] as const;
+export const AGENTGATE_MODES = ["off", "shadow", "enforce"] as const;
+export const SECURITY_EVENT_KINDS = ["denial", "approval", "trust_revoke", "chain_break", "chain_ack", "mode_change", "unlock", "proposal"] as const;
+export const SIG16 = /^[0-9a-f]{16}$/;
+const TOOL = /^[a-z0-9_]{1,32}$/;
+export type SecurityEvent = { at: number; kind: (typeof SECURITY_EVENT_KINDS)[number]; tool?: string };
+export type SecurityStat = {
+  chain?: (typeof CHAIN_STATES)[number]; chain_rows?: number; break_sig?: string; acked_sig?: string;
+  approvals_pending?: number; trust_grants?: number; denials_24h?: number; agentgate_mode?: (typeof AGENTGATE_MODES)[number]; events?: SecurityEvent[];
+};
+export function parseSecurity(v: unknown): { ok: true; value: SecurityStat } | { ok: false; error: string } {
+  const bad = (m: string) => ({ ok: false as const, error: `security: ${m}` });
+  if (!isObj(v)) return bad("must be an object");
+  const e = onlyKeys(v, ["chain", "chain_rows", "break_sig", "acked_sig", "approvals_pending", "trust_grants", "denials_24h", "agentgate_mode", "events"]);
+  if (e) return bad(e);
+  const out: SecurityStat = {};
+  if ("chain" in v) { if (!oneOf(CHAIN_STATES, v.chain)) return bad("bad chain"); out.chain = v.chain; }
+  if ("chain_rows" in v) { if (!int(v.chain_rows, 0, MAX_COUNT)) return bad("bad chain_rows"); out.chain_rows = v.chain_rows; }
+  for (const k of ["break_sig", "acked_sig"] as const) if (k in v) { if (typeof v[k] !== "string" || !SIG16.test(v[k] as string)) return bad(`bad ${k}`); out[k] = v[k] as string; }
+  if ("approvals_pending" in v) { if (!int(v.approvals_pending, 0, 10000)) return bad("bad approvals_pending"); out.approvals_pending = v.approvals_pending; }
+  if ("trust_grants" in v) { if (!int(v.trust_grants, 0, 10000)) return bad("bad trust_grants"); out.trust_grants = v.trust_grants; }
+  if ("denials_24h" in v) { if (!int(v.denials_24h, 0, 100000)) return bad("bad denials_24h"); out.denials_24h = v.denials_24h; }
+  if ("agentgate_mode" in v) { if (!oneOf(AGENTGATE_MODES, v.agentgate_mode)) return bad("bad agentgate_mode"); out.agentgate_mode = v.agentgate_mode; }
+  if ("events" in v) {
+    if (!Array.isArray(v.events) || v.events.length > 20) return bad("bad events");
+    out.events = [];
+    for (const ev of v.events) {
+      if (!isObj(ev)) return bad("bad event");
+      const ee = onlyKeys(ev, ["at", "kind", "tool"]);
+      if (ee) return bad(`event: ${ee}`);
+      if (!int(ev.at, 0, MAX_TS) || !oneOf(SECURITY_EVENT_KINDS, ev.kind)) return bad("bad event");
+      const one: SecurityEvent = { at: ev.at, kind: ev.kind };
+      if ("tool" in ev) { if (typeof ev.tool !== "string" || !TOOL.test(ev.tool)) return bad("bad event tool"); one.tool = ev.tool; }
+      out.events.push(one);
+    }
+  }
+  return { ok: true, value: out };
+}
 
 const num = (v: unknown, min: number, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
 const int = (v: unknown, min: number, max: number): v is number => num(v, min, max) && Number.isInteger(v);
@@ -65,7 +107,7 @@ function parseService<S extends readonly string[]>(s: unknown, names: RegExp, st
 export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: false; error: string } {
   const bad = (m: string) => ({ ok: false as const, error: `stats: ${m}` });
   if (!isObj(v)) return bad("must be an object");
-  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates", "connectors", "mesh"]);
+  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates", "connectors", "mesh", "security"]);
   if (e) return bad(e);
   // Every field is optional (a Hub reports only what it knows); anything present is validated.
   const out: HubStats = {};
@@ -177,6 +219,11 @@ export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: fa
     const ms = parseMesh(v.mesh);
     if (!ms.ok) return bad(ms.error);
     out.mesh = ms.value;
+  }
+  if ("security" in v) {
+    const sc = parseSecurity(v.security);
+    if (!sc.ok) return bad(sc.error);
+    out.security = sc.value;
   }
   return { ok: true, value: out };
 }

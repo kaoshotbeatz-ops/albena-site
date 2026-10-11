@@ -64,3 +64,13 @@ export interface HubDetail {
 }
 export interface MetricPoint { ts: number; cpu: number | null; mem_pct: number | null; gpu_util: number | null; gpu_mem_pct: number | null; latency_ms: number | null }
 export type MetricRange = '24h' | '7d';
+
+/** Per-Hub security snapshot from the heartbeat (stats.security): counters, enums and tool names only. */
+export interface SecurityStat {
+  chain?: 'verified' | 'broken' | 'absent' | 'unreadable'; chain_rows?: number; break_sig?: string; acked_sig?: string;
+  approvals_pending?: number; trust_grants?: number; denials_24h?: number; agentgate_mode?: 'off' | 'shadow' | 'enforce';
+  events?: { at: number; kind: string; tool?: string }[];
+}
+export interface SecurityHub { id: string; name: string; online: boolean; security: SecurityStat | null; pending: { kind: 'chain_ack' | 'revoke_trust'; requestedAt: number }[] }
+export interface RiskTier { id: string; name: string; summary: string }
+export interface SecurityOverview { hubs: SecurityHub[]; tiers: RiskTier[] }

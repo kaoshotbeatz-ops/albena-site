@@ -118,7 +118,7 @@ async function finishLogin(c: Context<AppEnv>, email: string): Promise<void> {
     const u = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<{ id: string }>();
     const user = u && await userById(c, u.id);
     if (!user) throw new Error("user_creation_failed");
-    await createSession(c, user);
+    await createSession(c, user, "magic");
     deleteCookie(c, COOKIE, cookieOptions);
     await audit(c, "auth.login.magic", user.id);
 }

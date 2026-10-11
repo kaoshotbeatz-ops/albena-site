@@ -4,6 +4,7 @@ import { audit, requireUser } from "../auth";
 import { ipBucket } from "../auth/limits";
 import { getEntitlement } from "../billing/entitlements";
 import { MAX_HUBS } from "../billing/plans";
+import { claimCommands } from "../hubsecurity";
 import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, parsePairComplete } from "./schema";
 import { RANGES, type Range, isOnline, loadDetail, loadMetrics, loadModuleMetrics, parseStored, recordMetric, recordModuleMetrics, summarize } from "./stats";
 import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
@@ -263,6 +264,7 @@ export function mount(app: Hono<AppEnv>): void {
     await c.env.DB.prepare("DELETE FROM hub_nonces WHERE hub_id=?").bind(id).run();
     await c.env.DB.prepare("DELETE FROM hub_metrics WHERE hub_id=?").bind(id).run();
     await c.env.DB.prepare("DELETE FROM hub_module_metrics WHERE hub_id=?").bind(id).run();
+    await c.env.DB.prepare("DELETE FROM hub_security_commands WHERE hub_id=?").bind(id).run();
     await audit(c, "hub.unpair", id);
     return c.json({ ok: true });
   });
@@ -291,8 +293,10 @@ export function mount(app: Hono<AppEnv>): void {
       if (changed && hub.net_ip) await audit(c, "hub.public_ip_changed", hub.id); // hub id only: the address itself is never written to the audit log
     }
     if (v.stats && (await recordMetric(c.env.DB, hub.id, stats, t))) await recordModuleMetrics(c.env.DB, hub.id, stats.activity?.modules, t);
+    // Owner commands queued from the portal security page (passkey-gated). Delivered once; the Hub applies them.
+    const security = await claimCommands(c.env.DB, hub.id, stats.security, t);
     // server-side settings win; hub learns them here
-    return c.json({ ok: true, updateChannel: hub.update_channel, remoteAccess: !!hub.remote_access });
+    return c.json({ ok: true, updateChannel: hub.update_channel, remoteAccess: !!hub.remote_access, security });
   });
 
   // ---- releases (public, no personal data) ----

@@ -1,5 +1,5 @@
 // Same-origin portal API client (see portal/CONTRACT.md). Session cookie is HttpOnly; no tokens in JS.
-import type { HubDetail, ModuleSeries, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member, ConnectionsView } from './types';
+import type { HubDetail, ModuleSeries, MetricPoint, MetricRange, Account, BillingSummary, HeldPlan, Hub, Interval, Invoice, Me, Order, PairStart, Passkey, PlanId, Release, Session, SignIn, Connector, Member, ConnectionsView, SecurityOverview } from './types';
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public body: unknown = undefined) { super(code); }
@@ -87,6 +87,9 @@ export const api = {
   passkeyRemove: (id: string) => req<unknown>('DELETE', `/api/security/passkeys/${encodeURIComponent(id)}`),
   sessions: async (): Promise<Session[]> => (await get<W.Sessions>('/api/security/sessions')).sessions.map((s) => ({ id: s.id, current: s.current, createdAt: iso(s.createdAt), lastSeenAt: iso(s.lastSeen) })),
   revokeSession: (id: string) => req<unknown>('DELETE', `/api/security/sessions/${encodeURIComponent(id)}`),
+  securityOverview: () => get<SecurityOverview>('/api/security/overview'),
+  chainAck: (hubId: string, sig: string, note?: string) => req<unknown>('POST', `/api/hubs/${encodeURIComponent(hubId)}/security/chain-ack`, note ? { sig, note } : { sig }),
+  revokeTrust: (hubId: string) => req<unknown>('POST', `/api/hubs/${encodeURIComponent(hubId)}/security/revoke-trust`, {}),
   history: async (): Promise<SignIn[]> => (await get<W.History>('/api/security/history')).events,
   billing: async (): Promise<BillingSummary> => {
     const { entitlement: e } = await get<W.Summary>('/api/billing/summary');
@@ -129,6 +132,8 @@ export const api = {
 export function errMsg(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.status === 429) return 'Too many attempts. Wait a minute and try again.';
+    if (e.code === 'passkey_required') return 'Sign in with a passkey to do this. An email-link session cannot.';
+    if (e.code === 'sig_mismatch' || e.code === 'no_break' || e.code === 'already_acked') return 'That break is no longer current. Refresh to see the latest state.';
     if (e.status >= 500) return 'The service had a problem. Try again shortly.';
     return e.code === 'error' ? 'Something went wrong.' : e.code.replace(/_/g, ' ');
   }

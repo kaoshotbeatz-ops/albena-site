@@ -17,13 +17,14 @@ export const viewAsMayRun = (method: string, path: string) =>
 export const now = () => Math.floor(Date.now() / 1000);
 const options = { httpOnly: true, secure: true, sameSite: "Lax" as const, path: "/" };
 export function clearSession(c: Context<AppEnv>) { deleteCookie(c, SESSION_COOKIE, options); }
-export async function createSession(c: Context<AppEnv>, user: User): Promise<void> {
+export type LoginMethod = "passkey" | "magic";
+export async function createSession(c: Context<AppEnv>, user: User, method: LoginMethod): Promise<void> {
   const token = randomToken(), id = crypto.randomUUID(), ts = now();
   const old = getCookie(c, SESSION_COOKIE);
   const statements = [];
   if (old) statements.push(c.env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(await sha256(old)));
-  statements.push(c.env.DB.prepare("INSERT INTO sessions (id, token_hash, user_id, account_id, created_at, last_seen, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, await sha256(token), user.id, user.accountId, ts, ts, ts + ABSOLUTE_SECONDS));
+  statements.push(c.env.DB.prepare("INSERT INTO sessions (id, token_hash, user_id, account_id, created_at, last_seen, expires_at, login_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, await sha256(token), user.id, user.accountId, ts, ts, ts + ABSOLUTE_SECONDS, method));
   await c.env.DB.batch(statements);
   c.set("user", user);
   c.set("sessionId", id);
@@ -62,8 +63,8 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   const ts = now();
   // Conditional update checks expiry/revocation and refreshes idle time atomically.
   const session = await c.env.DB.prepare(
-    "UPDATE sessions SET last_seen = MAX(last_seen, ?) WHERE token_hash = ? AND view_as = 0 AND last_seen > ? AND expires_at > ? RETURNING id, user_id, account_id",
-  ).bind(ts, await sha256(token), ts - IDLE_SECONDS, ts).first<{ id: string; user_id: string; account_id: string }>();
+    "UPDATE sessions SET last_seen = MAX(last_seen, ?) WHERE token_hash = ? AND view_as = 0 AND last_seen > ? AND expires_at > ? RETURNING id, user_id, account_id, login_method",
+  ).bind(ts, await sha256(token), ts - IDLE_SECONDS, ts).first<{ id: string; user_id: string; account_id: string; login_method: string | null }>();
   if (!session) { clearSession(c); return c.json({ error: "unauthorized" }, 401); }
   const user = await c.env.DB.prepare(
     "SELECT u.id, u.email, m.role, m.account_id AS accountId FROM users u JOIN members m ON m.user_id = u.id WHERE u.id = ? AND m.account_id = ?",
@@ -71,6 +72,7 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   if (!user) { clearSession(c); return c.json({ error: "unauthorized" }, 401); }
   c.set("user", user);
   c.set("sessionId", session.id);
+  c.set("loginMethod", session.login_method === "passkey" ? "passkey" : "magic");
   await next();
 };
 export async function userById(c: Context<AppEnv>, id: string): Promise<User | null> {
