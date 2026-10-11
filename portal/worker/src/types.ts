@@ -28,5 +28,5 @@ export interface Bindings {
 }
 export type AppEnv = {
   Bindings: Bindings;
-  Variables: { user: User; requestId: string; sessionId: string; viewAs?: { actor: string; expiresAt: number }; supportActor?: string };
+  Variables: { user: User; requestId: string; sessionId: string; loginMethod?: "passkey" | "magic"; viewAs?: { actor: string; expiresAt: number }; supportActor?: string };
 };

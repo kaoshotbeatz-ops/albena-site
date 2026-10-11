@@ -89,7 +89,7 @@ export function mountPasskeys(app: Hono<AppEnv>): void {
     if (!updated.meta.changes) return c.json({ error: "invalid_passkey" }, 400);
     const user = await userById(c, credential.user_id);
     if (!user) return c.json({ error: "invalid_passkey" }, 400);
-    await createSession(c, user);
+    await createSession(c, user, "passkey");
     await audit(c, "auth.login.passkey", user.id);
     return c.json({ ok: true });
   });

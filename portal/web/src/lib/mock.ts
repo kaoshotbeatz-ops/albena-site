@@ -10,6 +10,11 @@ let hubs = [
   { id: 'h2', name: 'Workshop (NVIDIA)', edition: 'nvidia', version: '1.8.1', profile: 'performance', updateChannel: 'beta', remoteAccess: true, health: { ok: false, services: [['voice', 'degraded']] }, lastSeen: now - 3 * H, createdAt: now - 30 * D },
 ];
 const invoices = [3, 2, 1].map((n) => ({ id: `in_${n}`, number: `ALB-000${n}`, status: 'paid', amountPaid: 4900, amountDue: 0, currency: 'usd', created: now - (n * 30 - 18) * D, hostedInvoiceUrl: `https://example.invalid/i/${n}`, pdf: null }));
+let secHubs: { id: string; name: string; online: boolean; security: Record<string, unknown> | null; pending: { kind: 'chain_ack' | 'revoke_trust'; requestedAt: number }[] }[] = [
+  { id: 'h1', name: 'Living room Hub', online: true, pending: [], security: { chain: 'broken', chain_rows: 4210, break_sig: '0123456789abcdef', approvals_pending: 1, trust_grants: 3, denials_24h: 2, agentgate_mode: 'enforce',
+    events: [{ at: now - 600, kind: 'chain_break' }, { at: now - 3 * H, kind: 'denial', tool: 'ha_call_service' }, { at: now - 5 * H, kind: 'approval', tool: 'hue_set_light' }] } },
+  { id: 'h2', name: 'Workshop (NVIDIA)', online: false, pending: [], security: null },
+];
 let passkeys = [{ id: 'pk1', createdAt: now - 60 * D }, { id: 'pk2', createdAt: now - 20 * D }];
 let sessions = [
   { id: 's1', current: true, createdAt: now - 2 * H, lastSeen: now - 60, expiresAt: now + 6 * D },
@@ -86,6 +91,15 @@ export function handle(method: string, path: string, body: unknown): unknown {
   if (p === '/api/security/passkeys') return { passkeys };
   const pm = /^\/api\/security\/passkeys\/([^/]+)$/.exec(p);
   if (pm) { passkeys = passkeys.filter((k) => k.id !== pm[1]); return { ok: true }; }
+  if (p === '/api/security/overview') return { hubs: secHubs, tiers: [
+    { id: 'R0', name: 'Read-only', summary: 'Just answers. Albena looks things up and tells you; nothing changes.' },
+    { id: 'R1', name: 'Home comfort', summary: 'Lights, TV and scenes. Albena may earn trust for a repeat action after 5 approved repeats.' },
+    { id: 'R2', name: 'Messages, memory and delegation', summary: 'Always asks you first.' },
+    { id: 'R3', name: 'Code, infrastructure, identity, money and deletion', summary: 'Asks you, and you enter your PIN on the Hub. Destructive actions need a long press.' },
+    { id: 'R4', name: 'Never allowed', summary: 'Security decisions: approving, granting trust, PIN entry, chain acknowledgement and AgentGate mode. Only a person on the Hub screen or this page can do these.' },
+  ] };
+  const sa = /^\/api\/hubs\/([^/]+)\/security\/(chain-ack|revoke-trust)$/.exec(p);
+  if (sa) { const sh = secHubs.find((x) => x.id === sa[1]); if (!sh) throw new ApiError(404, 'not_found'); sh.pending = [...sh.pending, { kind: sa[2] === 'chain-ack' ? 'chain_ack' : 'revoke_trust', requestedAt: now }]; return { ok: true }; }
   if (p === '/api/auth/logout' || p === '/api/auth/magic/code') return { ok: true };
   throw new ApiError(404, 'not_found');
 }

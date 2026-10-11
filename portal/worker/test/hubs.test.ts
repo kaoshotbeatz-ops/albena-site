@@ -134,7 +134,7 @@ describe("signed requests", () => {
     const s = await signed(hub, P, js(hb));
     const r = await call(P, s);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ ok: true, updateChannel: "stable", remoteAccess: false });
+    expect(await r.json()).toEqual({ ok: true, updateChannel: "stable", remoteAccess: false, security: { chainAck: null, revokeTrust: false } });
   });
   it("rejects invalid signature, tampered body, unknown hub", async () => {
     const hub = await pairHub();
@@ -233,7 +233,7 @@ describe("hub management", () => {
     await call(`/api/hubs/${hub.hubId}`, { method: "PATCH", user: OWNER, body: js({ remoteAccess: true, updateChannel: "beta" }) });
     const P = "/api/hubs/heartbeat";
     const r = await call(P, await signed(hub, P, js(hb)));
-    expect(await r.json()).toEqual({ ok: true, updateChannel: "beta", remoteAccess: true });
+    expect(await r.json()).toEqual({ ok: true, updateChannel: "beta", remoteAccess: true, security: { chainAck: null, revokeTrust: false } });
   });
 });
 
