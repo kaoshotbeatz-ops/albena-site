@@ -1,5 +1,6 @@
 // Hub telemetry: latest snapshot (hubs.stats_json), a thin time series (hub_metrics) and the read endpoints' shared queries.
 import type { HubStats, ModuleStat } from "./schema";
+import { parseMeshStored } from "./mesh";
 import type { ConnectorStat } from "../connectors/schema";
 
 export const ONLINE_S = 15 * 60; // a Hub is online when its last heartbeat is newer than this
@@ -112,7 +113,7 @@ export async function loadDetail(db: D1Database, hubId: string, accountId: strin
   return {
     id: row.id, accountId: row.account_id as string, name: row.name, edition: row.edition, profile: row.profile, version: row.version,
     updateChannel: row.update_channel, remoteAccess: !!row.remote_access,
-    health: row.health_json ? JSON.parse(row.health_json) : null, stats: parseStored(row.stats_json), connectors: parseConnectorsStored(row.connectors_json),
+    health: row.health_json ? JSON.parse(row.health_json) : null, stats: parseStored(row.stats_json), connectors: parseConnectorsStored(row.connectors_json), mesh: parseMeshStored(row.mesh_json),
     lastSeen: row.last_seen as number | null, online: isOnline(row.last_seen), createdAt: row.created_at,
     ...(withNet ? { publicNetwork: {
       ip: row.net_ip ?? null, isp: row.net_isp ?? null, asn: row.net_asn ?? null, city: row.net_city ?? null, region: row.net_region ?? null,

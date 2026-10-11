@@ -8,7 +8,7 @@ import { MAX_BODY, CHANNELS, EDITIONS, SERIAL, parseHeartbeat, parseHubPatch, pa
 import { RANGES, type Range, isOnline, loadDetail, loadMetrics, loadModuleMetrics, parseStored, recordMetric, recordModuleMetrics, summarize } from "./stats";
 import { b64decodeStrict, b64encode, newPairCode, normalizeCode, licenseKeyHash, normalizeLicenseKey, sha256Hex, signingString, verifyEd25519 } from "./crypto";
 
-export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql", "0700_hub_public_net.sql", "0800_hub_connectors.sql", "0900_hub_module_metrics.sql"];
+export const migrations: string[] = ["0300_hubs_init.sql", "0600_hub_stats.sql", "0700_hub_public_net.sql", "0800_hub_connectors.sql", "0900_hub_module_metrics.sql", "0950_hub_mesh.sql"];
 
 export const PAIR_TTL_S = 600;
 export const SKEW_S = 300;
@@ -280,9 +280,9 @@ export function mount(app: Hono<AppEnv>): void {
     const net = publicNet(c);
     // stats_json is the latest snapshot as validated (re-serialised from the parsed value, never the raw body); NULL when the Hub sent none.
     // The connector snapshot is stored apart (connectors_json): replaced when the Hub sends the array (even empty), kept when it does not.
-    const { connectors, ...stats } = v.stats ?? {};
-    await c.env.DB.prepare("UPDATE hubs SET version=?, profile=?, health_ok=?, health_json=?, stats_json=?, connectors_json=COALESCE(?, connectors_json), last_seen=? WHERE id=?")
-      .bind(v.version, v.profile, v.health.ok ? 1 : 0, JSON.stringify(v.health), v.stats ? JSON.stringify(stats) : null, connectors ? JSON.stringify(connectors) : null, t, hub.id).run();
+    const { connectors, mesh, ...stats } = v.stats ?? {};
+    await c.env.DB.prepare("UPDATE hubs SET version=?, profile=?, health_ok=?, health_json=?, stats_json=?, connectors_json=COALESCE(?, connectors_json), mesh_json=COALESCE(?, mesh_json), last_seen=? WHERE id=?")
+      .bind(v.version, v.profile, v.health.ok ? 1 : 0, JSON.stringify(v.health), v.stats ? JSON.stringify(stats) : null, connectors ? JSON.stringify(connectors) : null, mesh ? JSON.stringify(mesh) : null, t, hub.id).run();
     if (net) {
       // Current values only. net_changed_at moves only when the IP differs from what is stored.
       const changed = net.ip !== hub.net_ip;
