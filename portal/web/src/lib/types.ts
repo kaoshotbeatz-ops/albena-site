@@ -51,9 +51,14 @@ export interface HubStats {
   activity?: { requests_24h?: number; requests_7d?: number; wakes_24h?: number; approvals_pending?: number; approvals_24h?: number; modules?: Record<string, ModuleStat> };
   updates?: { latest_known?: string; last_result?: string; last_at?: number };
 }
+/** One machine in a Hub's mesh. Opaque id and safe label only; never a hostname or address. */
+export interface MeshHost {
+  id: string; label: string; os: 'macos' | 'linux' | 'windows' | 'unknown'; role: 'hub' | 'node'; online: boolean; last_seen_s?: number;
+  hw?: { cpu?: number; ram_gb?: number; gpu?: string }; parts: { name: string; state: 'running' | 'stopped' | 'unknown' }[];
+}
 export interface HubDetail {
   id: string; accountId?: string; name: string; edition: 'mac' | 'nvidia'; profile: string; version: string; updateChannel: 'stable' | 'beta'; remoteAccess: boolean;
-  health: { ok: boolean; services: ([string, string] | [string, string, number])[] } | null; stats: HubStats | null; connectors?: (HubConn & { id: string; label?: string })[] | null; lastSeen: number | null; online: boolean; createdAt: number;
+  health: { ok: boolean; services: ([string, string] | [string, string, number])[] } | null; stats: HubStats | null; connectors?: (HubConn & { id: string; label?: string })[] | null; mesh?: MeshHost[] | null; lastSeen: number | null; online: boolean; createdAt: number;
   /** Only present for the account owner, view-as sessions and staff. */
   publicNetwork?: { ip: string | null; isp: string | null; asn: number | null; city: string | null; region: string | null; country: string | null; timezone: string | null; changedAt: number | null };
 }

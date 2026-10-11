@@ -1,5 +1,6 @@
 // Strict hand-written validators: unknown keys are rejected so a hub (or bug) cannot smuggle personal data.
 import { parseConnectors, type ConnectorStat } from "../connectors/schema";
+import { parseMesh, type MeshHost } from "./mesh";
 export const MAX_BODY = 16384;
 const SEMVER = /^\d+(\.\d+){1,3}([-+][0-9A-Za-z.-]{1,16})?$/;
 const NAME = /^[A-Za-z0-9._-]{1,48}$/;
@@ -46,6 +47,8 @@ export type HubStats = {
   updates?: { latest_known?: string; last_result?: (typeof UPDATE_RESULTS)[number]; last_at?: number };
   /** Names and status of connections only (see ../connectors/schema.ts). Split off into hubs.connectors_json on heartbeat. */
   connectors?: ConnectorStat[];
+  /** Hosts in this Hub and the Albena parts on each (see ./mesh.ts). Split off into hubs.mesh_json on heartbeat. */
+  mesh?: MeshHost[];
 };
 
 const num = (v: unknown, min: number, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
@@ -62,7 +65,7 @@ function parseService<S extends readonly string[]>(s: unknown, names: RegExp, st
 export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: false; error: string } {
   const bad = (m: string) => ({ ok: false as const, error: `stats: ${m}` });
   if (!isObj(v)) return bad("must be an object");
-  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates", "connectors"]);
+  const e = onlyKeys(v, ["uptime_s", "cpu_pct", "load1", "mem_used_mb", "mem_total_mb", "disk_used_gb", "disk_total_gb", "temp_c", "gpu", "services", "ai", "activity", "updates", "connectors", "mesh"]);
   if (e) return bad(e);
   // Every field is optional (a Hub reports only what it knows); anything present is validated.
   const out: HubStats = {};
@@ -169,6 +172,11 @@ export function parseStats(v: unknown): { ok: true; value: HubStats } | { ok: fa
     const cs = parseConnectors(v.connectors);
     if (!cs.ok) return bad(cs.error.replace(/^connectors: /, "connectors: "));
     out.connectors = cs.value;
+  }
+  if ("mesh" in v) {
+    const ms = parseMesh(v.mesh);
+    if (!ms.ok) return bad(ms.error);
+    out.mesh = ms.value;
   }
   return { ok: true, value: out };
 }

@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { staff } from '../lib/staff';
 import { h, must, chip, dot, ago, fmtDateTime, failInto, empty, table, panel, toast } from '../lib/ui';
 import { connectionsPanel } from '../lib/connections';
-import type { ConnectionsView, HubDetail, HubStats, MetricPoint, MetricRange, ModuleSeries } from '../lib/types';
+import type { ConnectionsView, HubDetail, HubStats, MeshHost, MetricPoint, MetricRange, ModuleSeries } from '../lib/types';
 
 const staffMode = location.pathname.startsWith('/support/');
 const id = decodeURIComponent(location.pathname.split('/')[staffMode ? 3 : 2] ?? '');
@@ -98,6 +98,62 @@ function statusPanel(x: HubDetail) {
     ['Version', `v${x.version}`], ['Edition', x.edition === 'mac' ? 'Hub for Mac' : 'Hub for NVIDIA'], ['Profile', x.profile], ['Update channel', x.updateChannel],
     ['Uptime', n(s.uptime_s, dur)], ['Remote access', x.remoteAccess ? 'On' : 'Off'], ['Paired', fmtDateTime(iso(x.createdAt))],
   ]));
+}
+const OS_NAME: Record<MeshHost['os'], string> = { macos: 'macOS', linux: 'Linux', windows: 'Windows', unknown: 'Unknown' };
+const partName = (p: string) => p.replace(/_/g, ' ');
+const SVG = 'http://www.w3.org/2000/svg';
+function svg(tag: string, attrs: Record<string, string>, text?: string) {
+  const e = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+/** Hub in the centre, other hosts on a ring, one line each; green dot online, grey offline. */
+function meshDiagram(hosts: MeshHost[], hubOnline: boolean) {
+  const W = 360, H = 240, cx = W / 2, cy = H / 2, hub = hosts.find((m) => m.role === 'hub') ?? hosts[0];
+  const nodes = hosts.filter((m) => m !== hub);
+  const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'mesh-svg', role: 'img', 'aria-label': `${hosts.length} host${hosts.length === 1 ? '' : 's'} in this Hub` });
+  const put = (m: MeshHost, x: number, y: number, on: boolean) => {
+    const g = svg('g', {});
+    g.append(svg('circle', { cx: String(x), cy: String(y), r: m === hub ? '22' : '16', class: 'mesh-node' }),
+      svg('circle', { cx: String(x + (m === hub ? 16 : 11)), cy: String(y - (m === hub ? 16 : 11)), r: '5', class: on ? 'mesh-dot on' : 'mesh-dot' }),
+      svg('text', { x: String(x), y: String(y + (m === hub ? 38 : 30)), class: 'mesh-label', 'text-anchor': 'middle' }, m.label.length > 18 ? `${m.label.slice(0, 17)}\u2026` : m.label),
+      svg('title', {}, `${m.label}: ${m.online ? 'online' : 'offline'}`));
+    return g;
+  };
+  nodes.forEach((m, i) => {
+    const a = (-Math.PI / 2) + ((i + 0.5) * 2 * Math.PI) / nodes.length + (nodes.length === 1 ? Math.PI / 2 : 0);
+    const x = cx + 125 * Math.cos(a), y = cy + 75 * Math.sin(a);
+    el.append(svg('line', { x1: String(cx), y1: String(cy), x2: String(x), y2: String(y), class: m.online ? 'mesh-line on' : 'mesh-line' }));
+  });
+  nodes.forEach((m, i) => {
+    const a = (-Math.PI / 2) + ((i + 0.5) * 2 * Math.PI) / nodes.length + (nodes.length === 1 ? Math.PI / 2 : 0);
+    el.append(put(m, cx + 125 * Math.cos(a), cy + 75 * Math.sin(a), m.online));
+  });
+  el.append(put(hub, cx, cy, hubOnline));
+  return h('div', { class: 'mesh-wrap' }, el as unknown as Node);
+}
+function hwText(m: MeshHost) {
+  const hw = m.hw ?? {};
+  const bits = [hw.gpu, hw.cpu ? `${hw.cpu} cores` : null, hw.ram_gb ? `${hw.ram_gb} GB RAM` : null].filter(Boolean);
+  return bits.length ? bits.join(' \u00b7 ') : DASH;
+}
+function hostsPanel(x: HubDetail) {
+  const hosts = x.mesh ?? [];
+  if (!hosts.length) return panel('Hosts', none('This Hub does not report its hosts yet. They appear after the Hub updates to a version that sends them.'));
+  const rows = hosts.map((m) => [
+    h('span', { class: 'row' }, dot(m.online ? 'ok' : ''), h('span', {}, m.label)),
+    h('span', { class: 'os-tag' }, OS_NAME[m.os]),
+    m.role === 'hub' ? chip('Hub', 'indigo') : chip('Node', 'grey'),
+    h('span', {}, m.online ? 'Online' : m.last_seen_s === undefined ? 'Offline' : `Offline, seen ${dur(m.last_seen_s)} ago`),
+    h('span', {}, hwText(m)),
+    m.parts.length ? h('span', { class: 'row' }, ...m.parts.map((p) => chip(partName(p.name), p.state === 'running' ? 'green' : 'grey'))) : h('span', {}, DASH),
+  ]);
+  return panel('Hosts', [
+    meshDiagram(hosts, x.online),
+    table('Hosts in this Hub', ['Host', 'System', 'Role', 'Status', 'Hardware', 'Albena parts'], rows),
+    h('p', { class: 'note' }, 'Only the names you gave your machines are shown. Addresses and computer names never leave the Hub.'),
+  ]);
 }
 function servicesPanel(x: HubDetail) {
   const list = x.stats?.services ?? x.health?.services;
@@ -220,7 +276,7 @@ function render(x: HubDetail, conns: ConnectionsView | null) {
   const head = h('div', { class: 'row' }, dot(x.online ? 'ok' : 'bad'), h('h2', { class: 'hub-title' }, x.name), staffMode ? chip('read-only', 'grey') : null,
     h('a', { class: 'btn btn-sm', href: staffMode && x.accountId ? `/support/customers/${encodeURIComponent(x.accountId)}` : '/hubs' }, staffMode ? 'Back to customer' : 'All Hubs'));
   const banner = x.online ? null : h('div', { class: 'banner is-warn', role: 'alert' }, h('span', {}, `This Hub is offline. It last reported ${x.lastSeen ? ago(iso(x.lastSeen)) : 'never'}. Numbers below are its last known state.`));
-  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), internetPanel(x), conns ? connectionsPanel(conns, x.id, staffMode) : null, servicesPanel(x),
+  root.replaceChildren(h('div', { class: 'stack' }, head, banner, h('div', { class: 'grid-2' }, statusPanel(x), updatesPanel(x)), hostsPanel(x), internetPanel(x), conns ? connectionsPanel(conns, x.id, staffMode) : null, servicesPanel(x),
     h('div', { class: 'grid-2' }, hardwarePanel(x.stats), aiPanel(x.stats)), activityPanel(x.stats), modulesPanel(x.stats), chartsPanel()));
 }
 

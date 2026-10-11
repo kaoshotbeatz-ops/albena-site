@@ -4,6 +4,7 @@ import { app } from "../src/index";
 import { prune } from "../src/cron";
 import { applyEntitlement } from "../src/billing/entitlements";
 import { b64encode, sha256Hex } from "../src/hubs/crypto";
+import { parseMesh } from "../src/hubs/mesh";
 import { HUB_MODULES, MAX_BODY, MAX_MODULES, parseHeartbeat } from "../src/hubs/schema";
 import { METRIC_RETAIN_S, downsample, downsampleModule, type MetricPoint, type ModulePoint } from "../src/hubs/stats";
 import { ORIGIN, clearPortalTables, client, e, login, seedMember, seedOwner, testBindings } from "./helpers";
@@ -317,6 +318,34 @@ describe("hub telemetry end to end", () => {
     expect((await e.DB.prepare("SELECT requests_24h FROM hub_module_metrics WHERE hub_id = ? ORDER BY ts").bind(hub.id).all()).results.map((r: any) => r.requests_24h)).toEqual([2, 3]);
     expect((await call(`/api/hubs/${hub.id}`, OWNER, { method: "DELETE" })).status).toBe(200);
     expect((await e.DB.prepare("SELECT COUNT(*) n FROM hub_module_metrics WHERE hub_id = ?").bind(hub.id).first<{ n: number }>())!.n).toBe(0);
+  });
+
+  const host = (o: Record<string, unknown> = {}) => ({ id: "9b9e3b4cea4d", label: "Hub host", os: "macos", role: "hub", online: true, last_seen_s: 0, hw: { cpu: 18, ram_gb: 36, gpu: "Apple M5 Max" }, parts: [{ name: "voice", state: "running" }, { name: "ollama", state: "stopped" }], ...o });
+
+  it("mesh schema is strict: allowlisted parts, opaque ids, safe labels, caps, no extra fields", () => {
+    expect(parseMesh([host()]).ok).toBe(true);
+    expect(parseMesh([]).ok).toBe(true);
+    const bad: unknown[] = [
+      host({ id: "mac-studio.lan" }), host({ label: "mac-studio.lan" }), host({ label: "192.168.0.5" }), host({ os: "beos" }), host({ role: "boss" }),
+      host({ hostname: "x" }), host({ hw: { cpu: 0 } }), host({ hw: { ip: "1.2.3.4" } }), host({ parts: [{ name: "rm", state: "running" }] }),
+      host({ parts: [{ name: "voice", state: "up" }] }), host({ parts: [{ name: "voice", state: "running", path: "/x" }] }),
+      host({ parts: Array.from({ length: 33 }, () => ({ name: "voice", state: "running" })) }),
+    ];
+    for (const b of bad) expect(parseMesh([b]).ok, JSON.stringify(b)).toBe(false);
+    expect(parseMesh(Array.from({ length: 17 }, (_, i) => host({ id: i.toString(16).padStart(12, "0") }))).ok).toBe(false);
+    expect(parseMesh([host(), host()]).ok).toBe(false); // duplicate id
+  });
+
+  it("stores the latest mesh apart from stats, keeps it when a heartbeat omits it, rejects an invalid one", async () => {
+    expect((await heartbeat(hub, hbBody({ ...sample(), mesh: [host(), host({ id: "aaaaaaaaaaaa", label: "Host 2", role: "node", online: false })] }))).status).toBe(200);
+    let d = ((await (await call(`/api/hubs/${hub.id}`, OWNER)).json()) as any).hub;
+    expect(d.mesh).toHaveLength(2);
+    expect(d.stats.mesh).toBeUndefined();
+    await heartbeat(hub, hbBody(sample()));
+    d = ((await (await call(`/api/hubs/${hub.id}`, OWNER)).json()) as any).hub;
+    expect(d.mesh).toHaveLength(2);
+    expect((await heartbeat(hub, hbBody({ ...sample(), mesh: [host({ label: "box.local" })] }))).status).toBe(400);
+    expect(((await (await call(`/api/hubs/${hub.id}`, OWNER)).json()) as any).hub.mesh).toHaveLength(2);
   });
 
   it("authz: owner and member see it; another account's user, anonymous and unknown ids get 404/401", async () => {
