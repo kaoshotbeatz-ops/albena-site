@@ -1,0 +1,135 @@
+---
+// Simulated conversation. Everything here is scripted sample data: no model, network or home is involved.
+---
+<div class="demo" id="demo" data-demo>
+  <div class="demo-top">
+    <p class="demo-badge"><span aria-hidden="true">&#9679;</span> Demo &middot; scripted sample data, nothing is connected</p>
+  </div>
+  <p class="demo-h" id="demo-h">Try a request</p>
+  <div class="demo-prompts" role="group" aria-labelledby="demo-h">
+    <button type="button" class="chipbtn" data-p="lights">&ldquo;Hey Albena, dim the living room&rdquo;</button>
+    <button type="button" class="chipbtn" data-p="solar">&ldquo;What did solar make today?&rdquo;</button>
+    <button type="button" class="chipbtn" data-p="coffee">&ldquo;Order more coffee&rdquo;</button>
+  </div>
+  <div class="demo-log" role="log" aria-live="polite" aria-label="Sample conversation" data-log tabindex="0">
+    <p class="demo-empty" data-empty>Pick a request above to see how Albena answers, which local tool she uses, and when she stops to ask you.</p>
+  </div>
+  <p class="demo-foot">Illustration only. Real replies depend on the devices and connectors you set up.</p>
+</div>
+
+<script>
+  type Step = { kind: 'you' | 'tool' | 'albena' | 'approve'; text: string; meta?: string };
+  const SCRIPTS: Record<string, { risk: string; steps: Step[]; approved?: Step[]; declined?: Step[] }> = {
+    lights: {
+      risk: 'low',
+      steps: [
+        { kind: 'you', text: 'Hey Albena, dim the living room' },
+        { kind: 'tool', text: 'home.set_light', meta: 'Local · Home Assistant · living room → 30%' },
+        { kind: 'albena', text: 'Done. The living room is at 30%. Lights follow your rules, so I did not need to ask.' },
+      ],
+    },
+    solar: {
+      risk: 'read',
+      steps: [
+        { kind: 'you', text: 'What did solar make today?' },
+        { kind: 'tool', text: 'solar.read_today', meta: 'Local · read only · sample figure' },
+        { kind: 'albena', text: 'Sample answer: 21.4 kWh so far, with the peak around 1 pm. Reading data never needs approval.' },
+      ],
+    },
+    coffee: {
+      risk: 'high',
+      steps: [
+        { kind: 'you', text: 'Order more coffee' },
+        { kind: 'tool', text: 'shop.draft_order', meta: 'Local · draft only · nothing sent yet' },
+        { kind: 'albena', text: 'I drafted a reorder of your usual beans. Purchases need your approval, so I will wait.' },
+        { kind: 'approve', text: 'Approve purchase: 1 bag, usual beans (sample)' },
+      ],
+      approved: [
+        { kind: 'tool', text: 'shop.place_order', meta: 'Approved by you · logged' },
+        { kind: 'albena', text: 'Approved. In a real install the order goes out now and the approval is logged.' },
+      ],
+      declined: [{ kind: 'albena', text: 'No problem. I discarded the draft and ordered nothing.' }],
+    },
+  };
+  const root = document.querySelector<HTMLElement>('[data-demo]');
+  if (root) {
+    const log = root.querySelector<HTMLElement>('[data-log]')!;
+    const empty = root.querySelector<HTMLElement>('[data-empty]')!;
+    const btns = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-p]'));
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let run = 0;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+    const label: Record<string, string> = { you: 'You', tool: 'Local tool', albena: 'Albena', approve: 'Approval needed' };
+    function add(s: Step): HTMLElement {
+      const d = document.createElement('div');
+      d.className = 'msg msg-' + s.kind;
+      const who = document.createElement('span');
+      who.className = 'who';
+      who.textContent = label[s.kind];
+      const body = document.createElement('p');
+      if (s.kind === 'tool') {
+        const c = document.createElement('code');
+        c.textContent = s.text;
+        body.append(c);
+        if (s.meta) { const m = document.createElement('span'); m.className = 'meta'; m.textContent = s.meta; body.append(m); }
+      } else body.textContent = s.text;
+      d.append(who, body);
+      log.append(d);
+      log.scrollTop = log.scrollHeight;
+      return d;
+    }
+    async function play(key: string) {
+      const id = ++run;
+      const sc = SCRIPTS[key];
+      empty.hidden = true;
+      log.querySelectorAll('.msg').forEach((n) => n.remove());
+      btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === key)));
+      for (const s of sc.steps) {
+        await wait(s.kind === 'you' ? 100 : 750);
+        if (id !== run) return;
+        const el = add(s);
+        if (s.kind === 'approve') {
+          const row = document.createElement('div');
+          row.className = 'acts';
+          const yes = document.createElement('button'); yes.type = 'button'; yes.className = 'btn btn-primary btn-sm'; yes.textContent = 'Approve';
+          const no = document.createElement('button'); no.type = 'button'; no.className = 'btn btn-ghost btn-sm'; no.textContent = 'Decline';
+          row.append(yes, no);
+          el.append(row);
+          yes.focus({ preventScroll: true });
+          const finish = async (steps: Step[], note: string) => {
+            row.remove();
+            const n = document.createElement('p'); n.className = 'meta'; n.textContent = note; el.append(n);
+            for (const t of steps) { await wait(650); if (id !== run) return; add(t); }
+          };
+          yes.addEventListener('click', () => finish(sc.approved!, 'You approved this (demo).'));
+          no.addEventListener('click', () => finish(sc.declined!, 'You declined this (demo).'));
+        }
+      }
+    }
+    btns.forEach((b) => b.addEventListener('click', () => play(b.dataset.p!)));
+  }
+</script>
+
+<style is:global>
+  .demo { position: relative; max-width: 720px; margin: 56px auto 0; padding: 18px; text-align: left; border: 1px solid var(--line-2); border-radius: 18px; background: linear-gradient(180deg, #121316, #0b0c0d); box-shadow: 0 40px 100px -30px rgba(113, 112, 255, 0.4); }
+  .demo-badge { display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 500; color: #f2c94c; border: 1px solid rgba(242, 201, 76, 0.4); border-radius: 999px; padding: 4px 12px; }
+  .demo-h { margin: 16px 0 8px; font-size: 13px; color: var(--fg-2); font-weight: 500; }
+  .demo-prompts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chipbtn { font: inherit; font-size: 14px; color: var(--fg); text-align: left; min-height: 44px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line-2); background: rgba(255, 255, 255, 0.04); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+  .chipbtn:hover { background: rgba(255, 255, 255, 0.09); }
+  .chipbtn[aria-pressed='true'] { border-color: var(--acc-hi); background: rgba(113, 112, 255, 0.18); }
+  .demo-log { margin-top: 14px; min-height: 230px; max-height: 330px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0, 0, 0, 0.25); }
+  .demo-empty { margin: auto; max-width: 40ch; text-align: center; color: var(--fg-2); font-size: 14px; }
+  .demo .msg { max-width: 92%; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); animation: msgin 0.35s var(--ease); overflow-wrap: anywhere; }
+  .demo .msg-you { align-self: flex-end; background: rgba(113, 112, 255, 0.2); border-color: rgba(165, 168, 255, 0.35); }
+  .demo .msg-tool { border-style: dashed; background: rgba(76, 183, 130, 0.08); border-color: rgba(76, 183, 130, 0.45); }
+  .demo .msg-approve { border-color: rgba(242, 201, 76, 0.6); background: rgba(242, 201, 76, 0.08); }
+  .demo .who { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); margin-bottom: 3px; }
+  .demo .msg p { font-size: 14.5px; color: var(--fg); }
+  .demo .msg code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #8ce3b4; }
+  .demo .meta { display: block; margin-top: 2px; font-size: 12.5px; color: var(--fg-2); }
+  .demo .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .demo-foot { margin-top: 12px; font-size: 12.5px; color: var(--fg-2); }
+  @keyframes msgin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .demo .msg { animation: none; } }
+</style>
