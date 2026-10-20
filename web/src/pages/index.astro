@@ -2,6 +2,8 @@
 import { APPROVAL_POLICY } from '../data/approval';
 import Base from '../layouts/Base.astro';
 import RelatedLinks from '../components/RelatedLinks.astro';
+import Demo from '../components/Demo.astro';
+import FlowDiagram from '../components/FlowDiagram.astro';
 import WaitlistForm from '../components/WaitlistForm.astro';
 const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Jellyfin', 'Immich', 'GitHub', 'AWS', 'Azure', 'Cloudflare', 'Jira', 'Tailscale'];
 ---
@@ -13,45 +15,12 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
       <h1 class="h-display reveal">Your AI.<br class="br" /> Your systems.</h1>
       <p class="lead reveal">Albena is personal AI you can run locally: private, shaped around you, your household or your business, and connected to the systems you already use. {APPROVAL_POLICY}</p>
       <div class="cta reveal">
-        <a class="btn btn-primary" href="#waitlist">Join the waitlist</a>
-        <a class="btn btn-ghost" href="/features">See what she does</a>
+        <a class="btn btn-primary" href="#waitlist">Join the early-access waitlist</a>
+        <a class="btn btn-ghost" href="#demo">Try the demo</a>
       </div>
     </div>
 
-    <div class="stage" role="img" aria-label="Illustration of the Albena app: a sidebar, a good morning briefing with status rows, and a Hey Albena voice bar.">
-      <div class="stage-glow" aria-hidden="true"></div>
-      <div class="win" aria-hidden="true">
-        <div class="win-bar"><i></i><i></i><i></i><span>Albena</span></div>
-        <div class="win-body">
-          <aside class="side">
-            <p class="side-h">Workspace</p>
-            <a class="on"><svg viewBox="0 0 16 16"><path d="M2 7.5 8 3l6 4.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"/></svg>Home</a>
-            <a><svg viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="2"/><path d="M5 6.5h6M5 9.5h4"/></svg>Briefing<b>3</b></a>
-            <a><svg viewBox="0 0 16 16"><rect x="3" y="2.5" width="10" height="11" rx="2"/><circle cx="8" cy="9.5" r="1.5"/></svg>Devices</a>
-            <a><svg viewBox="0 0 16 16"><circle cx="4" cy="8" r="1.7"/><circle cx="12" cy="4" r="1.7"/><circle cx="12" cy="12" r="1.7"/><path d="m5.5 7.2 5-2.4M5.5 8.8l5 2.4"/></svg>Memory</a>
-            <p class="side-h">Rooms</p>
-            <a><span class="sq"></span>Kitchen</a>
-            <a><span class="sq s2"></span>Living room</a>
-          </aside>
-          <div class="main-pane">
-            <div class="pane-h"><h3>Good morning, Alex</h3><span class="kbd">7:30</span></div>
-            <ul class="rows">
-              <li><span class="st done"></span><span class="t">Front door locked, thermostat set to 68&deg;</span><span class="chip">Home</span><span class="kbd">G H</span></li>
-              <li><span class="st half"></span><span class="t">Dentist at 10:15, leave by 9:50</span><span class="chip">Calendar</span><span class="kbd">G C</span></li>
-              <li><span class="st half"></span><span class="t">3 email replies drafted</span><span class="chip amber">Needs approval</span><span class="kbd">&#8984; &#8629;</span></li>
-              <li><span class="st"></span><span class="t">Reorder coffee filters</span><span class="chip indigo">Suggested</span><span class="kbd">G S</span></li>
-              <li class="hide-s"><span class="st done"></span><span class="t">Garage camera: no motion overnight</span><span class="chip">Devices</span><span class="kbd">G D</span></li>
-            </ul>
-            <div class="voice">
-              <span class="mic"><svg viewBox="0 0 16 16"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 0 0 9 0M8 12.5V14"/></svg></span>
-              <span class="vt">Hey Albena<span class="caret"></span></span>
-              <span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="stage-fade" aria-hidden="true"></div>
-    </div>
+    <div class="wrap"><Demo /></div>
   </section>
 
   <section class="works" aria-label="Works with">
@@ -155,6 +124,22 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
         <li class="reveal"><span class="num">3</span><div><h3>You set the approval rules</h3><p>{APPROVAL_POLICY}</p></div></li>
       </ol>
     </div>
+    <div class="wrap diag reveal"><FlowDiagram /></div>
+  </section>
+
+  <section class="sec" id="trust" aria-labelledby="trust-h">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">Trust</p>
+        <h2 id="trust-h" class="h-section">What runs where, and who decides</h2>
+      </div>
+      <div class="tcards">
+        <article class="tcard reveal"><h3>Runs locally</h3><ul><li>Voice and everyday requests</li><li>Local models on your Mac or NVIDIA hardware</li><li>Memory and routines, stored at home</li><li>Keeps working when the internet is down</li></ul></article>
+        <article class="tcard reveal"><h3>Optional cloud</h3><ul><li>Off unless you allow it</li><li>Only for rare hard questions you permit</li><li>Albena tells you when she uses it</li><li>Cloud services you connect are your choice</li></ul></article>
+        <article class="tcard reveal"><h3>Approval model</h3><ul><li>Reads run freely</li><li>Low-risk actions like lights follow your rules</li><li>Messages, purchases and locks need your approval</li><li>The highest-risk actions also need a PIN</li></ul></article>
+        <article class="tcard reveal"><h3>Your data is yours</h3><ul><li>See everything Albena remembers</li><li>Delete it any time</li><li>We never sell your data</li><li>Conversations are never used for advertising</li></ul></article>
+      </div>
+    </div>
   </section>
 
   <section class="sec" id="privacy">
@@ -173,7 +158,7 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
     <div class="cta-glow" aria-hidden="true"></div>
     <div class="wrap center">
       <h2 class="h-section reveal">Be first to meet her</h2>
-      <p class="sub reveal">Leave your email and we will write when early access opens for you.</p>
+      <p class="sub reveal">Join the early-access waitlist. It is just an email, there is nothing to buy, and we will write when early access opens for you.</p>
       <div class="cta-form reveal"><WaitlistForm id="home" /></div>
     </div>
   </section>
@@ -181,6 +166,16 @@ const strip = ['Home Assistant', 'Philips Hue', 'Google Workspace', 'Slack', 'Je
 </Base>
 
 <style>
+  .diag { margin-top: 56px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); }
+  .tcards { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  .tcard { padding: 22px; border: 1px solid var(--line-2); border-radius: 16px; background: var(--panel); }
+  .tcard h3 { font-size: 18px; }
+  .tcard ul { margin-top: 12px; display: grid; gap: 8px; }
+  .tcard li { position: relative; padding-left: 18px; font-size: 14.5px; color: var(--fg-2); }
+  .tcard li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  @media (min-width: 700px) { .tcards { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .tcards { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 480px) { .diag { padding: 14px; } }
   .hero { position: relative; overflow: hidden; padding: 72px 0 0; }
   .grid-bg { position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 64px 64px; opacity: 0.35; -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 0, #000, transparent 75%); mask-image: radial-gradient(ellipse 70% 55% at 50% 0, #000, transparent 75%); }
   .hero-in { position: relative; max-width: var(--max); margin: 0 auto; padding: 0 20px; text-align: center; }
