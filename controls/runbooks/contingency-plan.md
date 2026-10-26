@@ -20,7 +20,7 @@
 
 ### DNS rollback to GitHub Pages
 The repo still carries the static site (`CNAME`, `index.html`, `.nojekyll`) from the previous GitHub Pages hosting.
-1. In the registrar/DNS provider, set `albena.ai` apex A records to GitHub Pages (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153) and `www` CNAME to `kaoshotbeatz-ops.github.io`. If DNS is on Cloudflare, set these records to DNS only (grey cloud) so traffic bypasses the Worker.
+1. In the registrar/DNS provider, set `albena.ai` apex A records to GitHub Pages (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153) and `www` CNAME to `omarhuertasllc-ops.github.io`. If DNS is on Cloudflare, set these records to DNS only (grey cloud) so traffic bypasses the Worker.
 2. Ensure Pages is enabled on the repo (Settings > Pages) with the root of `main` and custom domain `albena.ai`, "Enforce HTTPS" on.
 3. Expected limits: no form handling, no D1, no API; show a static notice. Record an Obvera Change.
 4. Reverse the records when the Worker is healthy. Confirm TTL (use <= 300 s during an incident).

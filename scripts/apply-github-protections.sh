@@ -4,7 +4,7 @@
 # Needs `gh` authenticated as a repo admin. Run by the repo owner, not by CI.
 set -euo pipefail
 
-DRY=0; REPO="kaoshotbeatz-ops/albena-site"; BRANCH="main"; REVIEWER="kaoshotbeatz-ops"
+DRY=0; REPO="omarhuertasllc-ops/albena-site"; BRANCH="main"; REVIEWER="omarhuertasllc-ops"
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1; shift ;;
