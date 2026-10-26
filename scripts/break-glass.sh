@@ -21,8 +21,8 @@
 # Only the owner can run it: it needs the PIN, a GitHub re-login, and local wrangler + Obvera credentials.
 set -euo pipefail
 
-OWNER_LOGIN="kaoshotbeatz-ops"
-ORG="kaoshotbeatz-ops"
+OWNER_LOGIN="omarhuertasllc-ops"
+ORG="omarhuertasllc-ops"
 BRANCH="main"
 GATEWAY="$HOME/Scripts/webdev_gateway.py"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
